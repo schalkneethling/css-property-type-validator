@@ -1,0 +1,19 @@
+{
+  "name": "@css-property-type-validator/cli",
+  "version": "0.1.0",
+  "description": "CLI for CSS custom property type validator.",
+  "bin": {
+    "css-property-type-validator": "./dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@css-property-type-validator/core": "workspace:*",
+    "commander": "^14.0.3"
+  }
+}

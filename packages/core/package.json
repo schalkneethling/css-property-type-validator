@@ -1,0 +1,26 @@
+{
+  "name": "@css-property-type-validator/core",
+  "version": "0.1.0",
+  "description": "Standalone CSS custom property type validator core.",
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "css-tree": "^3.2.1"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.2"
+  }
+}

@@ -1,0 +1,97 @@
+@property --brand-color {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --space-md {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 1rem;
+}
+
+@property --radius-lg {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 12px;
+}
+
+@property --fast-transition {
+  syntax: "<time>";
+  inherits: false;
+  initial-value: 150ms;
+}
+
+@property --overlay-alpha {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0.6;
+}
+
+@property --card-shadow {
+  syntax: "<shadow>";
+  inherits: false;
+  initial-value: 0 2px 8px rgb(0 0 0 / 0.12);
+}
+
+@property --hero-image {
+  syntax: "<image>";
+  inherits: false;
+  initial-value: url("hero-default.png");
+}
+
+@property --accent-ratio {
+  syntax: "<ratio>";
+  inherits: false;
+  initial-value: 16/9;
+}
+
+@property --heading-font {
+  syntax: "<font-family>";
+  inherits: true;
+  initial-value: serif;
+}
+
+/*
+  Valid usages developers would expect to keep passing.
+*/
+.card {
+  color: var(--brand-color);
+  padding-inline: var(--space-md);
+  border-start-start-radius: var(--radius-lg);
+  transition-duration: var(--fast-transition);
+  box-shadow: var(--card-shadow);
+  font-family: var(--heading-font);
+}
+
+.hero {
+  background-image: var(--hero-image);
+  aspect-ratio: var(--accent-ratio);
+}
+
+/*
+  Invalid usages the validator should flag.
+*/
+.card--broken {
+  inline-size: var(--brand-color);
+  color: var(--space-md);
+  border-end-end-radius: var(--fast-transition);
+  transition-duration: var(--overlay-alpha);
+  background-image: var(--brand-color);
+  box-shadow: var(--space-md);
+  aspect-ratio: var(--heading-font);
+}
+
+/*
+  Unregistered custom properties are currently ignored.
+*/
+.theme-preview {
+  color: var(--unregistered-token);
+}
+
+/*
+  Multiple var() usages in one declaration are intentionally skipped for now.
+*/
+.stack {
+  margin-inline: var(--space-md) var(--radius-lg);
+}

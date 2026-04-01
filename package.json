@@ -1,0 +1,34 @@
+{
+  "name": "css-property-type-validator",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Validate CSS custom property registrations and var() usages against @property syntax descriptors.",
+  "keywords": [
+    "css",
+    "custom-properties",
+    "property",
+    "validator"
+  ],
+  "license": "MIT",
+  "author": "Schalk Neethling",
+  "workspaces": [
+    "packages/*"
+  ],
+  "type": "module",
+  "scripts": {
+    "build": "pnpm -r --if-present run build",
+    "test": "vp test run",
+    "typecheck": "tsc -b tsconfig.json",
+    "clean": "node scripts/clean.mjs",
+    "example": "pnpm run build && node packages/cli/dist/cli.js example.css"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "typescript": "^6.0.2",
+    "vite-plus": "^0.1.15"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "packageManager": "pnpm@10.29.3"
+}
