@@ -1,18 +1,39 @@
 {
-  "name": "@css-property-type-validator/core",
+  "name": "@schalkneethling/css-property-type-validator-core",
   "version": "0.1.0",
   "description": "Standalone CSS custom property type validator core.",
+  "keywords": [
+    "css",
+    "custom-properties",
+    "property",
+    "validator",
+    "design-tokens"
+  ],
+  "license": "MIT",
+  "author": "Schalk Neethling",
   "files": [
     "dist"
   ],
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/schalkneethling/css-property-type-validator.git",
+    "directory": "packages/core"
+  },
+  "homepage": "https://github.com/schalkneethling/css-property-type-validator#readme",
+  "bugs": {
+    "url": "https://github.com/schalkneethling/css-property-type-validator/issues"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     }
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json"

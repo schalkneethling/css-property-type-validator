@@ -5,10 +5,10 @@ import process from "node:process";
 
 import { Command } from "commander";
 
-import { validateFiles } from "@css-property-type-validator/core";
+import { validateFiles } from "@schalkneethling/css-property-type-validator-core";
 import { formatValidationResult } from "./formatter.js";
 
-import type { ValidationInput } from "@css-property-type-validator/core";
+import type { ValidationInput } from "@schalkneethling/css-property-type-validator-core";
 
 type OutputFormat = "human" | "json";
 

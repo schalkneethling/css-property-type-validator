@@ -1,4 +1,7 @@
-import type { ValidationDiagnostic, ValidationResult } from "@css-property-type-validator/core";
+import type {
+  ValidationDiagnostic,
+  ValidationResult,
+} from "@schalkneethling/css-property-type-validator-core";
 
 type OutputFormat = "human" | "json";
 

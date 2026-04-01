@@ -1,7 +1,16 @@
 {
-  "name": "@css-property-type-validator/cli",
+  "name": "@schalkneethling/css-property-type-validator-cli",
   "version": "0.1.0",
   "description": "CLI for CSS custom property type validator.",
+  "keywords": [
+    "css",
+    "custom-properties",
+    "property",
+    "validator",
+    "cli"
+  ],
+  "license": "MIT",
+  "author": "Schalk Neethling",
   "bin": {
     "css-property-type-validator": "./dist/cli.js"
   },
@@ -9,11 +18,23 @@
     "dist"
   ],
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/schalkneethling/css-property-type-validator.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/schalkneethling/css-property-type-validator#readme",
+  "bugs": {
+    "url": "https://github.com/schalkneethling/css-property-type-validator/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@css-property-type-validator/core": "workspace:*",
+    "@schalkneethling/css-property-type-validator-core": "workspace:*",
     "commander": "^14.0.3"
   }
 }

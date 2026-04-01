@@ -22,6 +22,11 @@ Standalone tooling for validating CSS custom property registrations declared wit
 pnpm install
 ```
 
+## Publish Targets
+
+- Core package: `@schalkneethling/css-property-type-validator-core`
+- CLI package: `@schalkneethling/css-property-type-validator-cli`
+
 ## Develop
 
 ```bash
