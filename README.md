@@ -18,28 +18,68 @@ Standalone tooling for validating CSS custom property registrations declared wit
 
 ## Install
 
+### CLI
+
 ```bash
-pnpm install
+npm install --global @schalkneethling/css-property-type-validator-cli
 ```
 
-## Publish Targets
+Or run it without a global install:
 
-- Core package: `@schalkneethling/css-property-type-validator-core`
-- CLI package: `@schalkneethling/css-property-type-validator-cli`
+```bash
+npx @schalkneethling/css-property-type-validator-cli example.css
+```
+
+### Core library
+
+```bash
+pnpm add @schalkneethling/css-property-type-validator-core
+```
+
+## Published Packages
+
+- Core package: [`@schalkneethling/css-property-type-validator-core`](https://www.npmjs.com/package/@schalkneethling/css-property-type-validator-core)
+- CLI package: [`@schalkneethling/css-property-type-validator-cli`](https://www.npmjs.com/package/@schalkneethling/css-property-type-validator-cli)
 
 ## Develop
 
 ```bash
+pnpm install
 pnpm run typecheck
 pnpm test
 pnpm run build
 ```
 
+## Library usage
+
+```ts
+import { validateFiles } from "@schalkneethling/css-property-type-validator-core";
+
+const result = validateFiles([
+  {
+    path: "example.css",
+    css: `
+      @property --brand-color {
+        syntax: "<color>";
+        inherits: true;
+        initial-value: transparent;
+      }
+
+      .card {
+        inline-size: var(--brand-color);
+      }
+    `,
+  },
+]);
+
+console.log(result.diagnostics);
+```
+
 ## CLI usage
 
 ```bash
-node packages/cli/dist/cli.js "examples/**/*.css"
-node packages/cli/dist/cli.js "examples/**/*.css" --format json
+css-property-type-validator "src/**/*.css"
+css-property-type-validator "src/**/*.css" --format json
 ```
 
 Human output is the default. The CLI exits with:
