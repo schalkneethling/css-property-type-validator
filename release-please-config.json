@@ -1,0 +1,16 @@
+{
+  "bootstrap-sha": "61b0d717f5faf251d17f26715e42dae275db6eaf",
+  "include-component-in-tag": true,
+  "packages": {
+    "packages/core": {
+      "component": "core",
+      "release-type": "node",
+      "package-name": "@schalkneethling/css-property-type-validator-core"
+    },
+    "packages/cli": {
+      "component": "cli",
+      "release-type": "node",
+      "package-name": "@schalkneethling/css-property-type-validator-cli"
+    }
+  }
+}

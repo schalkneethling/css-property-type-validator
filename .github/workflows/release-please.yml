@@ -1,0 +1,57 @@
+name: Release Please
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Run release-please
+        id: release
+        uses: googleapis/release-please-action@v4
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+      - name: Check out repository
+        if: ${{ steps.release.outputs.releases_created == 'true' }}
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        if: ${{ steps.release.outputs.releases_created == 'true' }}
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+
+      - name: Set up Node.js
+        if: ${{ steps.release.outputs.releases_created == 'true' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          cache: pnpm
+
+      - name: Install dependencies
+        if: ${{ steps.release.outputs.releases_created == 'true' }}
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        if: ${{ steps.release.outputs.releases_created == 'true' }}
+        run: pnpm run build
+
+      - name: Publish core package
+        if: ${{ steps.release.outputs['packages/core--release_created'] == 'true' }}
+        run: pnpm --filter @schalkneethling/css-property-type-validator-core publish --access public --no-git-checks
+
+      - name: Publish CLI package
+        if: ${{ steps.release.outputs['packages/cli--release_created'] == 'true' }}
+        run: pnpm --filter @schalkneethling/css-property-type-validator-cli publish --access public --no-git-checks
