@@ -15,7 +15,8 @@
     "css-property-type-validator": "./dist/cli.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md"
   ],
   "type": "module",
   "repository": {

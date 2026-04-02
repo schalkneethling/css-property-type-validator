@@ -12,7 +12,8 @@
   "license": "MIT",
   "author": "Schalk Neethling",
   "files": [
-    "dist"
+    "dist",
+    "README.md"
   ],
   "type": "module",
   "main": "./dist/index.js",
