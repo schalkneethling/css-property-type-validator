@@ -52,10 +52,15 @@ function parseValue(value: string): any | null {
   }
 }
 
-function declarationMatchesSample(declaration: any, varNode: any, sample: string): boolean {
+function declarationMatchesSamples(
+  declaration: any,
+  substitutions: Array<{ sample: string; varNode: any }>,
+): boolean {
   const valueSource = cssTree.generate(declaration.value);
-  const replacementTarget = cssTree.generate(varNode);
-  const replacedSource = valueSource.replace(replacementTarget, sample);
+  const replacedSource = substitutions.reduce((source, substitution) => {
+    const replacementTarget = cssTree.generate(substitution.varNode);
+    return source.replace(replacementTarget, substitution.sample);
+  }, valueSource);
   const replacedAst = parseValue(replacedSource);
 
   if (!replacedAst) {
@@ -64,6 +69,62 @@ function declarationMatchesSample(declaration: any, varNode: any, sample: string
 
   const match = cssTree.lexer.matchProperty(declaration.property, replacedAst);
   return Boolean(match?.matched);
+}
+
+function toVarDiagnostic(
+  filePath: string,
+  declaration: any,
+  registrations: RegisteredProperty[],
+  varNodes: any[],
+): ValidationDiagnostic {
+  if (registrations.length === 1) {
+    const [registration] = registrations;
+    const [varNode] = varNodes;
+
+    return {
+      code: "incompatible-var-usage",
+      filePath,
+      loc: toLocation(varNode.loc),
+      message: `Registered property ${registration.name} uses syntax "${registration.syntax}" which is incompatible with ${declaration.property} at this var() usage.`,
+      propertyName: registration.name,
+      registeredSyntax: registration.syntax,
+      expectedProperty: declaration.property,
+      snippet: cssTree.generate(declaration),
+    };
+  }
+
+  const registeredNames = [...new Set(registrations.map((registration) => registration.name))].join(
+    ", ",
+  );
+
+  return {
+    code: "incompatible-var-usage",
+    filePath,
+    loc: toLocation(declaration.value.loc),
+    message: `Registered properties ${registeredNames} are jointly incompatible with ${declaration.property} at this declaration value.`,
+    expectedProperty: declaration.property,
+    snippet: cssTree.generate(declaration),
+  };
+}
+
+function isCompatibleWithSubstitutions(
+  declaration: any,
+  substitutionOptions: Array<{ samples: string[]; varNode: any }>,
+  index = 0,
+  activeSubstitutions: Array<{ sample: string; varNode: any }> = [],
+): boolean {
+  if (index === substitutionOptions.length) {
+    return declarationMatchesSamples(declaration, activeSubstitutions);
+  }
+
+  const option = substitutionOptions[index];
+
+  return option.samples.some((sample) =>
+    isCompatibleWithSubstitutions(declaration, substitutionOptions, index + 1, [
+      ...activeSubstitutions,
+      { sample, varNode: option.varNode },
+    ]),
+  );
 }
 
 function validateDeclaration(
@@ -79,57 +140,76 @@ function validateDeclaration(
     return { diagnostics, skipped: 0, validated: 0 };
   }
 
-  // Multiple var() usages need coordinated substitution, so we track them as skipped for now.
-  if (varFunctions.length > 1) {
+  const varMetadata = varFunctions.map((varNode) => {
+    const propertyName = getVarPropertyName(varNode);
+
+    return {
+      propertyName,
+      registration: propertyName ? registry.get(propertyName) ?? null : null,
+      varNode,
+    };
+  });
+
+  // If any var() reference cannot be resolved to a custom property name, we cannot validate safely.
+  if (varMetadata.some((entry) => !entry.propertyName)) {
     return { diagnostics, skipped: 1, validated: 0 };
   }
 
-  const varNode = varFunctions[0];
-  const propertyName = getVarPropertyName(varNode);
+  const registeredEntries = varMetadata.filter(
+    (
+      entry,
+    ): entry is {
+      propertyName: string;
+      registration: RegisteredProperty;
+      varNode: any;
+    } => Boolean(entry.registration),
+  );
 
-  // If the first var() argument is not a custom property name, we cannot resolve it reliably.
-  if (!propertyName) {
-    return { diagnostics, skipped: 1, validated: 0 };
-  }
-
-  const registration = registry.get(propertyName);
-
-  // Unregistered custom properties are intentionally ignored in this first version.
-  if (!registration) {
+  // Unregistered custom properties are intentionally ignored when no registered inputs participate.
+  if (registeredEntries.length === 0) {
     return { diagnostics, skipped: 0, validated: 0 };
   }
 
-  let samples: string[];
-
-  try {
-    samples = buildRepresentativeSamples(registration.syntax, cssTree.definitionSyntax);
-  } catch {
+  // Mixed registered and unregistered var() usages still leave unresolved values in the declaration.
+  if (registeredEntries.length !== varMetadata.length) {
     return { diagnostics, skipped: 1, validated: 0 };
   }
 
-  // If we cannot materialize any valid sample values for the registered syntax,
-  // we skip the check.
-  if (samples.length === 0) {
-    return { diagnostics, skipped: 1, validated: 0 };
+  const substitutionOptions = [];
+
+  for (const entry of registeredEntries) {
+    let samples: string[];
+
+    try {
+      samples = buildRepresentativeSamples(entry.registration.syntax, cssTree.definitionSyntax);
+    } catch {
+      return { diagnostics, skipped: 1, validated: 0 };
+    }
+
+    // If we cannot materialize any valid sample values for a registered syntax, we skip the check.
+    if (samples.length === 0) {
+      return { diagnostics, skipped: 1, validated: 0 };
+    }
+
+    substitutionOptions.push({
+      samples,
+      varNode: entry.varNode,
+    });
   }
 
-  // A declaration is considered compatible if at least one representative
-  // sample fits the consumer property.
-  const isCompatible = samples.some((sample) =>
-    declarationMatchesSample(declaration, varNode, sample),
-  );
+  // The declaration passes if all registered var() usages can be substituted
+  // with one compatible combination of representative sample values.
+  const isCompatible = isCompatibleWithSubstitutions(declaration, substitutionOptions);
 
   if (!isCompatible) {
-    diagnostics.push({
-      code: "incompatible-var-usage",
-      filePath,
-      loc: toLocation(varNode.loc),
-      message: `Registered property ${propertyName} uses syntax "${registration.syntax}" which is incompatible with ${declaration.property} at this var() usage.`,
-      propertyName,
-      registeredSyntax: registration.syntax,
-      expectedProperty: declaration.property,
-      snippet: cssTree.generate(declaration),
-    });
+    diagnostics.push(
+      toVarDiagnostic(
+        filePath,
+        declaration,
+        registeredEntries.map((entry) => entry.registration),
+        registeredEntries.map((entry) => entry.varNode),
+      ),
+    );
   }
 
   return { diagnostics, skipped: 0, validated: 1 };
