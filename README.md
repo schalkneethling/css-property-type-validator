@@ -50,6 +50,10 @@ pnpm test
 pnpm run build
 ```
 
+## CI and Releases
+
+This repository uses GitHub Actions for CI and Release Please for automated releases and npm publishing. See [RELEASING.md](/Users/schalkneethling/dev/opensource/css-property-type-validator/RELEASING.md) for setup details and required secrets.
+
 ## Library usage
 
 ```ts
