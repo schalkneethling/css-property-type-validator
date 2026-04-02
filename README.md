@@ -7,7 +7,7 @@ Standalone tooling for validating CSS custom property registrations declared wit
 - Parses CSS with `css-tree`
 - Builds a registry from `@property` rules across multiple input files
 - Validates `syntax` descriptors in those registrations
-- Checks single-`var()` declaration values against the consuming CSS property
+- Checks `var()` declaration values against the consuming CSS property, including coordinated multi-`var()` cases
 - Ignores unregistered custom properties
 - Ships a standalone core package and a thin CLI wrapper
 
@@ -197,7 +197,6 @@ The validator assembles one registry from the full set of input files, then chec
 
 For this first cut, compatibility checks are intentionally conservative:
 
-- only declarations with a single `var()` usage are validated
 - direct custom property assignments like `--token: 10px` are not validated yet
 - automatic `@import` resolution is not implemented yet
 

@@ -58,7 +58,9 @@
 .card {
   color: var(--brand-color);
   padding-inline: var(--space-md);
+  margin-inline: var(--space-md) var(--radius-lg);
   border-start-start-radius: var(--radius-lg);
+  border: var(--radius-lg) solid var(--brand-color);
   transition-duration: var(--fast-transition);
   box-shadow: var(--card-shadow);
   font-family: var(--heading-font);
@@ -67,6 +69,8 @@
 .hero {
   background-image: var(--hero-image);
   aspect-ratio: var(--accent-ratio);
+  color: var(--brand-color);
+  padding-inline: var(--space-md);
 }
 
 /*
@@ -75,7 +79,9 @@
 .card--broken {
   inline-size: var(--brand-color);
   color: var(--space-md);
+  margin-inline: var(--brand-color) var(--space-md);
   border-end-end-radius: var(--fast-transition);
+  border: var(--brand-color) solid var(--brand-color);
   transition-duration: var(--overlay-alpha);
   background-image: var(--brand-color);
   box-shadow: var(--space-md);
@@ -90,8 +96,19 @@
 }
 
 /*
-  Multiple var() usages in one declaration are intentionally skipped for now.
+  Multiple var() usages in one declaration should validate successfully.
 */
 .stack {
   margin-inline: var(--space-md) var(--radius-lg);
+  padding-inline: var(--space-md);
+  border-start-start-radius: var(--radius-lg);
+}
+
+/*
+  Invalid multi-var() compositions should still be flagged.
+*/
+.panel--broken {
+  margin-inline: var(--brand-color) var(--radius-lg);
+  border: var(--brand-color) solid var(--brand-color);
+  color: var(--space-md);
 }
