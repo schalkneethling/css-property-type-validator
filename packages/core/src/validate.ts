@@ -24,6 +24,10 @@ function registryMap(registry: RegisteredProperty[]): Map<string, RegisteredProp
   return new Map(registry.map((entry) => [entry.name, entry]));
 }
 
+function isCustomPropertyName(propertyName: string): boolean {
+  return propertyName.startsWith("--");
+}
+
 function collectVarFunctions(value: any): any[] {
   const functions: any[] = [];
 
@@ -39,6 +43,14 @@ function collectVarFunctions(value: any): any[] {
   return functions;
 }
 
+function getDeclarationValueForValidation(declaration: any): any | null {
+  if (isCustomPropertyName(declaration.property)) {
+    return parseValue(cssTree.generate(declaration.value));
+  }
+
+  return declaration.value;
+}
+
 function getVarPropertyName(node: any): string | undefined {
   const firstNode = node.children?.first ?? node.children?.[0];
   return firstNode?.type === "Identifier" ? firstNode.name : undefined;
@@ -52,11 +64,21 @@ function parseValue(value: string): any | null {
   }
 }
 
-function declarationMatchesSamples(
-  declaration: any,
+function matchRegisteredSyntax(registration: RegisteredProperty, value: any): boolean {
+  if (registration.syntax === "*") {
+    return true;
+  }
+
+  const match = cssTree.lexer.match(registration.syntax, value);
+  return Boolean(match?.matched);
+}
+
+function valueMatchesSamples(
+  value: any,
   substitutions: Array<{ sample: string; varNode: any }>,
+  matcher: (candidateValue: any) => boolean,
 ): boolean {
-  const valueSource = cssTree.generate(declaration.value);
+  const valueSource = cssTree.generate(value);
   const replacedSource = substitutions.reduce((source, substitution) => {
     const replacementTarget = cssTree.generate(substitution.varNode);
     return source.replace(replacementTarget, substitution.sample);
@@ -67,8 +89,7 @@ function declarationMatchesSamples(
     return false;
   }
 
-  const match = cssTree.lexer.matchProperty(declaration.property, replacedAst);
-  return Boolean(match?.matched);
+  return matcher(replacedAst);
 }
 
 function toVarDiagnostic(
@@ -107,20 +128,37 @@ function toVarDiagnostic(
   };
 }
 
-function isCompatibleWithSubstitutions(
+function toAssignmentDiagnostic(
+  filePath: string,
   declaration: any,
+  registration: RegisteredProperty,
+): ValidationDiagnostic {
+  return {
+    code: "incompatible-custom-property-assignment",
+    filePath,
+    loc: toLocation(declaration.value.loc ?? declaration.loc),
+    message: `Assigned value for registered property ${registration.name} does not match its syntax "${registration.syntax}".`,
+    propertyName: registration.name,
+    registeredSyntax: registration.syntax,
+    snippet: cssTree.generate(declaration),
+  };
+}
+
+function isCompatibleWithSubstitutions(
+  value: any,
   substitutionOptions: Array<{ samples: string[]; varNode: any }>,
+  matcher: (candidateValue: any) => boolean,
   index = 0,
   activeSubstitutions: Array<{ sample: string; varNode: any }> = [],
 ): boolean {
   if (index === substitutionOptions.length) {
-    return declarationMatchesSamples(declaration, activeSubstitutions);
+    return valueMatchesSamples(value, activeSubstitutions, matcher);
   }
 
   const option = substitutionOptions[index];
 
   return option.samples.some((sample) =>
-    isCompatibleWithSubstitutions(declaration, substitutionOptions, index + 1, [
+    isCompatibleWithSubstitutions(value, substitutionOptions, matcher, index + 1, [
       ...activeSubstitutions,
       { sample, varNode: option.varNode },
     ]),
@@ -133,10 +171,39 @@ function validateDeclaration(
   registry: Map<string, RegisteredProperty>,
 ): { diagnostics: ValidationDiagnostic[]; skipped: number; validated: number } {
   const diagnostics: ValidationDiagnostic[] = [];
-  const varFunctions = collectVarFunctions(declaration.value);
+  const valueToValidate = getDeclarationValueForValidation(declaration);
 
-  // v1 only validates var() consumption sites, not authored values assigned to custom properties.
-  if (varFunctions.length === 0 || declaration.property.startsWith("--")) {
+  if (!valueToValidate) {
+    return isCustomPropertyName(declaration.property)
+      ? { diagnostics, skipped: 1, validated: 0 }
+      : { diagnostics, skipped: 0, validated: 0 };
+  }
+
+  const varFunctions = collectVarFunctions(valueToValidate);
+
+  if (isCustomPropertyName(declaration.property)) {
+    const registration = registry.get(declaration.property);
+
+    if (!registration) {
+      return { diagnostics, skipped: 0, validated: 0 };
+    }
+
+    const authoredValue = cssTree.generate(declaration.value).trim();
+
+    if (authoredValue.length === 0) {
+      return { diagnostics, skipped: 1, validated: 0 };
+    }
+
+    if (varFunctions.length === 0) {
+      if (!matchRegisteredSyntax(registration, valueToValidate)) {
+        diagnostics.push(toAssignmentDiagnostic(filePath, declaration, registration));
+      }
+
+      return { diagnostics, skipped: 0, validated: 1 };
+    }
+  }
+
+  if (varFunctions.length === 0) {
     return { diagnostics, skipped: 0, validated: 0 };
   }
 
@@ -164,6 +231,12 @@ function validateDeclaration(
       varNode: any;
     } => Boolean(entry.registration),
   );
+
+  if (isCustomPropertyName(declaration.property)) {
+    if (registeredEntries.length !== varMetadata.length) {
+      return { diagnostics, skipped: 1, validated: 0 };
+    }
+  }
 
   // Unregistered custom properties are intentionally ignored when no registered inputs participate.
   if (registeredEntries.length === 0) {
@@ -197,19 +270,33 @@ function validateDeclaration(
     });
   }
 
+  const matcher = isCustomPropertyName(declaration.property)
+    ? (candidateValue: any) =>
+        matchRegisteredSyntax(registry.get(declaration.property) as RegisteredProperty, candidateValue)
+    : (candidateValue: any) => {
+        const match = cssTree.lexer.matchProperty(declaration.property, candidateValue);
+        return Boolean(match?.matched);
+      };
+
   // The declaration passes if all registered var() usages can be substituted
   // with one compatible combination of representative sample values.
-  const isCompatible = isCompatibleWithSubstitutions(declaration, substitutionOptions);
+  const isCompatible = isCompatibleWithSubstitutions(valueToValidate, substitutionOptions, matcher);
 
   if (!isCompatible) {
-    diagnostics.push(
-      toVarDiagnostic(
-        filePath,
-        declaration,
-        registeredEntries.map((entry) => entry.registration),
-        registeredEntries.map((entry) => entry.varNode),
-      ),
-    );
+    if (isCustomPropertyName(declaration.property)) {
+      diagnostics.push(
+        toAssignmentDiagnostic(filePath, declaration, registry.get(declaration.property) as RegisteredProperty),
+      );
+    } else {
+      diagnostics.push(
+        toVarDiagnostic(
+          filePath,
+          declaration,
+          registeredEntries.map((entry) => entry.registration),
+          registeredEntries.map((entry) => entry.varNode),
+        ),
+      );
+    }
   }
 
   return { diagnostics, skipped: 0, validated: 1 };

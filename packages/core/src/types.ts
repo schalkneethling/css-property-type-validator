@@ -26,6 +26,7 @@ export interface RegisteredProperty {
 
 export type DiagnosticCode =
   | "invalid-property-registration"
+  | "incompatible-custom-property-assignment"
   | "incompatible-var-usage"
   | "unparseable-stylesheet";
 

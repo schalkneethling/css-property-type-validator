@@ -74,6 +74,15 @@
 }
 
 /*
+  Valid authored assignments to registered custom properties should pass.
+*/
+:root {
+  --brand-color: rebeccapurple;
+  --space-md: 1.5rem;
+  --radius-lg: var(--space-md);
+}
+
+/*
   Invalid usages the validator should flag.
 */
 .card--broken {
@@ -86,6 +95,15 @@
   background-image: var(--brand-color);
   box-shadow: var(--space-md);
   aspect-ratio: var(--heading-font);
+}
+
+/*
+  Invalid authored assignments to registered custom properties should also be flagged.
+*/
+.theme-broken {
+  --brand-color: 10px;
+  --space-md: tomato;
+  --hero-image: var(--brand-color);
 }
 
 /*

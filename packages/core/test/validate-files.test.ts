@@ -92,15 +92,91 @@ describe("validateFiles", () => {
     expect(result.diagnostics[0]?.expectedProperty).toBe("color");
   });
 
-  it("ignores direct custom property assignments in the current version", () => {
+  it("accepts compatible direct assignments to registered custom properties", () => {
+    const result = runValidation({
+      "/tmp/registry.css":
+        '@property --brand-color { syntax: "<color>"; inherits: true; initial-value: transparent; }',
+      "/tmp/usage.css": ":root { --brand-color: rebeccapurple; }",
+    });
+
+    expect(result.diagnostics).toHaveLength(0);
+    expect(result.validatedDeclarations).toBe(1);
+  });
+
+  it("reports incompatible direct assignments to registered custom properties", () => {
     const result = runValidation({
       "/tmp/registry.css":
         '@property --brand-color { syntax: "<color>"; inherits: true; initial-value: transparent; }',
       "/tmp/usage.css": ":root { --brand-color: 10px; }",
     });
 
+    expect(result.diagnostics).toHaveLength(1);
+    expect(result.diagnostics[0]?.code).toBe("incompatible-custom-property-assignment");
+    expect(result.diagnostics[0]?.propertyName).toBe("--brand-color");
+    expect(result.diagnostics[0]?.expectedProperty).toBeUndefined();
+    expect(result.validatedDeclarations).toBe(1);
+  });
+
+  it("accepts compatible assignment-site var() usage for registered custom properties", () => {
+    const result = runValidation({
+      "/tmp/registry.css": [
+        '@property --brand-color { syntax: "<color>"; inherits: true; initial-value: transparent; }',
+        '@property --accent-color { syntax: "<color>"; inherits: true; initial-value: black; }',
+      ].join("\n"),
+      "/tmp/usage.css": ":root { --accent-color: var(--brand-color); }",
+    });
+
     expect(result.diagnostics).toHaveLength(0);
+    expect(result.validatedDeclarations).toBe(1);
+  });
+
+  it("reports incompatible assignment-site var() usage for registered custom properties", () => {
+    const result = runValidation({
+      "/tmp/registry.css": [
+        '@property --brand-color { syntax: "<color>"; inherits: true; initial-value: transparent; }',
+        '@property --space { syntax: "<length>"; inherits: false; initial-value: 0px; }',
+      ].join("\n"),
+      "/tmp/usage.css": ":root { --space: var(--brand-color); }",
+    });
+
+    expect(result.diagnostics).toHaveLength(1);
+    expect(result.diagnostics[0]?.code).toBe("incompatible-custom-property-assignment");
+    expect(result.validatedDeclarations).toBe(1);
+  });
+
+  it("skips assignment-site validation when var() references are mixed registered and unregistered", () => {
+    const result = runValidation({
+      "/tmp/registry.css":
+        '@property --space { syntax: "<length>"; inherits: false; initial-value: 0px; }',
+      "/tmp/usage.css": ":root { --space: var(--unknown-space); }",
+    });
+
+    expect(result.diagnostics).toHaveLength(0);
+    expect(result.skippedDeclarations).toBe(1);
     expect(result.validatedDeclarations).toBe(0);
+  });
+
+  it("skips whitespace-only assignment-site declarations for the conservative MVP", () => {
+    const result = runValidation({
+      "/tmp/registry.css":
+        '@property --space-toggle { syntax: "<length>"; inherits: false; initial-value: 0px; }',
+      "/tmp/usage.css": ":root { --space-toggle: ; }",
+    });
+
+    expect(result.diagnostics).toHaveLength(0);
+    expect(result.skippedDeclarations).toBe(1);
+    expect(result.validatedDeclarations).toBe(0);
+  });
+
+  it('accepts direct assignments for registered custom properties using syntax "*"', () => {
+    const result = runValidation({
+      "/tmp/registry.css":
+        '@property --anything { syntax: "*"; inherits: false; initial-value: 0px; }',
+      "/tmp/usage.css": ':root { --anything: clamp(1rem, 2vw, 3rem); }',
+    });
+
+    expect(result.diagnostics).toHaveLength(0);
+    expect(result.validatedDeclarations).toBe(1);
   });
 
   it("accepts registered var() usages that include fallbacks in realistic component code", () => {
@@ -252,13 +328,24 @@ describe("validateFiles", () => {
       validatedDeclarations: number;
     };
 
-    expect(report.diagnostics).toHaveLength(12);
-    expect(report.diagnostics.every((diagnostic) => diagnostic.code === "incompatible-var-usage")).toBe(
-      true,
-    );
+    expect(report.diagnostics).toHaveLength(15);
+    expect(
+      report.diagnostics.every(
+        (diagnostic) =>
+          diagnostic.code === "incompatible-var-usage" ||
+          diagnostic.code === "incompatible-custom-property-assignment",
+      ),
+    ).toBe(true);
     expect(report.diagnostics.some((diagnostic) => diagnostic.expectedProperty === "inline-size")).toBe(
       true,
     );
+    expect(
+      report.diagnostics.some(
+        (diagnostic) =>
+          diagnostic.code === "incompatible-custom-property-assignment" &&
+          diagnostic.propertyName === "--brand-color",
+      ),
+    ).toBe(true);
     expect(
       report.diagnostics.some(
         (diagnostic) => diagnostic.snippet === "border:var(--brand-color) solid var(--brand-color)",
@@ -270,6 +357,6 @@ describe("validateFiles", () => {
       ),
     ).toBe(true);
     expect(report.skippedDeclarations).toBe(0);
-    expect(report.validatedDeclarations).toBe(27);
+    expect(report.validatedDeclarations).toBe(33);
   });
 });
