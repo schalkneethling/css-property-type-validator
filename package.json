@@ -23,7 +23,7 @@
     "example": "pnpm run build && node packages/cli/dist/cli.js example.css"
   },
   "devDependencies": {
-    "@types/node": "^25.5.0",
+    "@types/node": "^25.6.0",
     "typescript": "^6.0.2",
     "vite-plus": "^0.1.16"
   },
