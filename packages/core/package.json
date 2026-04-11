@@ -43,6 +43,6 @@
     "css-tree": "^3.2.1"
   },
   "devDependencies": {
-    "vitest": "^4.1.2"
+    "vitest": "^4.1.4"
   }
 }
