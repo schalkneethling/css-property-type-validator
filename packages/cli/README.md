@@ -2,7 +2,7 @@
 
 CLI for CSS Property Type Validator.
 
-This package validates CSS `@property` registrations and checks whether registered custom properties are used compatibly through `var()`.
+This package validates CSS `@property` registrations, checks whether registered custom properties are used compatibly through `var()`, and validates authored assignments to registered custom properties.
 
 ## Install
 

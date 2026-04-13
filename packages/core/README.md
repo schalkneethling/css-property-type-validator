@@ -2,7 +2,7 @@
 
 Core validation engine for CSS Property Type Validator.
 
-This package reads CSS `@property` registrations, builds a registry of typed custom properties, and validates compatible `var()` usage against consuming CSS properties.
+This package reads CSS `@property` registrations, builds a registry of typed custom properties, validates compatible `var()` usage against consuming CSS properties, and checks authored assignments to registered custom properties.
 
 ## Install
 
@@ -40,6 +40,8 @@ console.log(result.diagnostics);
 - Validates `@property` syntax descriptors
 - Builds a registry across provided input files
 - Validates single-`var()` declaration usages
-- Ignores unregistered custom properties in the current version
+- Validates authored values assigned to registered custom properties
+- Skips whitespace-toggle and similarly ambiguous custom property assignment patterns for now
+- Ignores unregistered custom properties
 
 Repository: [schalkneethling/css-property-type-validator](https://github.com/schalkneethling/css-property-type-validator)

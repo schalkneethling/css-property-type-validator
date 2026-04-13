@@ -8,6 +8,7 @@ Standalone tooling for validating CSS custom property registrations declared wit
 - Builds a registry from `@property` rules across multiple input files
 - Validates `syntax` descriptors in those registrations
 - Checks `var()` declaration values against the consuming CSS property, including coordinated multi-`var()` cases
+- Validates authored values assigned directly to registered custom properties
 - Ignores unregistered custom properties
 - Ships a standalone core package and a thin CLI wrapper
 
@@ -197,7 +198,7 @@ The validator assembles one registry from the full set of input files, then chec
 
 For this first cut, compatibility checks are intentionally conservative:
 
-- direct custom property assignments like `--token: 10px` are not validated yet
+- whitespace-toggle and similarly ambiguous custom property assignment patterns are skipped for now
 - automatic `@import` resolution is not implemented yet
 
 That keeps false positives down while the standalone core takes shape.
