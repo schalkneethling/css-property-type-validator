@@ -34,6 +34,16 @@ async function loadInputs(patterns: string[]): Promise<ValidationInput[]> {
   return inputs.sort((left, right) => left.path.localeCompare(right.path));
 }
 
+async function loadRegistryInputs(
+  patterns: string[],
+  validationInputs: ValidationInput[],
+): Promise<ValidationInput[]> {
+  const registryInputs = await loadInputs(patterns);
+  const validationPaths = new Set(validationInputs.map((input) => input.path));
+
+  return registryInputs.filter((input) => !validationPaths.has(input.path));
+}
+
 async function main(): Promise<void> {
   const program = new Command();
 
@@ -42,7 +52,13 @@ async function main(): Promise<void> {
     .description("Validate @property registrations and var() usages across CSS files.")
     .argument("<patterns...>", "CSS files or glob patterns to validate")
     .option("-f, --format <format>", "output format: human or json", "human")
-    .action(async (patterns: string[], options: { format: OutputFormat }) => {
+    .option(
+      "-r, --registry <pattern>",
+      "CSS file or glob pattern to use for shared @property registrations",
+      (value: string, previous: string[] = []) => [...previous, value],
+      [],
+    )
+    .action(async (patterns: string[], options: { format: OutputFormat; registry: string[] }) => {
       const format = options.format === "json" ? "json" : "human";
       const inputs = await loadInputs(patterns);
 
@@ -52,7 +68,8 @@ async function main(): Promise<void> {
         return;
       }
 
-      const result = validateFiles(inputs);
+      const registryInputs = await loadRegistryInputs(options.registry, inputs);
+      const result = validateFiles(inputs, { registryInputs });
       const output = formatValidationResult(result, format);
 
       process.stdout.write(`${output}\n`);

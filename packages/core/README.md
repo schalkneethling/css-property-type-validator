@@ -15,22 +15,32 @@ pnpm add @schalkneethling/css-property-type-validator-core
 ```ts
 import { validateFiles } from "@schalkneethling/css-property-type-validator-core";
 
-const result = validateFiles([
+const result = validateFiles(
+  [
+    {
+      path: "example.css",
+      css: `
+        .card {
+          inline-size: var(--brand-color);
+        }
+      `,
+    },
+  ],
   {
-    path: "example.css",
-    css: `
-      @property --brand-color {
-        syntax: "<color>";
-        inherits: true;
-        initial-value: transparent;
-      }
-
-      .card {
-        inline-size: var(--brand-color);
-      }
-    `,
+    registryInputs: [
+      {
+        path: "tokens.css",
+        css: `
+          @property --brand-color {
+            syntax: "<color>";
+            inherits: true;
+            initial-value: transparent;
+          }
+        `,
+      },
+    ],
   },
-]);
+);
 
 console.log(result.diagnostics);
 ```
@@ -39,6 +49,7 @@ console.log(result.diagnostics);
 
 - Validates `@property` syntax descriptors
 - Builds a registry across provided input files
+- Can extend that registry with optional `registryInputs`
 - Validates single-`var()` declaration usages
 - Ignores unregistered custom properties in the current version
 

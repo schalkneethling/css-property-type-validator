@@ -10,6 +10,10 @@ import type {
   ValidationResult,
 } from "./types.js";
 
+export interface ValidateFilesOptions {
+  registryInputs?: ValidationInput[];
+}
+
 function toLocation(loc: any): ValidationDiagnostic["loc"] {
   return loc
     ? {
@@ -175,6 +179,14 @@ function validateDeclaration(
     return { diagnostics, skipped: 1, validated: 0 };
   }
 
+  // Universal-syntax registrations compute like unregistered custom properties,
+  // and we do not currently model authored custom-property values at computed value time.
+  // Skipping avoids false positives such as flagging `var(--token)` in places
+  // where the actual substituted value could still be valid.
+  if (registeredEntries.some((entry) => entry.registration.syntax === "*")) {
+    return { diagnostics, skipped: 1, validated: 0 };
+  }
+
   const substitutionOptions = [];
 
   for (const entry of registeredEntries) {
@@ -215,8 +227,24 @@ function validateDeclaration(
   return { diagnostics, skipped: 0, validated: 1 };
 }
 
-export function validateFiles(inputs: ValidationInput[]): ValidationResult {
-  const registryResult = collectRegistry(inputs);
+export function validateFiles(
+  inputs: ValidationInput[],
+  options: ValidateFilesOptions = {},
+): ValidationResult {
+  const registryInputs = options.registryInputs ?? [];
+  const registrySources = [...inputs];
+  const seenRegistryPaths = new Set(inputs.map((input) => input.path));
+
+  for (const input of registryInputs) {
+    if (seenRegistryPaths.has(input.path)) {
+      continue;
+    }
+
+    seenRegistryPaths.add(input.path);
+    registrySources.push(input);
+  }
+
+  const registryResult = collectRegistry(registrySources);
   const diagnostics = [...registryResult.diagnostics];
   const registry = registryMap(registryResult.registry);
   let skippedDeclarations = 0;
