@@ -19,6 +19,7 @@
     "build": "pnpm -r --if-present run build",
     "test": "vp test run",
     "typecheck": "tsc -b tsconfig.json",
+    "check:supported-syntax-names": "node scripts/check-supported-syntax-names.mjs",
     "clean": "node scripts/clean.mjs",
     "example": "pnpm run build && node packages/cli/dist/cli.js example.css"
   },
