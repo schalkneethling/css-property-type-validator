@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.2.0](https://github.com/schalkneethling/css-property-type-validator/compare/cli-v0.1.1...cli-v0.2.0) (2026-04-15)
+
+
+### Features
+
+* Add registry input support to validator ([c4a1fb8](https://github.com/schalkneethling/css-property-type-validator/commit/c4a1fb806933488c857a27b67ea29daaca790b2e))
+* validate authored registered custom property values ([36a8fd9](https://github.com/schalkneethling/css-property-type-validator/commit/36a8fd9cf0c2d58065fd149bbfaf8c70710b242f))
+* validate authored registered custom property values ([35b06e6](https://github.com/schalkneethling/css-property-type-validator/commit/35b06e6149939c7f693edde9302a8f8e567980bb))
+
 ## [0.1.1](https://github.com/schalkneethling/css-property-type-validator/compare/cli-v0.1.0...cli-v0.1.1) (2026-04-02)
 
 
