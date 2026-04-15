@@ -4,31 +4,27 @@ import { getUnsupportedSyntaxComponentName } from "./supported-syntax.js";
 
 import type { RegisteredProperty, ValidationDiagnostic, ValidationInput } from "./types.js";
 
-const COMPUTATION_INDEPENDENT_DIMENSION_UNITS = Object.freeze({
-  cm: true,
-  deg: true,
-  dpcm: true,
-  dpi: true,
-  dppx: true,
-  grad: true,
-  in: true,
-  ms: true,
-  mm: true,
-  pc: true,
-  pt: true,
-  px: true,
-  q: true,
-  rad: true,
-  s: true,
-  turn: true,
-  x: true,
-});
+const COMPUTATION_INDEPENDENT_DIMENSION_UNITS = Object.freeze([
+  "cm",
+  "deg",
+  "dpcm",
+  "dpi",
+  "dppx",
+  "grad",
+  "in",
+  "ms",
+  "mm",
+  "pc",
+  "pt",
+  "px",
+  "q",
+  "rad",
+  "s",
+  "turn",
+  "x",
+]);
 
-const COMPUTATION_DEPENDENT_FUNCTIONS = Object.freeze({
-  attr: true,
-  env: true,
-  var: true,
-});
+const COMPUTATION_DEPENDENT_FUNCTIONS = Object.freeze(["attr", "env", "var"]);
 
 function toBoolean(value: string | undefined): boolean | undefined {
   if (value === "true") {
@@ -92,7 +88,7 @@ function getComputationalIndependenceFailure(value: any): string | null {
         // Values that depend on later substitution, such as var(), are not computationally
         // independent. CSS Properties and Values API Level 1 §2.7 defines var() substitution:
         // https://www.w3.org/TR/css-properties-values-api-1/#substitution
-        if (Object.hasOwn(COMPUTATION_DEPENDENT_FUNCTIONS, functionName)) {
+        if (COMPUTATION_DEPENDENT_FUNCTIONS.includes(functionName)) {
           failure =
             functionName === "var"
               ? "uses var(), which makes the registration invalid because initial-value must be computationally independent"
@@ -105,7 +101,7 @@ function getComputationalIndependenceFailure(value: any): string | null {
       if (node.type === "Dimension") {
         const unit = String(node.unit ?? "").toLowerCase();
 
-        if (!Object.hasOwn(COMPUTATION_INDEPENDENT_DIMENSION_UNITS, unit)) {
+        if (!COMPUTATION_INDEPENDENT_DIMENSION_UNITS.includes(unit)) {
           failure =
             `uses the relative or context-dependent unit "${node.unit}", which makes the registration invalid because initial-value must be computationally independent`;
         }
