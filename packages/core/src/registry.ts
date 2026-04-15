@@ -75,7 +75,7 @@ function isAbsoluteUrl(url: string): boolean {
   }
 }
 
-function getComputationalIndependenceFailure(value: any): string | null {
+function getComputationalIndependenceFailureReason(value: any): string | null {
   let failure: string | null = null;
 
   cssTree.walk(value, {
@@ -135,7 +135,7 @@ function validateInitialValueAgainstSyntax(
     return `@property ${propertyName} has an initial-value that could not be parsed as a CSS value.`;
   }
 
-  const independenceFailure = getComputationalIndependenceFailure(parsedValue);
+  const independenceFailure = getComputationalIndependenceFailureReason(parsedValue);
 
   if (independenceFailure) {
     return `@property ${propertyName} has an initial-value "${initialValue}" that ${independenceFailure}.`;
