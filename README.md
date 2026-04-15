@@ -85,6 +85,7 @@ console.log(result.diagnostics);
 ```bash
 css-property-type-validator "src/**/*.css"
 css-property-type-validator "src/**/*.css" --format json
+css-property-type-validator "src/**/*.css" --registry "src/tokens/**/*.css"
 ```
 
 Human output is the default. The CLI exits with:
@@ -196,9 +197,18 @@ This example is truncated for readability. A full run against [example.css](/Use
 
 The validator assembles one registry from the full set of input files, then checks each stylesheet against that combined registry.
 
+When shared registrations live outside the files you want to validate, the CLI can add them as registry-only sources:
+
+```bash
+css-property-type-validator "src/components/**/*.css" --registry "src/tokens/**/*.css"
+```
+
+Registry-only files contribute `@property` registrations and any registration/parse diagnostics, but their own normal declarations are not validated unless you also pass them as main inputs.
+
 For this first cut, compatibility checks are intentionally conservative:
 
 - whitespace-toggle and similarly ambiguous custom property assignment patterns are skipped for now
 - automatic `@import` resolution is not implemented yet
+- config-file based registry discovery is not implemented yet
 
 That keeps false positives down while the standalone core takes shape.

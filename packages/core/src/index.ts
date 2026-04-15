@@ -1,4 +1,5 @@
 export { validateFiles } from "./validate.js";
+export type { ValidateFilesOptions } from "./validate.js";
 
 export type {
   RegisteredProperty,

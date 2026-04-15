@@ -21,7 +21,18 @@ npx @schalkneethling/css-property-type-validator-cli "src/**/*.css"
 ```bash
 css-property-type-validator "src/**/*.css"
 css-property-type-validator "src/**/*.css" --format json
+css-property-type-validator "src/**/*.css" --registry "src/tokens/**/*.css"
 ```
+
+Use `--registry` multiple times to include shared `@property` definitions without validating the rest of those files:
+
+```bash
+css-property-type-validator "src/**/*.css" \
+  --registry "src/tokens/**/*.css" \
+  --registry "src/brand/**/*.css"
+```
+
+Registry-only files still report parse errors and invalid `@property` registrations. Automatic `@import` traversal is not supported yet.
 
 ## Exit codes
 
