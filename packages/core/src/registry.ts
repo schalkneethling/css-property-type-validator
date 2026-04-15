@@ -67,7 +67,12 @@ function parseValue(value: string): any | null {
 }
 
 function isAbsoluteUrl(url: string): boolean {
-  return /^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(url);
+  try {
+    new URL(url);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function getComputationalIndependenceFailure(value: any): string | null {
