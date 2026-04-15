@@ -63,7 +63,9 @@ async function main(): Promise<void> {
       const inputs = await loadInputs(patterns);
 
       if (inputs.length === 0) {
-        process.stderr.write("No CSS files matched the provided patterns.\n");
+        process.stderr.write(
+          "No CSS files matched the validation patterns. Files passed via --registry are registration sources only.\n",
+        );
         process.exitCode = 2;
         return;
       }

@@ -448,7 +448,9 @@ describe("validateFiles", () => {
     );
 
     expect(cliResult.status).toBe(2);
-    expect(cliResult.stderr).toContain("No CSS files matched the validation patterns.");
+    expect(cliResult.stderr).toContain(
+      "No CSS files matched the validation patterns. Files passed via --registry are registration sources only.",
+    );
   });
 
   it("includes registry-only diagnostics in CLI json output", { timeout: 120000 }, () => {
