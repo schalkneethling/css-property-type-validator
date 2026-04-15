@@ -1,6 +1,6 @@
 import * as cssTree from "css-tree";
 
-import { getUnsupportedSyntaxComponentName } from "./supported-syntax.js";
+import { getFirstUnsupportedSyntaxComponentName } from "./supported-syntax.js";
 
 import type { RegisteredProperty, ValidationDiagnostic, ValidationInput } from "./types.js";
 
@@ -257,7 +257,7 @@ export function collectRegistry(inputs: ValidationInput[]): {
           // CSS Properties and Values API Level 1 §5.4.4 only accepts supported syntax
           // component names from §5.1:
           // https://www.w3.org/TR/css-properties-values-api-1/#supported-names
-          const unsupportedName = getUnsupportedSyntaxComponentName(syntaxAst);
+          const unsupportedName = getFirstUnsupportedSyntaxComponentName(syntaxAst);
 
           if (unsupportedName) {
             diagnostics.push({

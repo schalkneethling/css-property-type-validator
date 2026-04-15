@@ -59,6 +59,6 @@ function validateNode(node: any): string | null {
   }
 }
 
-export function getUnsupportedSyntaxComponentName(syntaxAst: any): string | null {
+export function getFirstUnsupportedSyntaxComponentName(syntaxAst: any): string | null {
   return validateNode(syntaxAst);
 }
