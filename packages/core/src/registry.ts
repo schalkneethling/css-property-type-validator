@@ -135,10 +135,10 @@ function validateInitialValueAgainstSyntax(
     return `@property ${propertyName} has an initial-value that could not be parsed as a CSS value.`;
   }
 
-  const independenceFailure = getComputationalIndependenceFailureReason(parsedValue);
+  const independenceFailureReason = getComputationalIndependenceFailureReason(parsedValue);
 
-  if (independenceFailure) {
-    return `@property ${propertyName} has an initial-value "${initialValue}" that ${independenceFailure}.`;
+  if (independenceFailureReason) {
+    return `@property ${propertyName} has an initial-value "${initialValue}" that ${independenceFailureReason}.`;
   }
 
   const match = cssTree.lexer.match(syntax, parsedValue);
