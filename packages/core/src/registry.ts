@@ -276,7 +276,6 @@ export function collectRegistry(inputs: ValidationInput[]): {
         // @property rule. We only validate the known descriptors defined by the spec.
         // CSS Properties and Values API Level 1 §3:
         // https://www.w3.org/TR/css-properties-values-api-1/#at-property-rule
-
         if (!inheritsDescriptor) {
           diagnostics.push({
             code: "invalid-property-registration",
