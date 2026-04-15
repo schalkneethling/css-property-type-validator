@@ -247,7 +247,7 @@ describe("validateFiles", () => {
     expect(result.registry[0]?.filePath).toBe("/tmp/registry.css");
   });
 
-  it("reports incompatible usage when the registration only exists in registry inputs", () => {
+  it("ensures that an @property registration from external CSS validates local use", () => {
     const result = validateFiles(
       [{ path: "/tmp/component.css", css: ".card { inline-size: var(--brand-color); }" }],
       {
