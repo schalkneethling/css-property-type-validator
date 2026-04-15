@@ -18,11 +18,7 @@ export const SUPPORTED_SYNTAX_COMPONENT_NAMES = Object.freeze([
   "<transform-function>",
   "<custom-ident>",
   "<transform-list>",
-] as const);
-
-const SUPPORTED_SYNTAX_COMPONENT_NAME_LOOKUP = Object.freeze(
-  Object.fromEntries(SUPPORTED_SYNTAX_COMPONENT_NAMES.map((name) => [name, true] as const)),
-);
+] as readonly string[]);
 
 function validateNode(node: any): string | null {
   if (!node) {
@@ -46,9 +42,7 @@ function validateNode(node: any): string | null {
 
     case "Type": {
       const supportedName = `<${node.name}>`;
-      return Object.hasOwn(SUPPORTED_SYNTAX_COMPONENT_NAME_LOOKUP, supportedName)
-        ? null
-        : supportedName;
+      return SUPPORTED_SYNTAX_COMPONENT_NAMES.includes(supportedName) ? null : supportedName;
     }
 
     case "Keyword":
