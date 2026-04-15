@@ -283,7 +283,7 @@ describe("validateFiles", () => {
     expect(result.diagnostics[0]?.code).toBe("invalid-property-registration");
   });
 
-  it("does not validate declarations that only appear in registry-only inputs", () => {
+  it("treats registry-only files as registration sources, not validation targets", () => {
     const result = validateFiles(
       [{ path: "/tmp/component.css", css: ".card { color: var(--brand-color); }" }],
       {
