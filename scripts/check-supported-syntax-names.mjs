@@ -1,19 +1,35 @@
+import * as cheerio from "cheerio";
+
 import { SUPPORTED_SYNTAX_COMPONENT_NAMES } from "../packages/core/src/supported-syntax.ts";
 
 const SPEC_URL = "https://www.w3.org/TR/css-properties-values-api-1/#supported-names";
 
 function extractSupportedNames(documentText) {
-  const sectionStart = documentText.indexOf('id="supported-names"');
-  const sectionEnd = documentText.indexOf('id="multipliers"', sectionStart);
+  const $ = cheerio.load(documentText);
+  const sectionHeading = $("#supported-names");
 
-  if (sectionStart === -1 || sectionEnd === -1) {
+  if (sectionHeading.length === 0) {
     throw new Error("Could not find the Supported Names section in the downloaded spec.");
   }
 
-  const sectionText = documentText.slice(sectionStart, sectionEnd);
-  const names = [...sectionText.matchAll(/<dt[^>]*data-md[^>]*>"(&lt;[a-z-]+>)"/gi)].map((match) =>
-    match[1].replaceAll("&lt;", "<"),
-  );
+  const names = [];
+  let currentNode = sectionHeading.next();
+
+  while (currentNode.length > 0 && currentNode.attr("id") !== "multipliers") {
+    if (currentNode.is("dl")) {
+      currentNode.find('dt[data-md]').each((_, element) => {
+        const text = $(element).text().trim();
+        const quotedNameMatch = text.match(/^"(<[\w-]+>)"$/);
+
+        if (quotedNameMatch) {
+          names.push(quotedNameMatch[1]);
+        }
+      });
+    }
+
+    currentNode = currentNode.next();
+  }
+
   return [...new Set(names)];
 }
 
