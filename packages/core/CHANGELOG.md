@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/schalkneethling/css-property-type-validator/compare/core-v0.3.0...core-v0.4.0) (2026-04-16)
+
+
+### Features
+
+* Align [@property](https://github.com/property) registration validation with spec ([7595823](https://github.com/schalkneethling/css-property-type-validator/commit/759582387a5d4cf2f012edcf882e95d9a4d2e238))
+
 ## [0.3.0](https://github.com/schalkneethling/css-property-type-validator/compare/core-v0.2.0...core-v0.3.0) (2026-04-15)
 
 
