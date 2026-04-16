@@ -1,26 +1,6 @@
-import { readFile } from "node:fs/promises";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { SUPPORTED_SYNTAX_COMPONENT_NAMES } from "../packages/core/src/supported-syntax.ts";
 
 const SPEC_URL = "https://www.w3.org/TR/css-properties-values-api-1/#supported-names";
-const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
-const SOURCE_FILE = path.join(
-  SCRIPT_DIR,
-  "../packages/core/src/supported-syntax.ts",
-);
-
-async function readLocalSupportedNames() {
-  const source = await readFile(SOURCE_FILE, "utf8");
-  const arrayMatch = source.match(
-    /SUPPORTED_SYNTAX_COMPONENT_NAMES\s*=\s*Object\.freeze\(\[(?<entries>[\s\S]*?)\]\s+as const\)/,
-  );
-
-  if (!arrayMatch?.groups?.entries) {
-    throw new Error("Could not read SUPPORTED_SYNTAX_COMPONENT_NAMES from supported-syntax.ts.");
-  }
-
-  return [...arrayMatch.groups.entries.matchAll(/"(<[a-z-]+>)"/gi)].map((match) => match[1]);
-}
 
 function extractSupportedNames(documentText) {
   const sectionStart = documentText.indexOf('id="supported-names"');
@@ -54,7 +34,7 @@ async function main() {
 
   const documentText = await response.text();
   const specNames = extractSupportedNames(documentText).sort();
-  const localNames = (await readLocalSupportedNames()).sort();
+  const localNames = [...SUPPORTED_SYNTAX_COMPONENT_NAMES].sort();
 
   const missingLocally = specNames.filter((name) => !localNames.includes(name));
   const onlyLocal = localNames.filter((name) => !specNames.includes(name));
