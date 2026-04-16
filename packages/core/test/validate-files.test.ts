@@ -78,6 +78,131 @@ describe("validateFiles", () => {
     expect(result.diagnostics[0]?.message).toContain("missing a valid string-valued syntax");
   });
 
+  it("reports missing inherits descriptors in @property rules", () => {
+    const result = runValidation({
+      "/tmp/registry.css": '@property --space { syntax: "<length>"; initial-value: 0px; }',
+    });
+
+    expect(result.diagnostics).toHaveLength(1);
+    expect(result.diagnostics[0]?.code).toBe("invalid-property-registration");
+    expect(result.diagnostics[0]?.message).toContain("missing the required inherits descriptor");
+    expect(result.registry).toHaveLength(0);
+  });
+
+  it("reports invalid inherits values in @property rules", () => {
+    const result = runValidation({
+      "/tmp/registry.css":
+        '@property --space { syntax: "<length>"; inherits: maybe; initial-value: 0px; }',
+    });
+
+    expect(result.diagnostics).toHaveLength(1);
+    expect(result.diagnostics[0]?.code).toBe("invalid-property-registration");
+    expect(result.diagnostics[0]?.message).toContain("must set inherits to true or false");
+    expect(result.registry).toHaveLength(0);
+  });
+
+  it("reports missing initial-value descriptors for non-universal syntax", () => {
+    const result = runValidation({
+      "/tmp/registry.css": '@property --space { syntax: "<length>"; inherits: false; }',
+    });
+
+    expect(result.diagnostics).toHaveLength(1);
+    expect(result.diagnostics[0]?.code).toBe("invalid-property-registration");
+    expect(result.diagnostics[0]?.message).toContain("missing the required initial-value descriptor");
+    expect(result.registry).toHaveLength(0);
+  });
+
+  it('allows omitted initial-value descriptors for syntax "*"', () => {
+    const result = runValidation({
+      "/tmp/registry.css": '@property --anything { syntax: "*"; inherits: false; }',
+    });
+
+    expect(result.diagnostics).toHaveLength(0);
+    expect(result.registry).toHaveLength(1);
+    expect(result.registry[0]?.syntax).toBe("*");
+  });
+
+  it("reports initial-value values that do not match the declared syntax", () => {
+    const result = runValidation({
+      "/tmp/registry.css":
+        '@property --brand-color { syntax: "<color>"; inherits: true; initial-value: 10px; }',
+    });
+
+    expect(result.diagnostics).toHaveLength(1);
+    expect(result.diagnostics[0]?.code).toBe("invalid-property-registration");
+    expect(result.diagnostics[0]?.message).toContain('does not match its syntax descriptor "<color>"');
+    expect(result.registry).toHaveLength(0);
+  });
+
+  it("reports non-computationally-independent initial-value units", () => {
+    const result = runValidation({
+      "/tmp/registry.css":
+        '@property --space { syntax: "<length>"; inherits: false; initial-value: 3em; }',
+    });
+
+    expect(result.diagnostics).toHaveLength(1);
+    expect(result.diagnostics[0]?.code).toBe("invalid-property-registration");
+    expect(result.diagnostics[0]?.message).toContain('uses the relative or context-dependent unit "em"');
+    expect(result.registry).toHaveLength(0);
+  });
+
+  it("reports initial-value values that use var()", () => {
+    const result = runValidation({
+      "/tmp/registry.css":
+        '@property --space { syntax: "<length>"; inherits: false; initial-value: var(--token); }',
+    });
+
+    expect(result.diagnostics).toHaveLength(1);
+    expect(result.diagnostics[0]?.code).toBe("invalid-property-registration");
+    expect(result.diagnostics[0]?.message).toContain("uses var()");
+    expect(result.registry).toHaveLength(0);
+  });
+
+  it("ignores unknown descriptors when the known descriptors are valid", () => {
+    const result = runValidation({
+      "/tmp/registry.css":
+        '@property --space { syntax: "<length>"; inherits: false; initial-value: 0px; design-token-group: spacing; }',
+    });
+
+    expect(result.diagnostics).toHaveLength(0);
+    expect(result.registry).toHaveLength(1);
+    expect(result.registry[0]?.name).toBe("--space");
+  });
+
+  it("rejects unsupported syntax component names", () => {
+    const result = runValidation({
+      "/tmp/registry.css":
+        '@property --space { syntax: "<foo>"; inherits: false; initial-value: bar; }',
+    });
+
+    expect(result.diagnostics).toHaveLength(1);
+    expect(result.diagnostics[0]?.code).toBe("invalid-property-registration");
+    expect(result.diagnostics[0]?.message).toContain('unsupported syntax component name "<foo>"');
+    expect(result.registry).toHaveLength(0);
+  });
+
+  it("accepts supported pre-multiplied syntax component names", () => {
+    const result = runValidation({
+      "/tmp/registry.css":
+        '@property --transforms { syntax: "<transform-list>"; inherits: false; initial-value: rotate(45deg); }',
+    });
+
+    expect(result.diagnostics).toHaveLength(0);
+    expect(result.registry).toHaveLength(1);
+    expect(result.registry[0]?.syntax).toBe("<transform-list>");
+  });
+
+  it("accepts syntax strings that use custom identifiers", () => {
+    const result = runValidation({
+      "/tmp/registry.css":
+        '@property --size-name { syntax: "big | bigger | BIGGER"; inherits: false; initial-value: big; }',
+    });
+
+    expect(result.diagnostics).toHaveLength(0);
+    expect(result.registry).toHaveLength(1);
+    expect(result.registry[0]?.syntax).toBe("big | bigger | BIGGER");
+  });
+
   it("uses the latest collected registration when the same custom property is declared in multiple files", () => {
     const result = runValidation({
       "/tmp/tokens-base.css":
@@ -92,6 +217,22 @@ describe("validateFiles", () => {
     expect(result.registry[0]?.syntax).toBe("<length>");
     expect(result.diagnostics).toHaveLength(1);
     expect(result.diagnostics[0]?.expectedProperty).toBe("color");
+  });
+
+  it("keeps the last valid registration when a later registration is invalid", () => {
+    const result = runValidation({
+      "/tmp/tokens-base.css":
+        '@property --surface-token { syntax: "<color>"; inherits: true; initial-value: white; }',
+      "/tmp/tokens-theme.css":
+        '@property --surface-token { syntax: "<length>"; inherits: false; initial-value: 3em; }',
+      "/tmp/component.css": ".card { color: var(--surface-token); }",
+    });
+
+    expect(result.registry).toHaveLength(1);
+    expect(result.registry[0]?.filePath).toBe("/tmp/tokens-base.css");
+    expect(result.registry[0]?.syntax).toBe("<color>");
+    expect(result.diagnostics).toHaveLength(1);
+    expect(result.diagnostics[0]?.code).toBe("invalid-property-registration");
   });
 
   it("accepts compatible direct assignments to registered custom properties", () => {
@@ -429,22 +570,30 @@ describe("validateFiles", () => {
     expect(cliResult.status).toBe(1);
 
     const report = JSON.parse(cliResult.stdout) as {
-      diagnostics: Array<{ code: string; expectedProperty?: string; snippet?: string }>;
+      diagnostics: Array<{
+        code: string;
+        expectedProperty?: string;
+        propertyName?: string;
+        snippet?: string;
+      }>;
       skippedDeclarations: number;
       validatedDeclarations: number;
     };
 
-    expect(report.diagnostics).toHaveLength(15);
-    expect(
-      report.diagnostics.every(
-        (diagnostic) =>
-          diagnostic.code === "incompatible-var-usage" ||
-          diagnostic.code === "incompatible-custom-property-assignment",
-      ),
-    ).toBe(true);
+    expect(report.diagnostics).toHaveLength(13);
+    expect(report.diagnostics.some((diagnostic) => diagnostic.code === "invalid-property-registration")).toBe(
+      true,
+    );
     expect(report.diagnostics.some((diagnostic) => diagnostic.expectedProperty === "inline-size")).toBe(
       true,
     );
+    expect(
+      report.diagnostics.some(
+        (diagnostic) =>
+          diagnostic.code === "invalid-property-registration" &&
+          diagnostic.propertyName === "--space-md",
+      ),
+    ).toBe(true);
     expect(
       report.diagnostics.some(
         (diagnostic) =>
@@ -462,8 +611,8 @@ describe("validateFiles", () => {
         (diagnostic) => diagnostic.snippet === "margin-inline:var(--brand-color) var(--radius-lg)",
       ),
     ).toBe(true);
-    expect(report.skippedDeclarations).toBe(0);
-    expect(report.validatedDeclarations).toBe(33);
+    expect(report.skippedDeclarations).toBe(4);
+    expect(report.validatedDeclarations).toBe(15);
   });
 
   it("supports registry-only CLI inputs", { timeout: 120000 }, () => {
