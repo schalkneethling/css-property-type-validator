@@ -87,6 +87,7 @@ console.log(result.diagnostics);
 css-property-type-validator "src/**/*.css"
 css-property-type-validator "src/**/*.css" --format json
 css-property-type-validator "src/**/*.css" --registry "src/tokens/**/*.css"
+css-property-type-validator "src/tokens/**/*.css" --registry-only
 css-property-type-validator "fixtures/imports/main.css"
 ```
 
@@ -226,6 +227,14 @@ css-property-type-validator "src/components/**/*.css" --registry "src/tokens/**/
 ```
 
 Registry-only files contribute `@property` registrations and any registration/parse diagnostics, but their own normal declarations are not validated unless you also pass them as main inputs.
+
+When you want to validate registrations on their own, use the explicit registration-only mode:
+
+```bash
+css-property-type-validator "src/tokens/**/*.css" --registry-only
+```
+
+In `--registry-only` mode, the positional patterns are treated as registration sources rather than normal declaration-validation targets.
 
 When a resolver is available, the validator also follows local unconditioned `@import` rules while assembling the registry. That includes relative imports and root-relative imports in the CLI. Remote imports and conditioned imports remain intentionally out of scope for now.
 

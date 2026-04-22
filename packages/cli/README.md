@@ -22,6 +22,7 @@ npx @schalkneethling/css-property-type-validator-cli "src/**/*.css"
 css-property-type-validator "src/**/*.css"
 css-property-type-validator "src/**/*.css" --format json
 css-property-type-validator "src/**/*.css" --registry "src/tokens/**/*.css"
+css-property-type-validator "src/tokens/**/*.css" --registry-only
 css-property-type-validator "fixtures/imports/main.css"
 ```
 
@@ -34,6 +35,14 @@ css-property-type-validator "src/**/*.css" \
 ```
 
 Registry-only files still report parse errors and invalid `@property` registrations. The CLI also follows local unconditioned `@import` rules automatically while assembling the registry, including relative and root-relative imports. Remote and conditioned imports are still out of scope for now.
+
+Use `--registry-only` when you want to validate `@property` rules without also validating ordinary declarations from those files:
+
+```bash
+css-property-type-validator "src/tokens/**/*.css" --registry-only
+```
+
+In `--registry-only` mode, the positional patterns become registration sources instead of normal validation targets. You can still add extra shared registry inputs with `--registry` when needed.
 
 ## Exit codes
 
