@@ -1,56 +1,7 @@
-@property --brand-color {
-  syntax: "<color>";
-  inherits: true;
-  initial-value: transparent;
-}
-
-@property --space-md {
-  syntax: "<length>";
-  inherits: false;
-  initial-value: 1rem;
-}
-
-@property --radius-lg {
-  syntax: "<length>";
-  inherits: false;
-  initial-value: 12px;
-}
-
-@property --fast-transition {
-  syntax: "<time>";
-  inherits: false;
-  initial-value: 150ms;
-}
-
-@property --overlay-alpha {
-  syntax: "<number>";
-  inherits: false;
-  initial-value: 0.6;
-}
-
-@property --card-shadow {
-  syntax: "<shadow>";
-  inherits: false;
-  initial-value: 0 2px 8px rgb(0 0 0 / 0.12);
-}
-
-@property --hero-image {
-  syntax: "<image>";
-  inherits: false;
-  initial-value: url("hero-default.png");
-}
-
-@property --accent-ratio {
-  syntax: "<ratio>";
-  inherits: false;
-  initial-value: 16/9;
-}
-
-@property --heading-font {
-  syntax: "<font-family>";
-  inherits: true;
-  initial-value: serif;
-}
+@import "./registry/tokens.css";
+@import "/fixtures/imports/root/root-tokens.css";
+@import "./ignored/conditional.css" screen;
+@import "https://example.com/remote.css";
 
 /*
   Valid usages developers would expect to keep passing.
@@ -62,13 +13,10 @@
   border-start-start-radius: var(--radius-lg);
   border: var(--radius-lg) solid var(--brand-color);
   transition-duration: var(--fast-transition);
-  box-shadow: var(--card-shadow);
-  font-family: var(--heading-font);
 }
 
 .hero {
-  background-image: var(--hero-image);
-  aspect-ratio: var(--accent-ratio);
+  background-image: var(--hero-url);
   color: var(--brand-color);
   padding-inline: var(--space-md);
 }
@@ -80,6 +28,7 @@
   --brand-color: rebeccapurple;
   --space-md: 1.5rem;
   --radius-lg: var(--space-md);
+  --hero-url: url("https://example.com/hero-theme.png");
 }
 
 /*
@@ -93,8 +42,6 @@
   border: var(--brand-color) solid var(--brand-color);
   transition-duration: var(--overlay-alpha);
   background-image: var(--brand-color);
-  box-shadow: var(--space-md);
-  aspect-ratio: var(--heading-font);
 }
 
 /*
@@ -103,7 +50,7 @@
 .theme-broken {
   --brand-color: 10px;
   --space-md: tomato;
-  --hero-image: var(--brand-color);
+  --hero-url: red;
 }
 
 /*
@@ -129,4 +76,11 @@
   margin-inline: var(--brand-color) var(--radius-lg);
   border: var(--brand-color) solid var(--brand-color);
   color: var(--space-md);
+}
+
+/*
+  Some multi-var() declarations remain only diagnosable at the declaration level.
+*/
+.layout--broken {
+  margin: var(--brand-color) var(--brand-color);
 }

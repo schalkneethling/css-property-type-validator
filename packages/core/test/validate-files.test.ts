@@ -23,6 +23,16 @@ function runValidation(cssByPath: Record<string, string>) {
   );
 }
 
+function createTestResolver(cssByPath: Record<string, string>) {
+  return (specifier: string, fromPath: string) => {
+    const resolvedPath = specifier.startsWith("/")
+      ? specifier
+      : path.posix.resolve(path.posix.dirname(fromPath), specifier);
+
+    return resolvedPath in cssByPath ? { path: resolvedPath, css: cssByPath[resolvedPath] } : null;
+  };
+}
+
 describe("validateFiles", () => {
   it("accepts a compatible var() usage from a registration in another file", () => {
     const result = runValidation({
@@ -374,10 +384,12 @@ describe("validateFiles", () => {
     expect(result.diagnostics).toHaveLength(1);
     expect(result.diagnostics[0]?.code).toBe("incompatible-var-usage");
     expect(result.diagnostics[0]?.expectedProperty).toBe("margin");
+    expect(result.diagnostics[0]?.propertyName).toBe("--brand-color");
+    expect(result.diagnostics[0]?.message).toContain("at this var() usage");
     expect(result.validatedDeclarations).toBe(1);
   });
 
-  it("reports incompatible shorthand-like declarations with multiple registered custom properties", () => {
+  it("reports possible culprits for ambiguous shorthand-like declarations", () => {
     const result = runValidation({
       "/tmp/registry.css": SHARED_REGISTRY,
       "/tmp/usage.css": ".card { border: var(--brand-color) solid var(--brand-color); }",
@@ -387,12 +399,29 @@ describe("validateFiles", () => {
     expect(result.diagnostics[0]?.code).toBe("incompatible-var-usage");
     expect(result.diagnostics[0]?.expectedProperty).toBe("border");
     expect(result.diagnostics[0]?.message).toContain(
-      "Registered properties --brand-color are jointly incompatible with border",
+      "One or more var() usages of registered property --brand-color may be incompatible with border",
     );
     expect(result.diagnostics[0]?.message).not.toContain("--brand-color, --brand-color");
+    expect(result.diagnostics[0]?.propertyName).toBeUndefined();
     expect(result.diagnostics[0]?.snippet).toBe(
       "border:var(--brand-color) solid var(--brand-color)",
     );
+  });
+
+  it("falls back to a declaration-level diagnostic when no single var() removal isolates the mismatch", () => {
+    const result = runValidation({
+      "/tmp/registry.css":
+        '@property --brand-color { syntax: "<color>"; inherits: true; initial-value: transparent; }',
+      "/tmp/usage.css": ".card { margin: var(--brand-color) var(--brand-color); }",
+    });
+
+    expect(result.diagnostics).toHaveLength(1);
+    expect(result.diagnostics[0]?.code).toBe("incompatible-var-usage");
+    expect(result.diagnostics[0]?.expectedProperty).toBe("margin");
+    expect(result.diagnostics[0]?.message).toContain(
+      "Registered properties --brand-color are jointly incompatible with margin",
+    );
+    expect(result.diagnostics[0]?.propertyName).toBeUndefined();
   });
 
   it("accepts repeated use of the same registered custom property in one declaration", () => {
@@ -500,6 +529,175 @@ describe("validateFiles", () => {
     expect(result.diagnostics[0]?.code).toBe("invalid-property-registration");
   });
 
+  it("uses imports from validation inputs when assembling the registry", () => {
+    const cssByPath = {
+      "/tmp/main.css": '@import "./tokens.css";\n.card { inline-size: var(--space); }',
+      "/tmp/tokens.css":
+        '@property --space { syntax: "<length>"; inherits: false; initial-value: 0px; }',
+    };
+
+    const result = validateFiles(
+      [{ path: "/tmp/main.css", css: cssByPath["/tmp/main.css"] }],
+      { resolveImport: createTestResolver(cssByPath) },
+    );
+
+    expect(result.diagnostics).toHaveLength(0);
+    expect(result.registry).toHaveLength(1);
+    expect(result.registry[0]?.filePath).toBe("/tmp/tokens.css");
+    expect(result.validatedDeclarations).toBe(1);
+  });
+
+  it("follows nested imports from registry-only inputs", () => {
+    const cssByPath = {
+      "/tmp/component.css": ".card { inline-size: var(--space); }",
+      "/tmp/registry.css": '@import "./tokens.css";',
+      "/tmp/tokens.css":
+        '@property --space { syntax: "<length>"; inherits: false; initial-value: 0px; }',
+    };
+
+    const result = validateFiles(
+      [{ path: "/tmp/component.css", css: cssByPath["/tmp/component.css"] }],
+      {
+        registryInputs: [{ path: "/tmp/registry.css", css: cssByPath["/tmp/registry.css"] }],
+        resolveImport: createTestResolver(cssByPath),
+      },
+    );
+
+    expect(result.diagnostics).toHaveLength(0);
+    expect(result.registry).toHaveLength(1);
+    expect(result.registry[0]?.filePath).toBe("/tmp/tokens.css");
+    expect(result.validatedDeclarations).toBe(1);
+  });
+
+  it("resolves root-relative imports through the resolver policy", () => {
+    const cssByPath = {
+      "/tmp/main.css": '@import "/tokens/root.css";\n.card { background-image: var(--hero-url); }',
+      "/tokens/root.css":
+        '@property --hero-url { syntax: "<url>"; inherits: false; initial-value: url("https://example.com/hero.png"); }',
+    };
+
+    const result = validateFiles(
+      [{ path: "/tmp/main.css", css: cssByPath["/tmp/main.css"] }],
+      { resolveImport: createTestResolver(cssByPath) },
+    );
+
+    expect(result.diagnostics).toHaveLength(0);
+    expect(result.registry[0]?.filePath).toBe("/tokens/root.css");
+    expect(result.validatedDeclarations).toBe(1);
+  });
+
+  it("treats imported files as registry sources rather than additional validation targets", () => {
+    const cssByPath = {
+      "/tmp/main.css": '@import "./tokens.css";\n.card { color: var(--brand-color); }',
+      "/tmp/tokens.css": [
+        '@property --brand-color { syntax: "<color>"; inherits: true; initial-value: transparent; }',
+        ".tokens { inline-size: var(--brand-color); }",
+      ].join("\n"),
+    };
+
+    const result = validateFiles(
+      [{ path: "/tmp/main.css", css: cssByPath["/tmp/main.css"] }],
+      { resolveImport: createTestResolver(cssByPath) },
+    );
+
+    expect(result.diagnostics).toHaveLength(0);
+    expect(result.validatedDeclarations).toBe(1);
+  });
+
+  it("preserves last-valid-registration-wins precedence across import boundaries", () => {
+    const cssByPath = {
+      "/tmp/main.css": [
+        '@import "./theme.css";',
+        '@property --surface-token { syntax: "<length>"; inherits: false; initial-value: 0px; }',
+        ".card { color: var(--surface-token); }",
+      ].join("\n"),
+      "/tmp/theme.css":
+        '@property --surface-token { syntax: "<color>"; inherits: true; initial-value: white; }',
+    };
+
+    const result = validateFiles(
+      [{ path: "/tmp/main.css", css: cssByPath["/tmp/main.css"] }],
+      { resolveImport: createTestResolver(cssByPath) },
+    );
+
+    expect(result.registry).toHaveLength(1);
+    expect(result.registry[0]?.filePath).toBe("/tmp/main.css");
+    expect(result.registry[0]?.syntax).toBe("<length>");
+    expect(result.diagnostics).toHaveLength(1);
+    expect(result.diagnostics[0]?.expectedProperty).toBe("color");
+  });
+
+  it("handles cyclic import graphs without infinite recursion or duplicate registry entries", () => {
+    const cssByPath = {
+      "/tmp/main.css": '@import "./a.css";\n.card { inline-size: var(--space); }',
+      "/tmp/a.css": '@import "./b.css";',
+      "/tmp/b.css": [
+        '@import "./a.css";',
+        '@property --space { syntax: "<length>"; inherits: false; initial-value: 0px; }',
+      ].join("\n"),
+    };
+
+    const result = validateFiles(
+      [{ path: "/tmp/main.css", css: cssByPath["/tmp/main.css"] }],
+      { resolveImport: createTestResolver(cssByPath) },
+    );
+
+    expect(result.diagnostics).toHaveLength(0);
+    expect(result.registry).toHaveLength(1);
+    expect(result.validatedDeclarations).toBe(1);
+  });
+
+  it("skips absolute URL imports when assembling the registry", () => {
+    const result = validateFiles(
+      [
+        {
+          path: "/tmp/main.css",
+          css: '@import "https://example.com/tokens.css";\n.card { inline-size: var(--space); }',
+        },
+      ],
+      {
+        resolveImport: () => {
+          throw new Error("remote imports should be skipped before resolution");
+        },
+      },
+    );
+
+    expect(result.diagnostics).toHaveLength(0);
+    expect(result.registry).toHaveLength(0);
+    expect(result.validatedDeclarations).toBe(0);
+  });
+
+  it("skips conditioned imports when assembling the registry", () => {
+    const result = validateFiles(
+      [
+        {
+          path: "/tmp/main.css",
+          css: '@import "./tokens.css" screen;\n.card { inline-size: var(--space); }',
+        },
+      ],
+      {
+        resolveImport: () => {
+          throw new Error("conditioned imports should be skipped before resolution");
+        },
+      },
+    );
+
+    expect(result.diagnostics).toHaveLength(0);
+    expect(result.registry).toHaveLength(0);
+    expect(result.validatedDeclarations).toBe(0);
+  });
+
+  it("reports unresolved local imports", () => {
+    const result = validateFiles(
+      [{ path: "/tmp/main.css", css: '@import "./missing.css";\n.card { color: red; }' }],
+      { resolveImport: () => null },
+    );
+
+    expect(result.diagnostics).toHaveLength(1);
+    expect(result.diagnostics[0]?.code).toBe("unresolved-import");
+    expect(result.diagnostics[0]?.message).toContain("./missing.css");
+  });
+
   it("treats registry-only files as registration sources, not validation targets", () => {
     const result = validateFiles(
       [{ path: "/tmp/component.css", css: ".card { color: var(--brand-color); }" }],
@@ -560,7 +758,7 @@ describe("validateFiles", () => {
 
     const cliResult = spawnSync(
       "node",
-      ["packages/cli/dist/cli.js", "example.css", "--format", "json"],
+      ["packages/cli/dist/cli.js", "fixtures/imports/main.css", "--format", "json"],
       {
         cwd: repoRoot,
         encoding: "utf8",
@@ -573,6 +771,7 @@ describe("validateFiles", () => {
       diagnostics: Array<{
         code: string;
         expectedProperty?: string;
+        message: string;
         propertyName?: string;
         snippet?: string;
       }>;
@@ -580,7 +779,7 @@ describe("validateFiles", () => {
       validatedDeclarations: number;
     };
 
-    expect(report.diagnostics).toHaveLength(13);
+    expect(report.diagnostics).toHaveLength(20);
     expect(report.diagnostics.some((diagnostic) => diagnostic.code === "invalid-property-registration")).toBe(
       true,
     );
@@ -591,7 +790,7 @@ describe("validateFiles", () => {
       report.diagnostics.some(
         (diagnostic) =>
           diagnostic.code === "invalid-property-registration" &&
-          diagnostic.propertyName === "--space-md",
+          diagnostic.propertyName === "--relative-space",
       ),
     ).toBe(true);
     expect(
@@ -611,8 +810,15 @@ describe("validateFiles", () => {
         (diagnostic) => diagnostic.snippet === "margin-inline:var(--brand-color) var(--radius-lg)",
       ),
     ).toBe(true);
-    expect(report.skippedDeclarations).toBe(4);
-    expect(report.validatedDeclarations).toBe(15);
+    expect(
+      report.diagnostics.some(
+        (diagnostic) =>
+          diagnostic.snippet === "border:var(--brand-color) solid var(--brand-color)" &&
+          diagnostic.message.includes("may be incompatible"),
+      ),
+    ).toBe(true);
+    expect(report.skippedDeclarations).toBe(0);
+    expect(report.validatedDeclarations).toBe(30);
   });
 
   it("supports registry-only CLI inputs", { timeout: 120000 }, () => {
@@ -728,5 +934,66 @@ describe("validateFiles", () => {
     expect(report.diagnostics[0]?.code).toBe("invalid-property-registration");
     expect(report.diagnostics[0]?.filePath).toBe(registryPath);
     expect(report.validatedDeclarations).toBe(0);
+  });
+
+  it("follows local imports automatically in CLI mode", { timeout: 120000 }, () => {
+    const repoRoot = path.resolve(import.meta.dirname, "../../..");
+    const fixtureDir = mkdtempSync(path.join(tmpdir(), "css-property-validator-"));
+    const validationPath = path.join(fixtureDir, "component.css");
+    const registryPath = path.join(fixtureDir, "tokens.css");
+
+    writeFileSync(validationPath, '@import "./tokens.css";\n.card { inline-size: var(--space); }\n');
+    writeFileSync(
+      registryPath,
+      '@property --space { syntax: "<length>"; inherits: false; initial-value: 0px; }\n',
+    );
+
+    const cliResult = spawnSync(
+      "node",
+      ["packages/cli/dist/cli.js", validationPath, "--format", "json"],
+      {
+        cwd: repoRoot,
+        encoding: "utf8",
+      },
+    );
+
+    expect(cliResult.status).toBe(0);
+
+    const report = JSON.parse(cliResult.stdout) as {
+      diagnostics: Array<{ code: string }>;
+      registry: Array<{ filePath: string }>;
+      validatedDeclarations: number;
+    };
+
+    expect(report.diagnostics).toHaveLength(0);
+    expect(report.registry[0]?.filePath).toBe(registryPath);
+    expect(report.validatedDeclarations).toBe(1);
+  });
+
+  it("includes unresolved-import diagnostics in CLI output", { timeout: 120000 }, () => {
+    const repoRoot = path.resolve(import.meta.dirname, "../../..");
+    const fixtureDir = mkdtempSync(path.join(tmpdir(), "css-property-validator-"));
+    const validationPath = path.join(fixtureDir, "component.css");
+
+    writeFileSync(validationPath, '@import "./missing.css";\n.card { color: red; }\n');
+
+    const cliResult = spawnSync(
+      "node",
+      ["packages/cli/dist/cli.js", validationPath, "--format", "json"],
+      {
+        cwd: repoRoot,
+        encoding: "utf8",
+      },
+    );
+
+    expect(cliResult.status).toBe(1);
+
+    const report = JSON.parse(cliResult.stdout) as {
+      diagnostics: Array<{ code: string; message: string }>;
+    };
+
+    expect(report.diagnostics).toHaveLength(1);
+    expect(report.diagnostics[0]?.code).toBe("unresolved-import");
+    expect(report.diagnostics[0]?.message).toContain("./missing.css");
   });
 });

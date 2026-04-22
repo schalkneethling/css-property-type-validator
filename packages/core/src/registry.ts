@@ -2,7 +2,72 @@ import * as cssTree from "css-tree";
 
 import { getFirstUnsupportedSyntaxComponentName } from "./supported-syntax.js";
 
-import type { RegisteredProperty, ValidationDiagnostic, ValidationInput } from "./types.js";
+import type {
+  RegisteredProperty,
+  ResolveImport,
+  ValidationDiagnostic,
+  ValidationInput,
+} from "./types.js";
+
+interface CssNodeWithLoc {
+  loc?: unknown;
+}
+
+interface CssValueNode extends CssNodeWithLoc {
+  children?: ArrayLike<unknown>;
+}
+
+interface CssDeclarationNode extends CssNodeWithLoc {
+  property?: string;
+  value?: CssValueNode;
+}
+
+interface CssPreludeNode extends CssNodeWithLoc {
+  children?: ArrayLike<unknown>;
+}
+
+interface CssBlockNode extends CssNodeWithLoc {
+  children?: ArrayLike<unknown>;
+}
+
+interface CssAtruleNode extends CssNodeWithLoc {
+  name?: string;
+  type?: string;
+  prelude?: CssPreludeNode;
+  block?: CssBlockNode | null;
+}
+
+interface CssStringNode {
+  type: "String";
+  value?: string;
+}
+
+interface CssUrlNode {
+  type: "Url";
+  value?: string;
+}
+
+interface CssPropertyNameNode {
+  name?: string;
+}
+
+interface CssStylesheet {
+  children?: ArrayLike<unknown>;
+}
+
+interface CssLocation {
+  end: RegisteredProperty["loc"] extends infer T
+    ? T extends { end: infer End }
+      ? End
+      : never
+    : never;
+  source?: string;
+  start: RegisteredProperty["loc"] extends infer T
+    ? T extends { start: infer Start }
+      ? Start
+      : never
+    : never;
+}
 
 const COMPUTATION_INDEPENDENT_DIMENSION_UNITS = Object.freeze([
   "cm",
@@ -38,27 +103,33 @@ function toBoolean(value: string | undefined): boolean | undefined {
   return undefined;
 }
 
-function toLocation(loc: any): RegisteredProperty["loc"] {
-  return loc
-    ? {
-        source: loc.source,
-        start: { ...loc.start },
-        end: { ...loc.end },
-      }
-    : null;
+function toLocation(loc: unknown): RegisteredProperty["loc"] {
+  if (!loc) {
+    return null;
+  }
+
+  const typedLoc = loc as CssLocation;
+
+  return {
+    source: typedLoc.source,
+    start: { ...typedLoc.start },
+    end: { ...typedLoc.end },
+  };
 }
 
-function descriptorMap(block: any): Map<string, any> {
-  const descriptors = new Map<string, any>();
+function descriptorMap(block: CssBlockNode | null | undefined): Map<string, CssDeclarationNode> {
+  const descriptors = new Map<string, CssDeclarationNode>();
 
-  for (const declaration of block?.children ?? []) {
-    descriptors.set(declaration.property, declaration);
+  for (const declaration of Array.from(block?.children ?? []) as CssDeclarationNode[]) {
+    if (declaration.property) {
+      descriptors.set(declaration.property, declaration);
+    }
   }
 
   return descriptors;
 }
 
-function parseValue(value: string): any | null {
+function parseValue(value: string): unknown | null {
   try {
     return cssTree.parse(value, { context: "value" });
   } catch {
@@ -75,11 +146,11 @@ function isAbsoluteUrl(url: string): boolean {
   }
 }
 
-function getComputationalIndependenceFailureReason(value: any): string | null {
+function getComputationalIndependenceFailureReason(value: unknown): string | null {
   let failure: string | null = null;
 
   cssTree.walk(value, {
-    enter(node: any) {
+    enter(node: { name?: string; type?: string; unit?: string; value?: string }) {
       if (failure) {
         return;
       }
@@ -153,8 +224,11 @@ function validateInitialValueAgainstSyntax(
   return null;
 }
 
-function getStringDescriptor(declaration: any): string | undefined {
-  const firstNode = declaration?.value?.children?.first ?? declaration?.value?.children?.[0];
+function getStringDescriptor(declaration: CssDeclarationNode | undefined): string | undefined {
+  const valueChildren = declaration?.value?.children;
+  const firstNode = (valueChildren
+    ? (Array.from(valueChildren)[0] as CssStringNode | undefined)
+    : undefined);
 
   if (firstNode?.type === "String") {
     return firstNode.value;
@@ -163,7 +237,7 @@ function getStringDescriptor(declaration: any): string | undefined {
   return undefined;
 }
 
-function getRawDescriptor(declaration: any): string | undefined {
+function getRawDescriptor(declaration: CssDeclarationNode | undefined): string | undefined {
   if (!declaration?.value) {
     return undefined;
   }
@@ -171,21 +245,217 @@ function getRawDescriptor(declaration: any): string | undefined {
   return cssTree.generate(declaration.value).trim();
 }
 
-export function collectRegistry(inputs: ValidationInput[]): {
+function getImportSpecifier(importRule: CssAtruleNode): string | null {
+  const preludeChildren = Array.from(importRule.prelude?.children ?? []) as Array<
+    CssStringNode | CssUrlNode
+  >;
+
+  if (preludeChildren.length !== 1) {
+    return null;
+  }
+
+  const firstPreludeNode = preludeChildren[0];
+
+  if (firstPreludeNode?.type === "String" || firstPreludeNode?.type === "Url") {
+    return String(firstPreludeNode.value ?? "");
+  }
+
+  return null;
+}
+
+function isAbsoluteImportUrl(importSpecifier: string): boolean {
+  try {
+    new URL(importSpecifier);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function processPropertyRule(
+  input: ValidationInput,
+  node: CssAtruleNode,
+  diagnostics: ValidationDiagnostic[],
+  registry: Map<string, RegisteredProperty>,
+): void {
+  const propertyName = (
+    Array.from(node.prelude?.children ?? []) as CssPropertyNameNode[]
+  )[0]?.name;
+
+  if (!propertyName) {
+    diagnostics.push({
+      code: "invalid-property-registration",
+      filePath: input.path,
+      loc: toLocation(node.loc),
+      message: "Found an @property rule without a custom property name.",
+    });
+    return;
+  }
+
+  const descriptors = descriptorMap(node.block);
+  const syntaxDeclaration = descriptors.get("syntax");
+  const syntax = getStringDescriptor(syntaxDeclaration);
+  const inheritsDescriptor = descriptors.get("inherits");
+  const inheritsRaw = getRawDescriptor(inheritsDescriptor);
+  const inherits = toBoolean(inheritsRaw);
+  const initialValue = getRawDescriptor(descriptors.get("initial-value"));
+
+  if (!syntax) {
+    diagnostics.push({
+      code: "invalid-property-registration",
+      filePath: input.path,
+      loc: toLocation(node.loc),
+      message: `@property ${propertyName} is missing a valid string-valued syntax descriptor.`,
+      propertyName,
+    });
+    return;
+  }
+
+  let syntaxAst: unknown;
+
+  try {
+    if (syntax !== "*") {
+      syntaxAst = cssTree.definitionSyntax.parse(syntax);
+    }
+  } catch (error) {
+    diagnostics.push({
+      code: "invalid-property-registration",
+      filePath: input.path,
+      loc: toLocation(node.loc),
+      message: `@property ${propertyName} has an invalid syntax descriptor "${syntax}": ${(error as Error).message}`,
+      propertyName,
+      registeredSyntax: syntax,
+    });
+    return;
+  }
+
+  if (syntax !== "*") {
+    // CSS Properties and Values API Level 1 §5.4.4 only accepts supported syntax
+    // component names from §5.1:
+    // https://www.w3.org/TR/css-properties-values-api-1/#supported-names
+    const unsupportedName = getFirstUnsupportedSyntaxComponentName(syntaxAst);
+
+    if (unsupportedName) {
+      diagnostics.push({
+        code: "invalid-property-registration",
+        filePath: input.path,
+        loc: toLocation(node.loc),
+        message: `@property ${propertyName} uses the unsupported syntax component name "${unsupportedName}".`,
+        propertyName,
+        registeredSyntax: syntax,
+      });
+      return;
+    }
+  }
+
+  // Unknown descriptors are intentionally ignored and do not invalidate the
+  // @property rule. We only validate the known descriptors defined by the spec.
+  // CSS Properties and Values API Level 1 §3:
+  // https://www.w3.org/TR/css-properties-values-api-1/#at-property-rule
+  if (!inheritsDescriptor) {
+    diagnostics.push({
+      code: "invalid-property-registration",
+      filePath: input.path,
+      loc: toLocation(node.loc),
+      message: `@property ${propertyName} is missing the required inherits descriptor.`,
+      propertyName,
+      registeredSyntax: syntax,
+    });
+    return;
+  }
+
+  if (inherits === undefined) {
+    diagnostics.push({
+      code: "invalid-property-registration",
+      filePath: input.path,
+      loc: toLocation(node.loc),
+      message: `@property ${propertyName} must set inherits to true or false.`,
+      propertyName,
+      registeredSyntax: syntax,
+    });
+    return;
+  }
+
+  // CSS Properties and Values API Level 1 §3.3 only allows omitted initial-value
+  // when the syntax is the universal syntax definition:
+  // https://www.w3.org/TR/css-properties-values-api-1/#initial-value-descriptor
+  if (syntax !== "*" && !initialValue) {
+    diagnostics.push({
+      code: "invalid-property-registration",
+      filePath: input.path,
+      loc: toLocation(node.loc),
+      message: `@property ${propertyName} is missing the required initial-value descriptor for non-universal syntax "${syntax}".`,
+      propertyName,
+      registeredSyntax: syntax,
+    });
+    return;
+  }
+
+  if (syntax !== "*" && initialValue) {
+    const initialValueFailure = validateInitialValueAgainstSyntax(
+      propertyName,
+      syntax,
+      initialValue,
+    );
+
+    if (initialValueFailure) {
+      diagnostics.push({
+        code: "invalid-property-registration",
+        filePath: input.path,
+        loc: toLocation(node.loc),
+        message: initialValueFailure,
+        propertyName,
+        registeredSyntax: syntax,
+      });
+      return;
+    }
+  }
+
+  // CSS Cascading and Inheritance Level 5 §2 says imported stylesheets behave as
+  // if their contents were written at the point of the @import:
+  // https://www.w3.org/TR/css-cascade-5/#at-import
+  // CSS Properties and Values API Level 1 §2.1 says the last valid registration in
+  // document order wins. Invalid later rules must not displace an earlier valid one:
+  // https://www.w3.org/TR/css-properties-values-api-1/#determining-the-registration
+  registry.set(propertyName, {
+    filePath: input.path,
+    inherits,
+    initialValue,
+    loc: toLocation(node.loc),
+    name: propertyName,
+    syntax,
+  });
+}
+
+export function collectRegistry(
+  inputs: ValidationInput[],
+  options: { resolveImport?: ResolveImport } = {},
+): {
   diagnostics: ValidationDiagnostic[];
   registry: RegisteredProperty[];
 } {
   const diagnostics: ValidationDiagnostic[] = [];
   const registry = new Map<string, RegisteredProperty>();
+  const expandedPaths = new Set<string>();
+  const activePaths = new Set<string>();
 
-  for (const input of inputs) {
-    let ast: any;
+  function processInput(input: ValidationInput): void {
+    if (activePaths.has(input.path) || expandedPaths.has(input.path)) {
+      return;
+    }
+
+    // CSS files can import each other cyclically. Since each stylesheet is parsed
+    // independently, the parser itself is fine; this guard prevents our traversal
+    // from recursing forever while expanding the import graph for registry assembly.
+    activePaths.add(input.path);
+
+    let ast: CssStylesheet;
 
     try {
       ast = cssTree.parse(input.css, {
         filename: input.path,
         positions: true,
-      });
+      }) as CssStylesheet;
     } catch (error) {
       diagnostics.push({
         code: "unparseable-stylesheet",
@@ -193,161 +463,51 @@ export function collectRegistry(inputs: ValidationInput[]): {
         loc: null,
         message: `Could not parse stylesheet: ${(error as Error).message}`,
       });
-      continue;
+      activePaths.delete(input.path);
+      expandedPaths.add(input.path);
+      return;
     }
 
-    cssTree.walk(ast, {
-      visit: "Atrule",
-      enter(node: any) {
-        if (node.name !== "property") {
-          return;
+    for (const node of Array.from(ast.children ?? []) as CssAtruleNode[]) {
+      if (node.type !== "Atrule") {
+        continue;
+      }
+
+      if (node.name === "import") {
+        const importSpecifier = getImportSpecifier(node);
+
+        if (!importSpecifier || isAbsoluteImportUrl(importSpecifier) || !options.resolveImport) {
+          continue;
         }
 
-        const propertyName =
-          node.prelude?.children?.first?.name ?? node.prelude?.children?.[0]?.name;
+        const resolvedImport = options.resolveImport(importSpecifier, input.path);
 
-        if (!propertyName) {
+        if (!resolvedImport) {
           diagnostics.push({
-            code: "invalid-property-registration",
+            code: "unresolved-import",
             filePath: input.path,
             loc: toLocation(node.loc),
-            message: "Found an @property rule without a custom property name.",
+            message: `Could not resolve imported stylesheet "${importSpecifier}" from ${input.path}.`,
+            snippet: cssTree.generate(node),
           });
-          return;
+          continue;
         }
 
-        const descriptors = descriptorMap(node.block);
-        const syntaxDeclaration = descriptors.get("syntax");
-        const syntax = getStringDescriptor(syntaxDeclaration);
-        const inheritsDescriptor = descriptors.get("inherits");
-        const inheritsRaw = getRawDescriptor(inheritsDescriptor);
-        const inherits = toBoolean(inheritsRaw);
-        const initialValue = getRawDescriptor(descriptors.get("initial-value"));
+        processInput(resolvedImport);
+        continue;
+      }
 
-        if (!syntax) {
-          diagnostics.push({
-            code: "invalid-property-registration",
-            filePath: input.path,
-            loc: toLocation(node.loc),
-            message: `@property ${propertyName} is missing a valid string-valued syntax descriptor.`,
-            propertyName,
-          });
-          return;
-        }
+      if (node.name === "property") {
+        processPropertyRule(input, node, diagnostics, registry);
+      }
+    }
 
-        let syntaxAst: any;
+    activePaths.delete(input.path);
+    expandedPaths.add(input.path);
+  }
 
-        try {
-          if (syntax !== "*") {
-            syntaxAst = cssTree.definitionSyntax.parse(syntax);
-          }
-        } catch (error) {
-          diagnostics.push({
-            code: "invalid-property-registration",
-            filePath: input.path,
-            loc: toLocation(node.loc),
-            message: `@property ${propertyName} has an invalid syntax descriptor "${syntax}": ${(error as Error).message}`,
-            propertyName,
-            registeredSyntax: syntax,
-          });
-          return;
-        }
-
-        if (syntax !== "*") {
-          // CSS Properties and Values API Level 1 §5.4.4 only accepts supported syntax
-          // component names from §5.1:
-          // https://www.w3.org/TR/css-properties-values-api-1/#supported-names
-          const unsupportedName = getFirstUnsupportedSyntaxComponentName(syntaxAst);
-
-          if (unsupportedName) {
-            diagnostics.push({
-              code: "invalid-property-registration",
-              filePath: input.path,
-              loc: toLocation(node.loc),
-              message: `@property ${propertyName} uses the unsupported syntax component name "${unsupportedName}".`,
-              propertyName,
-              registeredSyntax: syntax,
-            });
-            return;
-          }
-        }
-
-        // Unknown descriptors are intentionally ignored and do not invalidate the
-        // @property rule. We only validate the known descriptors defined by the spec.
-        // CSS Properties and Values API Level 1 §3:
-        // https://www.w3.org/TR/css-properties-values-api-1/#at-property-rule
-        if (!inheritsDescriptor) {
-          diagnostics.push({
-            code: "invalid-property-registration",
-            filePath: input.path,
-            loc: toLocation(node.loc),
-            message: `@property ${propertyName} is missing the required inherits descriptor.`,
-            propertyName,
-            registeredSyntax: syntax,
-          });
-          return;
-        }
-
-        if (inherits === undefined) {
-          diagnostics.push({
-            code: "invalid-property-registration",
-            filePath: input.path,
-            loc: toLocation(node.loc),
-            message: `@property ${propertyName} must set inherits to true or false.`,
-            propertyName,
-            registeredSyntax: syntax,
-          });
-          return;
-        }
-
-        // CSS Properties and Values API Level 1 §3.3 only allows omitted initial-value
-        // when the syntax is the universal syntax definition:
-        // https://www.w3.org/TR/css-properties-values-api-1/#initial-value-descriptor
-        if (syntax !== "*" && !initialValue) {
-          diagnostics.push({
-            code: "invalid-property-registration",
-            filePath: input.path,
-            loc: toLocation(node.loc),
-            message: `@property ${propertyName} is missing the required initial-value descriptor for non-universal syntax "${syntax}".`,
-            propertyName,
-            registeredSyntax: syntax,
-          });
-          return;
-        }
-
-        if (syntax !== "*" && initialValue) {
-          const initialValueFailure = validateInitialValueAgainstSyntax(
-            propertyName,
-            syntax,
-            initialValue,
-          );
-
-          if (initialValueFailure) {
-            diagnostics.push({
-              code: "invalid-property-registration",
-              filePath: input.path,
-              loc: toLocation(node.loc),
-              message: initialValueFailure,
-              propertyName,
-              registeredSyntax: syntax,
-            });
-            return;
-          }
-        }
-
-        // CSS Properties and Values API Level 1 §2.1 says the last valid registration in
-        // document order wins. Invalid later rules must not displace an earlier valid one:
-        // https://www.w3.org/TR/css-properties-values-api-1/#determining-registration
-        registry.set(propertyName, {
-          filePath: input.path,
-          inherits,
-          initialValue,
-          loc: toLocation(node.loc),
-          name: propertyName,
-          syntax,
-        });
-      },
-    });
+  for (const input of inputs) {
+    processInput(input);
   }
 
   return {

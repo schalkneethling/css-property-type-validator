@@ -18,17 +18,23 @@ import { validateFiles } from "@schalkneethling/css-property-type-validator-core
 const result = validateFiles(
   [
     {
-      path: "example.css",
+      path: "fixtures/imports/main.css",
       css: `
+        @import "./tokens.css";
+
         .card {
-          inline-size: var(--brand-color);
+          color: var(--brand-color);
         }
       `,
     },
   ],
   {
-    registryInputs: [
-      {
+    resolveImport: (specifier, fromPath) => {
+      if (specifier !== "./tokens.css" || fromPath !== "fixtures/imports/main.css") {
+        return null;
+      }
+
+      return {
         path: "tokens.css",
         css: `
           @property --brand-color {
@@ -37,8 +43,8 @@ const result = validateFiles(
             initial-value: transparent;
           }
         `,
-      },
-    ],
+      };
+    },
   },
 );
 
@@ -50,9 +56,11 @@ console.log(result.diagnostics);
 - Validates `@property` syntax descriptors
 - Builds a registry across provided input files
 - Can extend that registry with optional `registryInputs`
+- Can follow local unconditioned `@import` rules when `resolveImport` is provided
 - Validates single-`var()` declaration usages
 - Validates authored values assigned to registered custom properties
 - Skips whitespace-toggle and similarly ambiguous custom property assignment patterns for now
+- Skips conditioned and remote `@import` traversal for now
 - Ignores unregistered custom properties
 
 Repository: [schalkneethling/css-property-type-validator](https://github.com/schalkneethling/css-property-type-validator)

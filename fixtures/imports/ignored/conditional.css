@@ -1,0 +1,5 @@
+@property --conditional-only {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: hotpink;
+}

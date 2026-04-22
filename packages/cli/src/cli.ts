@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 
+import { readFileSync } from "node:fs";
 import { glob, readFile } from "node:fs/promises";
+import path from "node:path";
 import process from "node:process";
 
 import { Command } from "commander";
@@ -8,7 +10,10 @@ import { Command } from "commander";
 import { validateFiles } from "@schalkneethling/css-property-type-validator-core";
 import { formatValidationResult } from "./formatter.js";
 
-import type { ValidationInput } from "@schalkneethling/css-property-type-validator-core";
+import type {
+  ResolveImport,
+  ValidationInput,
+} from "@schalkneethling/css-property-type-validator-core";
 
 type OutputFormat = "human" | "json";
 
@@ -32,6 +37,27 @@ async function loadInputs(patterns: string[]): Promise<ValidationInput[]> {
   );
 
   return inputs.sort((left, right) => left.path.localeCompare(right.path));
+}
+
+function createImportResolver(cwd: string): ResolveImport {
+  return (specifier: string, fromPath: string) => {
+    const resolvedPath = specifier.startsWith("/")
+      ? path.join(cwd, specifier.slice(1))
+      : path.resolve(path.dirname(fromPath), specifier);
+
+    if (!resolvedPath.endsWith(".css")) {
+      return null;
+    }
+
+    try {
+      return {
+        path: resolvedPath,
+        css: readFileSync(resolvedPath, "utf8"),
+      };
+    } catch {
+      return null;
+    }
+  };
 }
 
 async function loadRegistryInputs(
@@ -71,7 +97,10 @@ async function main(): Promise<void> {
       }
 
       const registryInputs = await loadRegistryInputs(options.registry, inputs);
-      const result = validateFiles(inputs, { registryInputs });
+      const result = validateFiles(inputs, {
+        registryInputs,
+        resolveImport: createImportResolver(process.cwd()),
+      });
       const output = formatValidationResult(result, format);
 
       process.stdout.write(`${output}\n`);

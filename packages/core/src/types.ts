@@ -15,6 +15,11 @@ export interface ValidationInput {
   css: string;
 }
 
+export type ResolveImport = (
+  specifier: string,
+  fromPath: string,
+) => ValidationInput | null;
+
 export interface RegisteredProperty {
   filePath: string;
   inherits?: boolean;
@@ -28,6 +33,7 @@ export type DiagnosticCode =
   | "invalid-property-registration"
   | "incompatible-custom-property-assignment"
   | "incompatible-var-usage"
+  | "unresolved-import"
   | "unparseable-stylesheet";
 
 export interface ValidationDiagnostic {
