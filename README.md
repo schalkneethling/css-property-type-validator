@@ -28,7 +28,7 @@ npm install --global @schalkneethling/css-property-type-validator-cli
 Or run it without a global install:
 
 ```bash
-npx @schalkneethling/css-property-type-validator-cli example.css
+npx @schalkneethling/css-property-type-validator-cli fixtures/imports/main.css
 ```
 
 ### Core library
@@ -63,7 +63,7 @@ import { validateFiles } from "@schalkneethling/css-property-type-validator-core
 
 const result = validateFiles([
   {
-    path: "example.css",
+    path: "fixtures/imports/main.css",
     css: `
       @property --brand-color {
         syntax: "<color>";
@@ -87,6 +87,7 @@ console.log(result.diagnostics);
 css-property-type-validator "src/**/*.css"
 css-property-type-validator "src/**/*.css" --format json
 css-property-type-validator "src/**/*.css" --registry "src/tokens/**/*.css"
+css-property-type-validator "fixtures/imports/main.css"
 ```
 
 Human output is the default. The CLI exits with:
@@ -102,17 +103,17 @@ Human output is the default. The CLI exits with:
   "diagnostics": [
     {
       "code": "incompatible-var-usage",
-      "filePath": "/Users/schalkneethling/dev/opensource/css-property-type-validator/example.css",
+      "filePath": "/Users/schalkneethling/dev/opensource/css-property-type-validator/fixtures/imports/main.css",
       "loc": {
-        "source": "/Users/schalkneethling/dev/opensource/css-property-type-validator/example.css",
+        "source": "/Users/schalkneethling/dev/opensource/css-property-type-validator/fixtures/imports/main.css",
         "start": {
-          "offset": 1356,
-          "line": 76,
+          "offset": 932,
+          "line": 38,
           "column": 16
         },
         "end": {
-          "offset": 1374,
-          "line": 76,
+          "offset": 950,
+          "line": 38,
           "column": 34
         }
       },
@@ -124,17 +125,17 @@ Human output is the default. The CLI exits with:
     },
     {
       "code": "incompatible-var-usage",
-      "filePath": "/Users/schalkneethling/dev/opensource/css-property-type-validator/example.css",
+      "filePath": "/Users/schalkneethling/dev/opensource/css-property-type-validator/fixtures/imports/main.css",
       "loc": {
-        "source": "/Users/schalkneethling/dev/opensource/css-property-type-validator/example.css",
+        "source": "/Users/schalkneethling/dev/opensource/css-property-type-validator/fixtures/imports/main.css",
         "start": {
-          "offset": 1385,
-          "line": 77,
+          "offset": 961,
+          "line": 39,
           "column": 10
         },
         "end": {
-          "offset": 1400,
-          "line": 77,
+          "offset": 976,
+          "line": 39,
           "column": 25
         }
       },
@@ -147,11 +148,11 @@ Human output is the default. The CLI exits with:
   ],
   "registry": [
     {
-      "filePath": "/Users/schalkneethling/dev/opensource/css-property-type-validator/example.css",
-      "inherits": true,
-      "initialValue": "transparent",
+      "filePath": "/Users/schalkneethling/dev/opensource/css-property-type-validator/fixtures/imports/registry/nested.css",
+      "inherits": false,
+      "initialValue": "12px",
       "loc": {
-        "source": "/Users/schalkneethling/dev/opensource/css-property-type-validator/example.css",
+        "source": "/Users/schalkneethling/dev/opensource/css-property-type-validator/fixtures/imports/registry/nested.css",
         "start": {
           "offset": 0,
           "line": 1,
@@ -163,23 +164,43 @@ Human output is the default. The CLI exits with:
           "column": 2
         }
       },
+      "name": "--radius-lg",
+      "syntax": "<length>"
+    },
+    {
+      "filePath": "/Users/schalkneethling/dev/opensource/css-property-type-validator/fixtures/imports/registry/tokens.css",
+      "inherits": true,
+      "initialValue": "transparent",
+      "loc": {
+        "source": "/Users/schalkneethling/dev/opensource/css-property-type-validator/fixtures/imports/registry/tokens.css",
+        "start": {
+          "offset": 25,
+          "line": 3,
+          "column": 1
+        },
+        "end": {
+          "offset": 121,
+          "line": 7,
+          "column": 2
+        }
+      },
       "name": "--brand-color",
       "syntax": "<color>"
     },
     {
-      "filePath": "/Users/schalkneethling/dev/opensource/css-property-type-validator/example.css",
+      "filePath": "/Users/schalkneethling/dev/opensource/css-property-type-validator/fixtures/imports/registry/tokens.css",
       "inherits": false,
-      "initialValue": "1rem",
+      "initialValue": "16px",
       "loc": {
-        "source": "/Users/schalkneethling/dev/opensource/css-property-type-validator/example.css",
+        "source": "/Users/schalkneethling/dev/opensource/css-property-type-validator/fixtures/imports/registry/tokens.css",
         "start": {
-          "offset": 98,
-          "line": 7,
+          "offset": 123,
+          "line": 9,
           "column": 1
         },
         "end": {
-          "offset": 186,
-          "line": 11,
+          "offset": 211,
+          "line": 13,
           "column": 2
         }
       },
@@ -187,12 +208,12 @@ Human output is the default. The CLI exits with:
       "syntax": "<length>"
     }
   ],
-  "skippedDeclarations": 1,
-  "validatedDeclarations": 15
+  "skippedDeclarations": 0,
+  "validatedDeclarations": 30
 }
 ```
 
-This example is truncated for readability. A full run against [example.css](/Users/schalkneethling/dev/opensource/css-property-type-validator/example.css) includes additional diagnostics and all registered properties in the combined registry.
+This example is truncated for readability. A full run against [fixtures/imports/main.css](/Users/schalkneethling/dev/opensource/css-property-type-validator/fixtures/imports/main.css) also includes invalid `@property` registrations from imported registry files, authored custom property assignment diagnostics, and more specific multi-`var()` messages when the validator can narrow the likely culprit.
 
 ## Current validation model
 
@@ -206,10 +227,12 @@ css-property-type-validator "src/components/**/*.css" --registry "src/tokens/**/
 
 Registry-only files contribute `@property` registrations and any registration/parse diagnostics, but their own normal declarations are not validated unless you also pass them as main inputs.
 
+When a resolver is available, the validator also follows local unconditioned `@import` rules while assembling the registry. That includes relative imports and root-relative imports in the CLI. Remote imports and conditioned imports remain intentionally out of scope for now.
+
 For this first cut, compatibility checks are intentionally conservative:
 
 - whitespace-toggle and similarly ambiguous custom property assignment patterns are skipped for now
-- automatic `@import` resolution is not implemented yet
+- conditioned and remote `@import` traversal are not implemented yet
 - config-file based registry discovery is not implemented yet
 
 That keeps false positives down while the standalone core takes shape.

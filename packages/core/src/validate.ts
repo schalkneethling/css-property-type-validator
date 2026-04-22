@@ -5,6 +5,7 @@ import { collectRegistry } from "./registry.js";
 
 import type {
   RegisteredProperty,
+  ResolveImport,
   ValidationDiagnostic,
   ValidationInput,
   ValidationResult,
@@ -12,6 +13,7 @@ import type {
 
 export interface ValidateFilesOptions {
   registryInputs?: ValidationInput[];
+  resolveImport?: ResolveImport;
 }
 
 function toLocation(loc: any): ValidationDiagnostic["loc"] {
@@ -77,23 +79,76 @@ function matchRegisteredSyntax(registration: RegisteredProperty, value: any): bo
   return Boolean(match?.matched);
 }
 
-function valueMatchesSamples(
-  value: any,
-  substitutions: Array<{ sample: string; varNode: any }>,
+function collectVarOccurrences(
+  valueSource: string,
+  varNodes: any[],
+): Array<{ end: number; start: number; varNode: any }> | null {
+  const occurrences = [];
+  let searchStart = 0;
+
+  for (const varNode of varNodes) {
+    const replacementTarget = cssTree.generate(varNode);
+    const start = valueSource.indexOf(replacementTarget, searchStart);
+
+    if (start === -1) {
+      return null;
+    }
+
+    const end = start + replacementTarget.length;
+
+    occurrences.push({ start, end, varNode });
+    searchStart = end;
+  }
+
+  return occurrences;
+}
+
+function renderValueWithReplacements(
+  valueSource: string,
+  occurrences: Array<{ end: number; start: number; varNode: any }>,
+  replacements: Array<string | null>,
+): string {
+  let rendered = "";
+  let cursor = 0;
+
+  for (const [index, occurrence] of occurrences.entries()) {
+    rendered += valueSource.slice(cursor, occurrence.start);
+    rendered += replacements[index] ?? "";
+    cursor = occurrence.end;
+  }
+
+  rendered += valueSource.slice(cursor);
+
+  return rendered.trim();
+}
+
+function valueMatchesRenderedSource(
+  renderedSource: string,
   matcher: (candidateValue: any) => boolean,
 ): boolean {
-  const valueSource = cssTree.generate(value);
-  const replacedSource = substitutions.reduce((source, substitution) => {
-    const replacementTarget = cssTree.generate(substitution.varNode);
-    return source.replace(replacementTarget, substitution.sample);
-  }, valueSource);
-  const replacedAst = parseValue(replacedSource);
+  const replacedAst = parseValue(renderedSource);
 
   if (!replacedAst) {
     return false;
   }
 
   return matcher(replacedAst);
+}
+
+function valueMatchesSamples(
+  valueSource: string,
+  occurrences: Array<{ end: number; start: number; varNode: any }>,
+  substitutions: Array<{ sample: string; varNode: any }>,
+  matcher: (candidateValue: any) => boolean,
+): boolean {
+  const replacementMap = new Map(substitutions.map((substitution) => [substitution.varNode, substitution.sample]));
+  const renderedSource = renderValueWithReplacements(
+    valueSource,
+    occurrences,
+    occurrences.map((occurrence) => replacementMap.get(occurrence.varNode) ?? null),
+  );
+
+  return valueMatchesRenderedSource(renderedSource, matcher);
 }
 
 function toVarDiagnostic(
@@ -132,6 +187,27 @@ function toVarDiagnostic(
   };
 }
 
+function toPossibleVarDiagnostic(
+  filePath: string,
+  declaration: any,
+  registrations: RegisteredProperty[],
+): ValidationDiagnostic {
+  const uniqueNames = [...new Set(registrations.map((registration) => registration.name))];
+  const message =
+    uniqueNames.length === 1
+      ? `One or more var() usages of registered property ${uniqueNames[0]} may be incompatible with ${declaration.property} at this declaration value.`
+      : `Registered properties ${uniqueNames.join(", ")} may be incompatible with ${declaration.property} at this declaration value.`;
+
+  return {
+    code: "incompatible-var-usage",
+    filePath,
+    loc: toLocation(declaration.value.loc),
+    message,
+    expectedProperty: declaration.property,
+    snippet: cssTree.generate(declaration),
+  };
+}
+
 function toAssignmentDiagnostic(
   filePath: string,
   declaration: any,
@@ -149,23 +225,118 @@ function toAssignmentDiagnostic(
 }
 
 function isCompatibleWithSubstitutions(
-  value: any,
+  valueSource: string,
+  occurrences: Array<{ end: number; start: number; varNode: any }>,
   substitutionOptions: Array<{ samples: string[]; varNode: any }>,
   matcher: (candidateValue: any) => boolean,
   index = 0,
   activeSubstitutions: Array<{ sample: string; varNode: any }> = [],
 ): boolean {
   if (index === substitutionOptions.length) {
-    return valueMatchesSamples(value, activeSubstitutions, matcher);
+    return valueMatchesSamples(valueSource, occurrences, activeSubstitutions, matcher);
   }
 
   const option = substitutionOptions[index];
 
   return option.samples.some((sample) =>
-    isCompatibleWithSubstitutions(value, substitutionOptions, matcher, index + 1, [
+    isCompatibleWithSubstitutions(valueSource, occurrences, substitutionOptions, matcher, index + 1, [
       ...activeSubstitutions,
       { sample, varNode: option.varNode },
     ]),
+  );
+}
+
+function canDeclarationMatchWithoutOccurrence(
+  valueSource: string,
+  occurrences: Array<{ end: number; start: number; varNode: any }>,
+  substitutionOptions: Array<{ index: number; samples: string[]; varNode: any }>,
+  matcher: (candidateValue: any) => boolean,
+  removedIndex: number,
+  optionIndex = 0,
+  replacements: Array<string | null> = Array.from({ length: occurrences.length }, () => null),
+): boolean {
+  if (optionIndex === substitutionOptions.length) {
+    const renderedSource = renderValueWithReplacements(valueSource, occurrences, replacements);
+    return valueMatchesRenderedSource(renderedSource, matcher);
+  }
+
+  const option = substitutionOptions[optionIndex];
+
+  if (option.index === removedIndex) {
+    return canDeclarationMatchWithoutOccurrence(
+      valueSource,
+      occurrences,
+      substitutionOptions,
+      matcher,
+      removedIndex,
+      optionIndex + 1,
+      replacements,
+    );
+  }
+
+  return option.samples.some((sample) => {
+    const nextReplacements = [...replacements];
+    nextReplacements[option.index] = sample;
+
+    return canDeclarationMatchWithoutOccurrence(
+      valueSource,
+      occurrences,
+      substitutionOptions,
+      matcher,
+      removedIndex,
+      optionIndex + 1,
+      nextReplacements,
+    );
+  });
+}
+
+function toPreciseMultiVarDiagnostic(
+  filePath: string,
+  declaration: any,
+  registeredEntries: Array<{ index: number; registration: RegisteredProperty; varNode: any }>,
+  valueSource: string,
+  occurrences: Array<{ end: number; start: number; varNode: any }>,
+  substitutionOptions: Array<{ index: number; samples: string[]; varNode: any }>,
+  matcher: (candidateValue: any) => boolean,
+): ValidationDiagnostic {
+  // For repeated or multi-var() values, we first ask a narrower question than
+  // "does the whole declaration fail?": if we drop exactly one occurrence and
+  // keep substituting representative samples for the rest, can the declaration
+  // become valid? A single surviving candidate gives us a precise culprit.
+  // Multiple candidates mean we should stay honest and report a possible culprit.
+  const candidateIndexes = registeredEntries
+    .filter((entry) =>
+      canDeclarationMatchWithoutOccurrence(
+        valueSource,
+        occurrences,
+        substitutionOptions,
+        matcher,
+        entry.index,
+      ),
+    )
+    .map((entry) => entry.index);
+
+  if (candidateIndexes.length === 1) {
+    const culprit = registeredEntries.find((entry) => entry.index === candidateIndexes[0]);
+
+    if (culprit) {
+      return toVarDiagnostic(filePath, declaration, [culprit.registration], [culprit.varNode]);
+    }
+  }
+
+  if (candidateIndexes.length > 1) {
+    const candidates = registeredEntries
+      .filter((entry) => candidateIndexes.includes(entry.index))
+      .map((entry) => entry.registration);
+
+    return toPossibleVarDiagnostic(filePath, declaration, candidates);
+  }
+
+  return toVarDiagnostic(
+    filePath,
+    declaration,
+    registeredEntries.map((entry) => entry.registration),
+    registeredEntries.map((entry) => entry.varNode),
   );
 }
 
@@ -260,9 +431,16 @@ function validateDeclaration(
     return { diagnostics, skipped: 1, validated: 0 };
   }
 
+  const valueSource = cssTree.generate(valueToValidate);
+  const occurrences = collectVarOccurrences(valueSource, registeredEntries.map((entry) => entry.varNode));
+
+  if (!occurrences) {
+    return { diagnostics, skipped: 1, validated: 0 };
+  }
+
   const substitutionOptions = [];
 
-  for (const entry of registeredEntries) {
+  for (const [index, entry] of registeredEntries.entries()) {
     let samples: string[];
 
     try {
@@ -277,6 +455,7 @@ function validateDeclaration(
     }
 
     substitutionOptions.push({
+      index,
       samples,
       varNode: entry.varNode,
     });
@@ -292,7 +471,12 @@ function validateDeclaration(
 
   // The declaration passes if all registered var() usages can be substituted
   // with one compatible combination of representative sample values.
-  const isCompatible = isCompatibleWithSubstitutions(valueToValidate, substitutionOptions, matcher);
+  const isCompatible = isCompatibleWithSubstitutions(
+    valueSource,
+    occurrences,
+    substitutionOptions,
+    matcher,
+  );
 
   if (!isCompatible) {
     if (isCustomPropertyName(declaration.property)) {
@@ -300,12 +484,19 @@ function validateDeclaration(
         toAssignmentDiagnostic(filePath, declaration, registry.get(declaration.property) as RegisteredProperty),
       );
     } else {
+      // When several registered var() calls participate in one declaration,
+      // prefer the narrowest truthful diagnostic we can support. If removing
+      // one occurrence isolates the failure, point at that occurrence; otherwise
+      // fall back to a possible-culprit or declaration-level message.
       diagnostics.push(
-        toVarDiagnostic(
+        toPreciseMultiVarDiagnostic(
           filePath,
           declaration,
-          registeredEntries.map((entry) => entry.registration),
-          registeredEntries.map((entry) => entry.varNode),
+          registeredEntries.map((entry, index) => ({ ...entry, index })),
+          valueSource,
+          occurrences,
+          substitutionOptions,
+          matcher,
         ),
       );
     }
@@ -331,7 +522,9 @@ export function validateFiles(
     registrySources.push(input);
   }
 
-  const registryResult = collectRegistry(registrySources);
+  const registryResult = collectRegistry(registrySources, {
+    resolveImport: options.resolveImport,
+  });
   const diagnostics = [...registryResult.diagnostics];
   const registry = registryMap(registryResult.registry);
   let skippedDeclarations = 0;

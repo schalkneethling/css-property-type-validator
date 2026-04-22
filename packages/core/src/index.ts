@@ -3,6 +3,7 @@ export type { ValidateFilesOptions } from "./validate.js";
 
 export type {
   RegisteredProperty,
+  ResolveImport,
   SourceLocation,
   SourcePosition,
   ValidationDiagnostic,

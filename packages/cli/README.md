@@ -22,6 +22,7 @@ npx @schalkneethling/css-property-type-validator-cli "src/**/*.css"
 css-property-type-validator "src/**/*.css"
 css-property-type-validator "src/**/*.css" --format json
 css-property-type-validator "src/**/*.css" --registry "src/tokens/**/*.css"
+css-property-type-validator "fixtures/imports/main.css"
 ```
 
 Use `--registry` multiple times to include shared `@property` definitions without validating the rest of those files:
@@ -32,7 +33,7 @@ css-property-type-validator "src/**/*.css" \
   --registry "src/brand/**/*.css"
 ```
 
-Registry-only files still report parse errors and invalid `@property` registrations. Automatic `@import` traversal is not supported yet.
+Registry-only files still report parse errors and invalid `@property` registrations. The CLI also follows local unconditioned `@import` rules automatically while assembling the registry, including relative and root-relative imports. Remote and conditioned imports are still out of scope for now.
 
 ## Exit codes
 

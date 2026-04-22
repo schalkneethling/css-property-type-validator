@@ -1,0 +1,43 @@
+@property --hero-url {
+  syntax: "<url>";
+  inherits: false;
+  initial-value: url("https://example.com/hero-default.png");
+}
+
+/*
+  Invalid registrations should be reported and omitted from the collected registry.
+*/
+@property --broken-syntax {
+  syntax: "<color";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --missing-inherits {
+  syntax: "<length>";
+  initial-value: 0px;
+}
+
+@property --bad-initial-color {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: 10px;
+}
+
+@property --relative-space {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 3em;
+}
+
+@property --relative-image {
+  syntax: "<image>";
+  inherits: false;
+  initial-value: url("hero-local.png");
+}
+
+@property --var-based-space {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: var(--space-md);
+}

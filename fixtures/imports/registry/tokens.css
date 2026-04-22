@@ -1,0 +1,20 @@
+@import "./nested.css";
+
+@property --brand-color {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --space-md {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 16px;
+}
+
+/*
+  Imported registry sources should not become validation targets automatically.
+*/
+.tokens-should-not-validate {
+  inline-size: var(--brand-color);
+}
