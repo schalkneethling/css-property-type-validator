@@ -965,7 +965,7 @@ describe("validateFiles", () => {
     );
   });
 
-  it("returns exit code 2 when no validation patterns are provided without --registry-only", { timeout: 120000 }, () => {
+  it("returns the normal validation-input error when no validation patterns are provided", { timeout: 120000 }, () => {
     const repoRoot = path.resolve(import.meta.dirname, "../../..");
 
     const cliResult = spawnSync(
@@ -979,7 +979,7 @@ describe("validateFiles", () => {
 
     expect(cliResult.status).toBe(2);
     expect(cliResult.stderr).toContain(
-      "No validation patterns were provided. Pass CSS files or glob patterns to validate, or use --registry-only for registration-only validation.",
+      "No CSS files matched the validation patterns. Files passed via --registry are registration sources only.",
     );
   });
 

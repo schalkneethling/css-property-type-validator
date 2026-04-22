@@ -131,14 +131,6 @@ async function main(): Promise<void> {
         return;
       }
 
-      if (patterns.length === 0) {
-        process.stderr.write(
-          "No validation patterns were provided. Pass CSS files or glob patterns to validate, or use --registry-only for registration-only validation.\n",
-        );
-        process.exitCode = 2;
-        return;
-      }
-
       const inputs = await loadInputs(patterns);
 
       if (inputs.length === 0) {
