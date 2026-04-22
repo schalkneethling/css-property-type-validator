@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.0](https://github.com/schalkneethling/css-property-type-validator/compare/core-v0.6.0...core-v0.7.0) (2026-04-22)
+
+
+### Features
+
+* **core:** validate simple var() fallback branches ([d8f1de6](https://github.com/schalkneethling/css-property-type-validator/commit/d8f1de62b0184c236e844927c8e0ee50b2641c9a))
+* **core:** validate simple var() fallback branches ([6db9510](https://github.com/schalkneethling/css-property-type-validator/commit/6db95107a58a8863830bd6bbfca8129f32691c6c))
+
 ## [0.6.0](https://github.com/schalkneethling/css-property-type-validator/compare/core-v0.5.0...core-v0.6.0) (2026-04-22)
 
 
