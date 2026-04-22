@@ -70,13 +70,17 @@ async function loadRegistryInputs(
   return registryInputs.filter((input) => !validationPaths.has(input.path));
 }
 
+function resolveOutputFormat(format: string): OutputFormat {
+  return format === "json" ? "json" : "human";
+}
+
 async function main(): Promise<void> {
   const program = new Command();
 
   program
     .name("css-property-type-validator")
     .description("Validate @property registrations and var() usages across CSS files.")
-    .argument("<patterns...>", "CSS files or glob patterns to validate")
+    .argument("[patterns...]", "CSS files or glob patterns to validate")
     .option("-f, --format <format>", "output format: human or json", "human")
     .option(
       "-r, --registry <pattern>",
@@ -84,8 +88,49 @@ async function main(): Promise<void> {
       (value: string, previous: string[] = []) => [...previous, value],
       [],
     )
-    .action(async (patterns: string[], options: { format: OutputFormat; registry: string[] }) => {
-      const format = options.format === "json" ? "json" : "human";
+    .option(
+      "--registry-only",
+      "validate @property registrations from the provided input patterns without validating ordinary declarations",
+      false,
+    )
+    .action(
+      async (
+        patterns: string[],
+        options: { format: OutputFormat; registry: string[]; registryOnly: boolean },
+      ) => {
+      const format = resolveOutputFormat(options.format);
+
+      if (options.registryOnly) {
+        if (patterns.length === 0) {
+          process.stderr.write(
+            "No CSS files matched the registration-only patterns. Pass one or more CSS files or glob patterns to --registry-only.\n",
+          );
+          process.exitCode = 2;
+          return;
+        }
+
+        const registryInputs = await loadInputs(patterns);
+
+        if (registryInputs.length === 0) {
+          process.stderr.write(
+            "No CSS files matched the registration-only patterns. Pass one or more CSS files or glob patterns to --registry-only.\n",
+          );
+          process.exitCode = 2;
+          return;
+        }
+
+        const additionalRegistryInputs = await loadRegistryInputs(options.registry, registryInputs);
+        const result = validateFiles([], {
+          registryInputs: [...registryInputs, ...additionalRegistryInputs],
+          resolveImport: createImportResolver(process.cwd()),
+        });
+        const output = formatValidationResult(result, format);
+
+        process.stdout.write(`${output}\n`);
+        process.exitCode = result.diagnostics.length > 0 ? 1 : 0;
+        return;
+      }
+
       const inputs = await loadInputs(patterns);
 
       if (inputs.length === 0) {
@@ -105,7 +150,8 @@ async function main(): Promise<void> {
 
       process.stdout.write(`${output}\n`);
       process.exitCode = result.diagnostics.length > 0 ? 1 : 0;
-    });
+      },
+    );
 
   await program.parseAsync(process.argv);
 }

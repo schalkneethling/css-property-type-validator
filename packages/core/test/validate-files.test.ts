@@ -863,7 +863,7 @@ describe("validateFiles", () => {
     expect(report.validatedDeclarations).toBe(1);
   });
 
-  it("returns exit code 2 when only registry inputs match", { timeout: 120000 }, () => {
+  it("supports explicit registration-only CLI mode", { timeout: 120000 }, () => {
     const repoRoot = path.resolve(import.meta.dirname, "../../..");
     const fixtureDir = mkdtempSync(path.join(tmpdir(), "css-property-validator-"));
     const registryPath = path.join(fixtureDir, "tokens.css");
@@ -877,12 +877,100 @@ describe("validateFiles", () => {
       "node",
       [
         "packages/cli/dist/cli.js",
-        path.join(fixtureDir, "missing-*.css"),
-        "--registry",
         registryPath,
+        "--registry-only",
         "--format",
         "json",
       ],
+      {
+        cwd: repoRoot,
+        encoding: "utf8",
+      },
+    );
+
+    expect(cliResult.status).toBe(0);
+
+    const report = JSON.parse(cliResult.stdout) as {
+      diagnostics: Array<{ code: string }>;
+      registry: Array<{ filePath: string }>;
+      validatedDeclarations: number;
+    };
+
+    expect(report.diagnostics).toHaveLength(0);
+    expect(report.registry).toHaveLength(1);
+    expect(report.registry[0]?.filePath).toBe(registryPath);
+    expect(report.validatedDeclarations).toBe(0);
+  });
+
+  it("reports invalid registrations in explicit registration-only CLI mode", { timeout: 120000 }, () => {
+    const repoRoot = path.resolve(import.meta.dirname, "../../..");
+    const fixtureDir = mkdtempSync(path.join(tmpdir(), "css-property-validator-"));
+    const registryPath = path.join(fixtureDir, "tokens.css");
+
+    writeFileSync(
+      registryPath,
+      '@property --bad { syntax: "<color"; inherits: true; initial-value: transparent; }\n',
+    );
+
+    const cliResult = spawnSync(
+      "node",
+      [
+        "packages/cli/dist/cli.js",
+        registryPath,
+        "--registry-only",
+        "--format",
+        "json",
+      ],
+      {
+        cwd: repoRoot,
+        encoding: "utf8",
+      },
+    );
+
+    expect(cliResult.status).toBe(1);
+
+    const report = JSON.parse(cliResult.stdout) as {
+      diagnostics: Array<{ code: string; filePath: string }>;
+      validatedDeclarations: number;
+    };
+
+    expect(report.diagnostics).toHaveLength(1);
+    expect(report.diagnostics[0]?.code).toBe("invalid-property-registration");
+    expect(report.diagnostics[0]?.filePath).toBe(registryPath);
+    expect(report.validatedDeclarations).toBe(0);
+  });
+
+  it("returns exit code 2 when registration-only patterns do not match", { timeout: 120000 }, () => {
+    const repoRoot = path.resolve(import.meta.dirname, "../../..");
+    const fixtureDir = mkdtempSync(path.join(tmpdir(), "css-property-validator-"));
+
+    const cliResult = spawnSync(
+      "node",
+      [
+        "packages/cli/dist/cli.js",
+        path.join(fixtureDir, "missing-*.css"),
+        "--registry-only",
+        "--format",
+        "json",
+      ],
+      {
+        cwd: repoRoot,
+        encoding: "utf8",
+      },
+    );
+
+    expect(cliResult.status).toBe(2);
+    expect(cliResult.stderr).toContain(
+      "No CSS files matched the registration-only patterns. Pass one or more CSS files or glob patterns to --registry-only.",
+    );
+  });
+
+  it("returns the normal validation-input error when no validation patterns are provided", { timeout: 120000 }, () => {
+    const repoRoot = path.resolve(import.meta.dirname, "../../..");
+
+    const cliResult = spawnSync(
+      "node",
+      ["packages/cli/dist/cli.js", "--format", "json"],
       {
         cwd: repoRoot,
         encoding: "utf8",
