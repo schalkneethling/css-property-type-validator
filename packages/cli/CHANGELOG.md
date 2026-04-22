@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.4.0](https://github.com/schalkneethling/css-property-type-validator/compare/cli-v0.3.0...cli-v0.4.0) (2026-04-22)
+
+
+### Features
+
+* **cli:** add explicit registration-only mode for [@property](https://github.com/property) validation ([a38ac90](https://github.com/schalkneethling/css-property-type-validator/commit/a38ac90b6faaf93d5a065bc301f7ede19768f52b))
+* **cli:** add registration-only mode ([aec5594](https://github.com/schalkneethling/css-property-type-validator/commit/aec5594d3a2aa18e5eba12981ea29c3f7a8069f5))
+
+
+### Bug Fixes
+
+* **cli:** reuse default missing-input error ([fe63b97](https://github.com/schalkneethling/css-property-type-validator/commit/fe63b97c989b0bd0e5c2c2c0dfa0a0670c977132))
+
 ## [0.3.0](https://github.com/schalkneethling/css-property-type-validator/compare/cli-v0.2.0...cli-v0.3.0) (2026-04-22)
 
 
