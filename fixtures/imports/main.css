@@ -19,6 +19,7 @@
   background-image: var(--hero-url);
   color: var(--brand-color);
   padding-inline: var(--space-md);
+  border-color: var(--brand-color, rebeccapurple);
 }
 
 /*
@@ -37,6 +38,7 @@
 .card--broken {
   inline-size: var(--brand-color);
   color: var(--space-md);
+  border-color: var(--brand-color, 10px);
   margin-inline: var(--brand-color) var(--space-md);
   border-end-end-radius: var(--fast-transition);
   border: var(--brand-color) solid var(--brand-color);

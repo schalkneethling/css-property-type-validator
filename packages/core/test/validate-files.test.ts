@@ -347,6 +347,59 @@ describe("validateFiles", () => {
     expect(result.validatedDeclarations).toBe(2);
   });
 
+  it("reports an incompatible fallback value for a registered var() usage", () => {
+    const result = runValidation({
+      "/tmp/tokens.css": SHARED_REGISTRY,
+      "/tmp/component.css": '.card { color: var(--brand-color, 10px); }',
+    });
+
+    expect(result.diagnostics).toHaveLength(1);
+    expect(result.diagnostics[0]?.code).toBe("incompatible-var-usage");
+    expect(result.diagnostics[0]?.message).toContain("Fallback value in var()");
+    expect(result.diagnostics[0]?.message).toContain("--brand-color");
+    expect(result.diagnostics[0]?.expectedProperty).toBe("color");
+    expect(result.validatedDeclarations).toBe(1);
+    expect(result.skippedDeclarations).toBe(0);
+  });
+
+  it("reports an incompatible fallback branch within a multi-var() declaration", () => {
+    const result = runValidation({
+      "/tmp/tokens.css": SHARED_REGISTRY,
+      "/tmp/component.css":
+        ".card { border: var(--border-width, red) solid var(--brand-color, rebeccapurple); }",
+    });
+
+    expect(result.diagnostics).toHaveLength(1);
+    expect(result.diagnostics[0]?.code).toBe("incompatible-var-usage");
+    expect(result.diagnostics[0]?.message).toContain("Fallback value in var()");
+    expect(result.diagnostics[0]?.message).toContain("--border-width");
+    expect(result.diagnostics[0]?.expectedProperty).toBe("border");
+    expect(result.validatedDeclarations).toBe(1);
+    expect(result.skippedDeclarations).toBe(0);
+  });
+
+  it("skips assignment-site fallback validation for now", () => {
+    const result = runValidation({
+      "/tmp/tokens.css": SHARED_REGISTRY,
+      "/tmp/component.css": ':root { --space-md: var(--space-sm, red); }',
+    });
+
+    expect(result.diagnostics).toHaveLength(0);
+    expect(result.validatedDeclarations).toBe(0);
+    expect(result.skippedDeclarations).toBe(1);
+  });
+
+  it("skips nested fallback chains until fallback reachability is modeled", () => {
+    const result = runValidation({
+      "/tmp/tokens.css": SHARED_REGISTRY,
+      "/tmp/component.css": '.card { color: var(--brand-color, var(--accent-color, blue)); }',
+    });
+
+    expect(result.diagnostics).toHaveLength(0);
+    expect(result.validatedDeclarations).toBe(0);
+    expect(result.skippedDeclarations).toBe(1);
+  });
+
   it("accepts compatible declarations with multiple var() usages", () => {
     const result = runValidation({
       "/tmp/registry.css": [
@@ -779,7 +832,7 @@ describe("validateFiles", () => {
       validatedDeclarations: number;
     };
 
-    expect(report.diagnostics).toHaveLength(20);
+    expect(report.diagnostics).toHaveLength(21);
     expect(report.diagnostics.some((diagnostic) => diagnostic.code === "invalid-property-registration")).toBe(
       true,
     );
@@ -813,12 +866,19 @@ describe("validateFiles", () => {
     expect(
       report.diagnostics.some(
         (diagnostic) =>
+          diagnostic.snippet === "border-color:var(--brand-color, 10px)" &&
+          diagnostic.message.includes("Fallback value in var()"),
+      ),
+    ).toBe(true);
+    expect(
+      report.diagnostics.some(
+        (diagnostic) =>
           diagnostic.snippet === "border:var(--brand-color) solid var(--brand-color)" &&
           diagnostic.message.includes("may be incompatible"),
       ),
     ).toBe(true);
     expect(report.skippedDeclarations).toBe(0);
-    expect(report.validatedDeclarations).toBe(30);
+    expect(report.validatedDeclarations).toBe(32);
   });
 
   it("supports registry-only CLI inputs", { timeout: 120000 }, () => {

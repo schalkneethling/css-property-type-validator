@@ -2,7 +2,7 @@
 
 Core validation engine for CSS Property Type Validator.
 
-This package reads CSS `@property` registrations, builds a registry of typed custom properties, validates compatible `var()` usage against consuming CSS properties, and checks authored assignments to registered custom properties.
+This package reads CSS `@property` registrations, builds a registry of typed custom properties, validates compatible `var()` usage against consuming CSS properties, validates simple `var()` fallback branches against consuming CSS properties, and checks authored assignments to registered custom properties.
 
 ## Install
 
