@@ -16,6 +16,31 @@ export interface ValidateFilesOptions {
   resolveImport?: ResolveImport;
 }
 
+type CssValueAst = any;
+type CssNodeWithLoc = { loc?: any; name?: string; type?: string; value?: string };
+type CssNodeList<TNode> = { first?: TNode; toArray?: () => TNode[] };
+type VarFunctionNode = {
+  children?: CssNodeList<CssNodeWithLoc> | CssNodeWithLoc[];
+  loc?: any;
+  name?: string;
+};
+type VarOccurrence = { end: number; start: number; varNode: VarFunctionNode };
+type SubstitutionOption = { index: number; samples: string[]; varNode: VarFunctionNode };
+type ActiveSubstitution = { sample: string; varNode: VarFunctionNode };
+type Matcher = (candidateValue: CssValueAst) => boolean;
+type ReplacementCheckContext = {
+  matcher: Matcher;
+  occurrences: VarOccurrence[];
+  substitutionOptions: SubstitutionOption[];
+  valueSource: string;
+};
+type FallbackEntry = {
+  fallbackSource: string;
+  index: number;
+  registration: RegisteredProperty;
+  varNode: VarFunctionNode;
+};
+
 function toLocation(loc: any): ValidationDiagnostic["loc"] {
   return loc
     ? {
@@ -57,12 +82,39 @@ function getDeclarationValueForValidation(declaration: any): any | null {
   return declaration.value;
 }
 
-function getVarPropertyName(node: any): string | undefined {
-  const firstNode = node.children?.first ?? node.children?.[0];
+function getVarChildren(node: VarFunctionNode): CssNodeWithLoc[] {
+  if (Array.isArray(node.children)) {
+    return node.children;
+  }
+
+  return node.children?.toArray?.() ?? [];
+}
+
+function getVarPropertyName(node: VarFunctionNode): string | undefined {
+  const firstNode = Array.isArray(node.children) ? node.children[0] : node.children?.first;
   return firstNode?.type === "Identifier" ? firstNode.name : undefined;
 }
 
-function parseValue(value: string): any | null {
+function getVarFallbackSource(node: VarFunctionNode): string | null {
+  const children = getVarChildren(node);
+  const fallbackStartIndex = children.findIndex(
+    (child) => child.type === "Operator" && child.value === ",",
+  );
+
+  if (fallbackStartIndex === -1) {
+    return null;
+  }
+
+  const fallbackSource = children
+    .slice(fallbackStartIndex + 1)
+    .map((child) => cssTree.generate(child))
+    .join("")
+    .trim();
+
+  return fallbackSource.length > 0 ? fallbackSource : null;
+}
+
+function parseValue(value: string): CssValueAst | null {
   try {
     return cssTree.parse(value, { context: "value" });
   } catch {
@@ -81,8 +133,8 @@ function matchRegisteredSyntax(registration: RegisteredProperty, value: any): bo
 
 function collectVarOccurrences(
   valueSource: string,
-  varNodes: any[],
-): Array<{ end: number; start: number; varNode: any }> | null {
+  varNodes: VarFunctionNode[],
+): VarOccurrence[] | null {
   const occurrences = [];
   let searchStart = 0;
 
@@ -105,7 +157,7 @@ function collectVarOccurrences(
 
 function renderValueWithReplacements(
   valueSource: string,
-  occurrences: Array<{ end: number; start: number; varNode: any }>,
+  occurrences: VarOccurrence[],
   replacements: Array<string | null>,
 ): string {
   let rendered = "";
@@ -124,7 +176,7 @@ function renderValueWithReplacements(
 
 function valueMatchesRenderedSource(
   renderedSource: string,
-  matcher: (candidateValue: any) => boolean,
+  matcher: Matcher,
 ): boolean {
   const replacedAst = parseValue(renderedSource);
 
@@ -137,9 +189,9 @@ function valueMatchesRenderedSource(
 
 function valueMatchesSamples(
   valueSource: string,
-  occurrences: Array<{ end: number; start: number; varNode: any }>,
-  substitutions: Array<{ sample: string; varNode: any }>,
-  matcher: (candidateValue: any) => boolean,
+  occurrences: VarOccurrence[],
+  substitutions: ActiveSubstitution[],
+  matcher: Matcher,
 ): boolean {
   const replacementMap = new Map(substitutions.map((substitution) => [substitution.varNode, substitution.sample]));
   const renderedSource = renderValueWithReplacements(
@@ -155,7 +207,7 @@ function toVarDiagnostic(
   filePath: string,
   declaration: any,
   registrations: RegisteredProperty[],
-  varNodes: any[],
+  varNodes: VarFunctionNode[],
 ): ValidationDiagnostic {
   if (registrations.length === 1) {
     const [registration] = registrations;
@@ -224,13 +276,31 @@ function toAssignmentDiagnostic(
   };
 }
 
+function toFallbackDiagnostic(
+  filePath: string,
+  declaration: any,
+  registration: RegisteredProperty,
+  varNode: VarFunctionNode,
+): ValidationDiagnostic {
+  return {
+    code: "incompatible-var-usage",
+    filePath,
+    loc: toLocation(varNode.loc),
+    message: `Fallback value in var() for registered property ${registration.name} is incompatible with ${declaration.property} at this var() usage.`,
+    propertyName: registration.name,
+    registeredSyntax: registration.syntax,
+    expectedProperty: declaration.property,
+    snippet: cssTree.generate(declaration),
+  };
+}
+
 function isCompatibleWithSubstitutions(
   valueSource: string,
-  occurrences: Array<{ end: number; start: number; varNode: any }>,
-  substitutionOptions: Array<{ samples: string[]; varNode: any }>,
-  matcher: (candidateValue: any) => boolean,
+  occurrences: VarOccurrence[],
+  substitutionOptions: Array<{ samples: string[]; varNode: VarFunctionNode }>,
+  matcher: Matcher,
   index = 0,
-  activeSubstitutions: Array<{ sample: string; varNode: any }> = [],
+  activeSubstitutions: ActiveSubstitution[] = [],
 ): boolean {
   if (index === substitutionOptions.length) {
     return valueMatchesSamples(valueSource, occurrences, activeSubstitutions, matcher);
@@ -248,9 +318,9 @@ function isCompatibleWithSubstitutions(
 
 function canDeclarationMatchWithoutOccurrence(
   valueSource: string,
-  occurrences: Array<{ end: number; start: number; varNode: any }>,
-  substitutionOptions: Array<{ index: number; samples: string[]; varNode: any }>,
-  matcher: (candidateValue: any) => boolean,
+  occurrences: VarOccurrence[],
+  substitutionOptions: SubstitutionOption[],
+  matcher: Matcher,
   removedIndex: number,
   optionIndex = 0,
   replacements: Array<string | null> = Array.from({ length: occurrences.length }, () => null),
@@ -290,14 +360,63 @@ function canDeclarationMatchWithoutOccurrence(
   });
 }
 
+// This helper answers a narrower fallback-specific question than the normal
+// representative-sample check: if one var() occurrence resolves to its authored
+// fallback branch while the other registered occurrences keep using compatible
+// samples, can the full declaration still match the consuming property?
+function canDeclarationMatchWithOccurrenceReplacement(
+  context: ReplacementCheckContext,
+  replacedIndex: number,
+  replacementSource: string,
+  optionIndex = 0,
+  replacements: Array<string | null> = Array.from({ length: context.occurrences.length }, () => null),
+): boolean {
+  if (optionIndex === context.substitutionOptions.length) {
+    const renderedSource = renderValueWithReplacements(
+      context.valueSource,
+      context.occurrences,
+      replacements,
+    );
+    return valueMatchesRenderedSource(renderedSource, context.matcher);
+  }
+
+  const option = context.substitutionOptions[optionIndex];
+
+  if (option.index === replacedIndex) {
+    const nextReplacements = [...replacements];
+    nextReplacements[replacedIndex] = replacementSource;
+
+    return canDeclarationMatchWithOccurrenceReplacement(
+      context,
+      replacedIndex,
+      replacementSource,
+      optionIndex + 1,
+      nextReplacements,
+    );
+  }
+
+  return option.samples.some((sample) => {
+    const nextReplacements = [...replacements];
+    nextReplacements[option.index] = sample;
+
+    return canDeclarationMatchWithOccurrenceReplacement(
+      context,
+      replacedIndex,
+      replacementSource,
+      optionIndex + 1,
+      nextReplacements,
+    );
+  });
+}
+
 function toPreciseMultiVarDiagnostic(
   filePath: string,
   declaration: any,
-  registeredEntries: Array<{ index: number; registration: RegisteredProperty; varNode: any }>,
+  registeredEntries: Array<{ index: number; registration: RegisteredProperty; varNode: VarFunctionNode }>,
   valueSource: string,
-  occurrences: Array<{ end: number; start: number; varNode: any }>,
-  substitutionOptions: Array<{ index: number; samples: string[]; varNode: any }>,
-  matcher: (candidateValue: any) => boolean,
+  occurrences: VarOccurrence[],
+  substitutionOptions: SubstitutionOption[],
+  matcher: Matcher,
 ): ValidationDiagnostic {
   // For repeated or multi-var() values, we first ask a narrower question than
   // "does the whole declaration fail?": if we drop exactly one occurrence and
@@ -431,6 +550,15 @@ function validateDeclaration(
     return { diagnostics, skipped: 1, validated: 0 };
   }
 
+  // Fallback handling for assignment-site var() usage is intentionally deferred.
+  // For now we only validate fallback branches against ordinary consuming properties.
+  if (
+    isCustomPropertyName(declaration.property) &&
+    registeredEntries.some((entry) => getVarFallbackSource(entry.varNode) !== null)
+  ) {
+    return { diagnostics, skipped: 1, validated: 0 };
+  }
+
   const valueSource = cssTree.generate(valueToValidate);
   const occurrences = collectVarOccurrences(valueSource, registeredEntries.map((entry) => entry.varNode));
 
@@ -469,6 +597,35 @@ function validateDeclaration(
         return Boolean(match?.matched);
       };
 
+  const fallbackEntries: FallbackEntry[] = [];
+
+  for (const [index, entry] of registeredEntries.entries()) {
+    const fallbackSource = getVarFallbackSource(entry.varNode);
+
+    if (!fallbackSource) {
+      continue;
+    }
+
+    const fallbackValue = parseValue(fallbackSource);
+
+    if (!fallbackValue) {
+      return { diagnostics, skipped: 1, validated: 0 };
+    }
+
+    // Nested var() fallback chains are valid CSS, but we skip them for now until
+    // the validator can model fallback reachability without overclaiming certainty.
+    if (collectVarFunctions(fallbackValue).length > 0) {
+      return { diagnostics, skipped: 1, validated: 0 };
+    }
+
+    fallbackEntries.push({
+      fallbackSource,
+      index,
+      registration: entry.registration,
+      varNode: entry.varNode,
+    });
+  }
+
   // The declaration passes if all registered var() usages can be substituted
   // with one compatible combination of representative sample values.
   const isCompatible = isCompatibleWithSubstitutions(
@@ -477,6 +634,31 @@ function validateDeclaration(
     substitutionOptions,
     matcher,
   );
+  const fallbackReplacementContext: ReplacementCheckContext = {
+    matcher,
+    occurrences,
+    substitutionOptions,
+    valueSource,
+  };
+
+  for (const fallbackEntry of fallbackEntries) {
+    const isFallbackCompatible = canDeclarationMatchWithOccurrenceReplacement(
+      fallbackReplacementContext,
+      fallbackEntry.index,
+      fallbackEntry.fallbackSource,
+    );
+
+    if (!isFallbackCompatible) {
+      diagnostics.push(
+        toFallbackDiagnostic(
+          filePath,
+          declaration,
+          fallbackEntry.registration,
+          fallbackEntry.varNode,
+        ),
+      );
+    }
+  }
 
   if (!isCompatible) {
     if (isCustomPropertyName(declaration.property)) {

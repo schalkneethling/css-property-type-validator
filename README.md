@@ -8,6 +8,7 @@ Standalone tooling for validating CSS custom property registrations declared wit
 - Builds a registry from `@property` rules across multiple input files
 - Validates `syntax` descriptors in those registrations
 - Checks `var()` declaration values against the consuming CSS property, including coordinated multi-`var()` cases
+- Validates simple fallback branches in `var(--token, fallback)` against the consuming property
 - Validates authored values assigned directly to registered custom properties
 - Ignores unregistered custom properties
 - Ships a standalone core package and a thin CLI wrapper
