@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/schalkneethling/css-property-type-validator/compare/cli-v0.2.0...cli-v0.3.0) (2026-04-22)
+
+
+### Features
+
+* Add local import traversal for registry assembly ([bf853e7](https://github.com/schalkneethling/css-property-type-validator/commit/bf853e738c2146ce2ba0ca77ca01afa77a0183f0))
+
 ## [0.2.0](https://github.com/schalkneethling/css-property-type-validator/compare/cli-v0.1.1...cli-v0.2.0) (2026-04-15)
 
 
