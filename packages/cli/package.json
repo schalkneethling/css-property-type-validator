@@ -3,14 +3,23 @@
   "version": "0.4.0",
   "description": "CLI for CSS custom property type validator.",
   "keywords": [
+    "cli",
     "css",
     "custom-properties",
     "property",
-    "validator",
-    "cli"
+    "validator"
   ],
+  "homepage": "https://github.com/schalkneethling/css-property-type-validator#readme",
+  "bugs": {
+    "url": "https://github.com/schalkneethling/css-property-type-validator/issues"
+  },
   "license": "MIT",
   "author": "Schalk Neethling",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/schalkneethling/css-property-type-validator.git",
+    "directory": "packages/cli"
+  },
   "bin": {
     "css-property-type-validator": "./dist/cli.js"
   },
@@ -19,15 +28,6 @@
     "README.md"
   ],
   "type": "module",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/schalkneethling/css-property-type-validator.git",
-    "directory": "packages/cli"
-  },
-  "homepage": "https://github.com/schalkneethling/css-property-type-validator#readme",
-  "bugs": {
-    "url": "https://github.com/schalkneethling/css-property-type-validator/issues"
-  },
   "publishConfig": {
     "access": "public"
   },
