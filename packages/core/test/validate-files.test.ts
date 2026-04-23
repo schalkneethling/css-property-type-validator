@@ -1,7 +1,8 @@
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 
 import { describe, expect, it } from "vitest";
 
@@ -118,7 +119,9 @@ describe("validateFiles", () => {
 
     expect(result.diagnostics).toHaveLength(1);
     expect(result.diagnostics[0]?.code).toBe("invalid-property-registration");
-    expect(result.diagnostics[0]?.message).toContain("missing the required initial-value descriptor");
+    expect(result.diagnostics[0]?.message).toContain(
+      "missing the required initial-value descriptor",
+    );
     expect(result.registry).toHaveLength(0);
   });
 
@@ -140,7 +143,9 @@ describe("validateFiles", () => {
 
     expect(result.diagnostics).toHaveLength(1);
     expect(result.diagnostics[0]?.code).toBe("invalid-property-registration");
-    expect(result.diagnostics[0]?.message).toContain('does not match its syntax descriptor "<color>"');
+    expect(result.diagnostics[0]?.message).toContain(
+      'does not match its syntax descriptor "<color>"',
+    );
     expect(result.registry).toHaveLength(0);
   });
 
@@ -152,7 +157,9 @@ describe("validateFiles", () => {
 
     expect(result.diagnostics).toHaveLength(1);
     expect(result.diagnostics[0]?.code).toBe("invalid-property-registration");
-    expect(result.diagnostics[0]?.message).toContain('uses the relative or context-dependent unit "em"');
+    expect(result.diagnostics[0]?.message).toContain(
+      'uses the relative or context-dependent unit "em"',
+    );
     expect(result.registry).toHaveLength(0);
   });
 
@@ -325,7 +332,7 @@ describe("validateFiles", () => {
     const result = runValidation({
       "/tmp/registry.css":
         '@property --anything { syntax: "*"; inherits: false; initial-value: 0px; }',
-      "/tmp/usage.css": ':root { --anything: clamp(1rem, 2vw, 3rem); }',
+      "/tmp/usage.css": ":root { --anything: clamp(1rem, 2vw, 3rem); }",
     });
 
     expect(result.diagnostics).toHaveLength(0);
@@ -350,7 +357,7 @@ describe("validateFiles", () => {
   it("reports an incompatible fallback value for a registered var() usage", () => {
     const result = runValidation({
       "/tmp/tokens.css": SHARED_REGISTRY,
-      "/tmp/component.css": '.card { color: var(--brand-color, 10px); }',
+      "/tmp/component.css": ".card { color: var(--brand-color, 10px); }",
     });
 
     expect(result.diagnostics).toHaveLength(1);
@@ -381,7 +388,7 @@ describe("validateFiles", () => {
   it("skips assignment-site fallback validation for now", () => {
     const result = runValidation({
       "/tmp/tokens.css": SHARED_REGISTRY,
-      "/tmp/component.css": ':root { --space-md: var(--space-sm, red); }',
+      "/tmp/component.css": ":root { --space-md: var(--space-sm, red); }",
     });
 
     expect(result.diagnostics).toHaveLength(0);
@@ -392,7 +399,7 @@ describe("validateFiles", () => {
   it("skips nested fallback chains until fallback reachability is modeled", () => {
     const result = runValidation({
       "/tmp/tokens.css": SHARED_REGISTRY,
-      "/tmp/component.css": '.card { color: var(--brand-color, var(--accent-color, blue)); }',
+      "/tmp/component.css": ".card { color: var(--brand-color, var(--accent-color, blue)); }",
     });
 
     expect(result.diagnostics).toHaveLength(0);
@@ -589,10 +596,9 @@ describe("validateFiles", () => {
         '@property --space { syntax: "<length>"; inherits: false; initial-value: 0px; }',
     };
 
-    const result = validateFiles(
-      [{ path: "/tmp/main.css", css: cssByPath["/tmp/main.css"] }],
-      { resolveImport: createTestResolver(cssByPath) },
-    );
+    const result = validateFiles([{ path: "/tmp/main.css", css: cssByPath["/tmp/main.css"] }], {
+      resolveImport: createTestResolver(cssByPath),
+    });
 
     expect(result.diagnostics).toHaveLength(0);
     expect(result.registry).toHaveLength(1);
@@ -629,10 +635,9 @@ describe("validateFiles", () => {
         '@property --hero-url { syntax: "<url>"; inherits: false; initial-value: url("https://example.com/hero.png"); }',
     };
 
-    const result = validateFiles(
-      [{ path: "/tmp/main.css", css: cssByPath["/tmp/main.css"] }],
-      { resolveImport: createTestResolver(cssByPath) },
-    );
+    const result = validateFiles([{ path: "/tmp/main.css", css: cssByPath["/tmp/main.css"] }], {
+      resolveImport: createTestResolver(cssByPath),
+    });
 
     expect(result.diagnostics).toHaveLength(0);
     expect(result.registry[0]?.filePath).toBe("/tokens/root.css");
@@ -648,10 +653,9 @@ describe("validateFiles", () => {
       ].join("\n"),
     };
 
-    const result = validateFiles(
-      [{ path: "/tmp/main.css", css: cssByPath["/tmp/main.css"] }],
-      { resolveImport: createTestResolver(cssByPath) },
-    );
+    const result = validateFiles([{ path: "/tmp/main.css", css: cssByPath["/tmp/main.css"] }], {
+      resolveImport: createTestResolver(cssByPath),
+    });
 
     expect(result.diagnostics).toHaveLength(0);
     expect(result.validatedDeclarations).toBe(1);
@@ -668,10 +672,9 @@ describe("validateFiles", () => {
         '@property --surface-token { syntax: "<color>"; inherits: true; initial-value: white; }',
     };
 
-    const result = validateFiles(
-      [{ path: "/tmp/main.css", css: cssByPath["/tmp/main.css"] }],
-      { resolveImport: createTestResolver(cssByPath) },
-    );
+    const result = validateFiles([{ path: "/tmp/main.css", css: cssByPath["/tmp/main.css"] }], {
+      resolveImport: createTestResolver(cssByPath),
+    });
 
     expect(result.registry).toHaveLength(1);
     expect(result.registry[0]?.filePath).toBe("/tmp/main.css");
@@ -690,10 +693,9 @@ describe("validateFiles", () => {
       ].join("\n"),
     };
 
-    const result = validateFiles(
-      [{ path: "/tmp/main.css", css: cssByPath["/tmp/main.css"] }],
-      { resolveImport: createTestResolver(cssByPath) },
-    );
+    const result = validateFiles([{ path: "/tmp/main.css", css: cssByPath["/tmp/main.css"] }], {
+      resolveImport: createTestResolver(cssByPath),
+    });
 
     expect(result.diagnostics).toHaveLength(0);
     expect(result.registry).toHaveLength(1);
@@ -833,12 +835,12 @@ describe("validateFiles", () => {
     };
 
     expect(report.diagnostics).toHaveLength(21);
-    expect(report.diagnostics.some((diagnostic) => diagnostic.code === "invalid-property-registration")).toBe(
-      true,
-    );
-    expect(report.diagnostics.some((diagnostic) => diagnostic.expectedProperty === "inline-size")).toBe(
-      true,
-    );
+    expect(
+      report.diagnostics.some((diagnostic) => diagnostic.code === "invalid-property-registration"),
+    ).toBe(true);
+    expect(
+      report.diagnostics.some((diagnostic) => diagnostic.expectedProperty === "inline-size"),
+    ).toBe(true);
     expect(
       report.diagnostics.some(
         (diagnostic) =>
@@ -881,6 +883,89 @@ describe("validateFiles", () => {
     expect(report.validatedDeclarations).toBe(32);
   });
 
+  it("documents key CLI options in --help output", { timeout: 120000 }, () => {
+    const repoRoot = path.resolve(import.meta.dirname, "../../..");
+    const cliResult = spawnSync("node", ["packages/cli/dist/cli.js", "--help"], {
+      cwd: repoRoot,
+      encoding: "utf8",
+    });
+
+    expect(cliResult.status).toBe(0);
+    expect(cliResult.stdout).toContain("--format");
+    expect(cliResult.stdout).toContain("--registry");
+    expect(cliResult.stdout).toContain("--registry-only");
+  });
+
+  it("keeps human CLI output stable for a clean validation run", { timeout: 120000 }, () => {
+    const repoRoot = path.resolve(import.meta.dirname, "../../..");
+    const fixtureDir = mkdtempSync(path.join(tmpdir(), "css-property-validator-"));
+    const validationPath = path.join(fixtureDir, "component.css");
+    const registryPath = path.join(fixtureDir, "tokens.css");
+
+    writeFileSync(validationPath, ".card { inline-size: var(--space); }\n");
+    writeFileSync(
+      registryPath,
+      '@property --space { syntax: "<length>"; inherits: false; initial-value: 0px; }\n',
+    );
+
+    const cliResult = spawnSync(
+      "node",
+      ["packages/cli/dist/cli.js", validationPath, "--registry", registryPath],
+      {
+        cwd: repoRoot,
+        encoding: "utf8",
+      },
+    );
+
+    expect(cliResult.status).toBe(0);
+    expect(cliResult.stdout.trim()).toBe("No validation issues found.");
+  });
+
+  it("keeps human CLI output stable for a diagnostic", { timeout: 120000 }, () => {
+    const repoRoot = path.resolve(import.meta.dirname, "../../..");
+    const fixtureDir = mkdtempSync(path.join(tmpdir(), "css-property-validator-"));
+    const validationPath = path.join(fixtureDir, "component.css");
+    const registryPath = path.join(fixtureDir, "tokens.css");
+
+    writeFileSync(validationPath, ".card { inline-size: var(--brand-color); }\n");
+    writeFileSync(
+      registryPath,
+      '@property --brand-color { syntax: "<color>"; inherits: true; initial-value: transparent; }\n',
+    );
+
+    const cliResult = spawnSync(
+      "node",
+      ["packages/cli/dist/cli.js", validationPath, "--registry", registryPath],
+      {
+        cwd: repoRoot,
+        encoding: "utf8",
+      },
+    );
+
+    expect(cliResult.status).toBe(1);
+    expect(cliResult.stdout).toContain(`${validationPath}:1:22 incompatible-var-usage`);
+    expect(cliResult.stdout).toContain(
+      'Registered property --brand-color uses syntax "<color>" which is incompatible with inline-size at this var() usage.',
+    );
+    expect(cliResult.stdout).toContain("inline-size:var(--brand-color)");
+  });
+
+  it("builds the public runtime and type exports", { timeout: 120000 }, async () => {
+    const repoRoot = path.resolve(import.meta.dirname, "../../..");
+    const builtCore = await import(
+      pathToFileURL(path.join(repoRoot, "packages/core/dist/index.js")).href
+    );
+    const declarationFile = readFileSync(
+      path.join(repoRoot, "packages/core/dist/index.d.ts"),
+      "utf8",
+    );
+
+    expect(typeof builtCore.validateFiles).toBe("function");
+    expect(declarationFile).toContain("ValidateFilesOptions");
+    expect(declarationFile).toContain("ValidationDiagnostic");
+    expect(declarationFile).toContain("ValidationResult");
+  });
+
   it("supports registry-only CLI inputs", { timeout: 120000 }, () => {
     const repoRoot = path.resolve(import.meta.dirname, "../../..");
     const fixtureDir = mkdtempSync(path.join(tmpdir(), "css-property-validator-"));
@@ -895,14 +980,7 @@ describe("validateFiles", () => {
 
     const cliResult = spawnSync(
       "node",
-      [
-        "packages/cli/dist/cli.js",
-        validationPath,
-        "--registry",
-        registryPath,
-        "--format",
-        "json",
-      ],
+      ["packages/cli/dist/cli.js", validationPath, "--registry", registryPath, "--format", "json"],
       {
         cwd: repoRoot,
         encoding: "utf8",
@@ -935,13 +1013,7 @@ describe("validateFiles", () => {
 
     const cliResult = spawnSync(
       "node",
-      [
-        "packages/cli/dist/cli.js",
-        registryPath,
-        "--registry-only",
-        "--format",
-        "json",
-      ],
+      ["packages/cli/dist/cli.js", registryPath, "--registry-only", "--format", "json"],
       {
         cwd: repoRoot,
         encoding: "utf8",
@@ -962,86 +1034,88 @@ describe("validateFiles", () => {
     expect(report.validatedDeclarations).toBe(0);
   });
 
-  it("reports invalid registrations in explicit registration-only CLI mode", { timeout: 120000 }, () => {
-    const repoRoot = path.resolve(import.meta.dirname, "../../..");
-    const fixtureDir = mkdtempSync(path.join(tmpdir(), "css-property-validator-"));
-    const registryPath = path.join(fixtureDir, "tokens.css");
+  it(
+    "reports invalid registrations in explicit registration-only CLI mode",
+    { timeout: 120000 },
+    () => {
+      const repoRoot = path.resolve(import.meta.dirname, "../../..");
+      const fixtureDir = mkdtempSync(path.join(tmpdir(), "css-property-validator-"));
+      const registryPath = path.join(fixtureDir, "tokens.css");
 
-    writeFileSync(
-      registryPath,
-      '@property --bad { syntax: "<color"; inherits: true; initial-value: transparent; }\n',
-    );
-
-    const cliResult = spawnSync(
-      "node",
-      [
-        "packages/cli/dist/cli.js",
+      writeFileSync(
         registryPath,
-        "--registry-only",
-        "--format",
-        "json",
-      ],
-      {
+        '@property --bad { syntax: "<color"; inherits: true; initial-value: transparent; }\n',
+      );
+
+      const cliResult = spawnSync(
+        "node",
+        ["packages/cli/dist/cli.js", registryPath, "--registry-only", "--format", "json"],
+        {
+          cwd: repoRoot,
+          encoding: "utf8",
+        },
+      );
+
+      expect(cliResult.status).toBe(1);
+
+      const report = JSON.parse(cliResult.stdout) as {
+        diagnostics: Array<{ code: string; filePath: string }>;
+        validatedDeclarations: number;
+      };
+
+      expect(report.diagnostics).toHaveLength(1);
+      expect(report.diagnostics[0]?.code).toBe("invalid-property-registration");
+      expect(report.diagnostics[0]?.filePath).toBe(registryPath);
+      expect(report.validatedDeclarations).toBe(0);
+    },
+  );
+
+  it(
+    "returns exit code 2 when registration-only patterns do not match",
+    { timeout: 120000 },
+    () => {
+      const repoRoot = path.resolve(import.meta.dirname, "../../..");
+      const fixtureDir = mkdtempSync(path.join(tmpdir(), "css-property-validator-"));
+
+      const cliResult = spawnSync(
+        "node",
+        [
+          "packages/cli/dist/cli.js",
+          path.join(fixtureDir, "missing-*.css"),
+          "--registry-only",
+          "--format",
+          "json",
+        ],
+        {
+          cwd: repoRoot,
+          encoding: "utf8",
+        },
+      );
+
+      expect(cliResult.status).toBe(2);
+      expect(cliResult.stderr).toContain(
+        "No CSS files matched the registration-only patterns. Pass one or more CSS files or glob patterns to --registry-only.",
+      );
+    },
+  );
+
+  it(
+    "returns the normal validation-input error when no validation patterns are provided",
+    { timeout: 120000 },
+    () => {
+      const repoRoot = path.resolve(import.meta.dirname, "../../..");
+
+      const cliResult = spawnSync("node", ["packages/cli/dist/cli.js", "--format", "json"], {
         cwd: repoRoot,
         encoding: "utf8",
-      },
-    );
+      });
 
-    expect(cliResult.status).toBe(1);
-
-    const report = JSON.parse(cliResult.stdout) as {
-      diagnostics: Array<{ code: string; filePath: string }>;
-      validatedDeclarations: number;
-    };
-
-    expect(report.diagnostics).toHaveLength(1);
-    expect(report.diagnostics[0]?.code).toBe("invalid-property-registration");
-    expect(report.diagnostics[0]?.filePath).toBe(registryPath);
-    expect(report.validatedDeclarations).toBe(0);
-  });
-
-  it("returns exit code 2 when registration-only patterns do not match", { timeout: 120000 }, () => {
-    const repoRoot = path.resolve(import.meta.dirname, "../../..");
-    const fixtureDir = mkdtempSync(path.join(tmpdir(), "css-property-validator-"));
-
-    const cliResult = spawnSync(
-      "node",
-      [
-        "packages/cli/dist/cli.js",
-        path.join(fixtureDir, "missing-*.css"),
-        "--registry-only",
-        "--format",
-        "json",
-      ],
-      {
-        cwd: repoRoot,
-        encoding: "utf8",
-      },
-    );
-
-    expect(cliResult.status).toBe(2);
-    expect(cliResult.stderr).toContain(
-      "No CSS files matched the registration-only patterns. Pass one or more CSS files or glob patterns to --registry-only.",
-    );
-  });
-
-  it("returns the normal validation-input error when no validation patterns are provided", { timeout: 120000 }, () => {
-    const repoRoot = path.resolve(import.meta.dirname, "../../..");
-
-    const cliResult = spawnSync(
-      "node",
-      ["packages/cli/dist/cli.js", "--format", "json"],
-      {
-        cwd: repoRoot,
-        encoding: "utf8",
-      },
-    );
-
-    expect(cliResult.status).toBe(2);
-    expect(cliResult.stderr).toContain(
-      "No CSS files matched the validation patterns. Files passed via --registry are registration sources only.",
-    );
-  });
+      expect(cliResult.status).toBe(2);
+      expect(cliResult.stderr).toContain(
+        "No CSS files matched the validation patterns. Files passed via --registry are registration sources only.",
+      );
+    },
+  );
 
   it("includes registry-only diagnostics in CLI json output", { timeout: 120000 }, () => {
     const repoRoot = path.resolve(import.meta.dirname, "../../..");
@@ -1057,14 +1131,7 @@ describe("validateFiles", () => {
 
     const cliResult = spawnSync(
       "node",
-      [
-        "packages/cli/dist/cli.js",
-        validationPath,
-        "--registry",
-        registryPath,
-        "--format",
-        "json",
-      ],
+      ["packages/cli/dist/cli.js", validationPath, "--registry", registryPath, "--format", "json"],
       {
         cwd: repoRoot,
         encoding: "utf8",
@@ -1090,7 +1157,10 @@ describe("validateFiles", () => {
     const validationPath = path.join(fixtureDir, "component.css");
     const registryPath = path.join(fixtureDir, "tokens.css");
 
-    writeFileSync(validationPath, '@import "./tokens.css";\n.card { inline-size: var(--space); }\n');
+    writeFileSync(
+      validationPath,
+      '@import "./tokens.css";\n.card { inline-size: var(--space); }\n',
+    );
     writeFileSync(
       registryPath,
       '@property --space { syntax: "<length>"; inherits: false; initial-value: 0px; }\n',

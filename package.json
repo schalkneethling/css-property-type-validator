@@ -17,6 +17,10 @@
   "type": "module",
   "scripts": {
     "build": "pnpm -r --if-present run build",
+    "check": "vp check && pnpm run typecheck && pnpm test && pnpm run build",
+    "format": "vp check --fix",
+    "format:check": "vp check --no-lint",
+    "lint": "vp check --no-fmt",
     "test": "vp test run",
     "typecheck": "tsc -b tsconfig.json",
     "check:supported-syntax-names": "node scripts/check-supported-syntax-names.mjs",

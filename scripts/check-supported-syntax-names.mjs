@@ -17,7 +17,7 @@ function extractSupportedNames(documentText) {
 
   while (currentNode.length > 0 && currentNode.attr("id") !== "multipliers") {
     if (currentNode.is("dl")) {
-      currentNode.find('dt[data-md]').each((_, element) => {
+      currentNode.find("dt[data-md]").each((_, element) => {
         const text = $(element).text().trim();
         const quotedNameMatch = text.match(/^"(<[\w-]+>)"$/);
 
@@ -71,6 +71,6 @@ async function main() {
 }
 
 main().catch((error) => {
-  process.stderr.write(`${(error instanceof Error ? error.message : String(error))}\n`);
+  process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
   process.exit(1);
 });

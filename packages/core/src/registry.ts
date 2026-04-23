@@ -178,8 +178,7 @@ function getComputationalIndependenceFailureReason(value: unknown): string | nul
         const unit = String(node.unit ?? "").toLowerCase();
 
         if (!COMPUTATION_INDEPENDENT_DIMENSION_UNITS.includes(unit)) {
-          failure =
-            `uses the relative or context-dependent unit "${node.unit}", which makes the registration invalid because initial-value must be computationally independent`;
+          failure = `uses the relative or context-dependent unit "${node.unit}", which makes the registration invalid because initial-value must be computationally independent`;
         }
 
         return;
@@ -226,9 +225,9 @@ function validateInitialValueAgainstSyntax(
 
 function getStringDescriptor(declaration: CssDeclarationNode | undefined): string | undefined {
   const valueChildren = declaration?.value?.children;
-  const firstNode = (valueChildren
+  const firstNode = valueChildren
     ? (Array.from(valueChildren)[0] as CssStringNode | undefined)
-    : undefined);
+    : undefined;
 
   if (firstNode?.type === "String") {
     return firstNode.value;
@@ -278,9 +277,7 @@ function processPropertyRule(
   diagnostics: ValidationDiagnostic[],
   registry: Map<string, RegisteredProperty>,
 ): void {
-  const propertyName = (
-    Array.from(node.prelude?.children ?? []) as CssPropertyNameNode[]
-  )[0]?.name;
+  const propertyName = (Array.from(node.prelude?.children ?? []) as CssPropertyNameNode[])[0]?.name;
 
   if (!propertyName) {
     diagnostics.push({
