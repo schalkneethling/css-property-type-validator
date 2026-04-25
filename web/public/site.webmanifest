@@ -1,6 +1,6 @@
 {
-  "name": "CSS Property Validator",
-  "short_name": "CSS Property Validator",
+  "name": "CSS Property Type Validator",
+  "short_name": "CSS Validator",
   "icons": [
     {
       "src": "/web-app-manifest-192x192.png",
