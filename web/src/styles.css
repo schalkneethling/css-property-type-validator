@@ -1,0 +1,882 @@
+@property --color-accent {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --color-accent-strong {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --color-body {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --color-editor {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --color-editor-gutter {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --color-editor-output {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --color-editor-text {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --color-focus {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --color-header {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --color-header-border {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --color-header-control {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --color-header-control-border {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --color-header-rgb {
+  syntax: "*";
+  inherits: true;
+  initial-value: 0 0 0;
+}
+
+@property --color-heading {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --color-link {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --color-link-hover {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --color-link-underline {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --color-page {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --color-page-grid-block {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --color-page-grid-inline {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --color-panel {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --color-panel-border {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --color-panel-divider {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --color-panel-kicker {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --color-panel-rule {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --color-pill-border {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --color-success {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --color-success-border {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --color-success-ink {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --color-success-muted {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --color-text {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --color-toggle-text {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --color-ui-muted {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --color-ui-muted-strong {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --color-ui-subtle {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --font-body {
+  syntax: "*";
+  inherits: true;
+  initial-value: 400 1px / 1 system-ui;
+}
+
+@property --font-caption {
+  syntax: "*";
+  inherits: true;
+  initial-value: 600 1px / 1 system-ui;
+}
+
+@property --font-caption-strong {
+  syntax: "*";
+  inherits: true;
+  initial-value: 800 1px / 1 system-ui;
+}
+
+@property --font-chip {
+  syntax: "*";
+  inherits: true;
+  initial-value: 400 1px / 1 monospace;
+}
+
+@property --font-control {
+  syntax: "*";
+  inherits: true;
+  initial-value: 600 1px / 1 system-ui;
+}
+
+@property --font-editor {
+  syntax: "*";
+  inherits: true;
+  initial-value: 400 1px / 1 monospace;
+}
+
+@property --font-family-body {
+  syntax: "*";
+  inherits: true;
+  initial-value: system-ui;
+}
+
+@property --font-family-display {
+  syntax: "*";
+  inherits: true;
+  initial-value: serif;
+}
+
+@property --font-family-mono {
+  syntax: "*";
+  inherits: true;
+  initial-value: monospace;
+}
+
+@property --font-heading-page {
+  syntax: "*";
+  inherits: true;
+  initial-value: 700 1px / 1 serif;
+}
+
+@property --font-heading-panel {
+  syntax: "*";
+  inherits: true;
+  initial-value: 700 1px / 1 serif;
+}
+
+@property --font-link {
+  syntax: "*";
+  inherits: true;
+  initial-value: 700 1px / 1 system-ui;
+}
+
+@property --font-size-body {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 15.68px;
+}
+
+@property --font-size-caption {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 11.52px;
+}
+
+@property --font-size-chip {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 12.48px;
+}
+
+@property --font-size-control {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 13.12px;
+}
+
+@property --font-size-editor {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 14.4px;
+}
+
+@property --font-size-heading-page {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 32px;
+}
+
+@property --font-size-heading-panel {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 18.4px;
+}
+
+@property --font-size-stat {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 23.2px;
+}
+
+@property --font-size-success {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 15.2px;
+}
+
+@property --font-size-success-detail {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 14.08px;
+}
+
+@property --font-stat {
+  syntax: "*";
+  inherits: true;
+  initial-value: 700 1px / 1 serif;
+}
+
+@property --font-success {
+  syntax: "*";
+  inherits: true;
+  initial-value: 700 1px / 1 system-ui;
+}
+
+@property --font-success-detail {
+  syntax: "*";
+  inherits: true;
+  initial-value: 400 1px / 1 system-ui;
+}
+
+@property --line-height-body {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}
+
+@property --line-height-editor {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}
+
+@property --line-height-tight {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}
+
+@property --line-height-title {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}
+
+:root {
+  --color-accent: #f3b56d;
+  --color-accent-strong: #f0b86b;
+  --color-body: #d8d2c2;
+  --color-editor: #fffaf0;
+  --color-editor-gutter: #eee9dc;
+  --color-editor-output: #fdf8ed;
+  --color-editor-text: #212821;
+  --color-focus: #69b7bc;
+  --color-header: #1f251f;
+  --color-header-border: rgb(248 243 231 / 0.18);
+  --color-header-control: rgb(248 243 231 / 0.08);
+  --color-header-control-border: rgb(248 243 231 / 0.25);
+  --color-header-rgb: 31 37 31;
+  --color-heading: #202820;
+  --color-link: #0b5f68;
+  --color-link-hover: #073f45;
+  --color-link-underline: rgb(11 95 104 / 0.35);
+  --color-page: #e7e3d8;
+  --color-page-grid-block: rgb(31 37 31 / 0.05);
+  --color-page-grid-inline: rgb(31 37 31 / 0.06);
+  --color-panel: #f8f3e7;
+  --color-panel-border: rgb(31 37 31 / 0.2);
+  --color-panel-divider: rgb(31 37 31 / 0.16);
+  --color-panel-kicker: #a35622;
+  --color-panel-rule: rgb(31 37 31 / 0.12);
+  --color-pill-border: rgb(31 37 31 / 0.14);
+  --color-success: #dcebc9;
+  --color-success-border: rgb(22 57 34 / 0.18);
+  --color-success-ink: #163922;
+  --color-success-muted: #35543d;
+  --color-text: #1f251f;
+  --color-toggle-text: #4f594e;
+  --color-ui-muted: #697267;
+  --color-ui-muted-strong: #384238;
+  --color-ui-subtle: #788073;
+
+  --font-body: 400 var(--font-size-body) / var(--line-height-body) var(--font-family-body);
+  --font-caption: 600 var(--font-size-caption) / var(--line-height-tight) var(--font-family-body);
+  --font-caption-strong: 800 var(--font-size-caption) / var(--line-height-tight)
+    var(--font-family-body);
+  --font-chip: 400 var(--font-size-chip) / var(--line-height-body) var(--font-family-mono);
+  --font-control: 600 var(--font-size-control) / var(--line-height-body) var(--font-family-body);
+  --font-editor: 400 var(--font-size-editor) / var(--line-height-editor) var(--font-family-mono);
+  --font-family-body: "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
+  --font-family-display: "Georgia", "Times New Roman", serif;
+  --font-family-mono: "SFMono-Regular", "Consolas", "Liberation Mono", monospace;
+  --font-heading-page: 700 var(--font-size-heading-page) / var(--line-height-title)
+    var(--font-family-display);
+  --font-heading-panel: 700 var(--font-size-heading-panel) / var(--line-height-tight)
+    var(--font-family-display);
+  --font-link: 700 var(--font-size-body) / var(--line-height-body) var(--font-family-body);
+  --font-size-body: 0.98rem;
+  --font-size-caption: 0.72rem;
+  --font-size-chip: 0.78rem;
+  --font-size-control: 0.82rem;
+  --font-size-editor: 0.9rem;
+  --font-size-heading-page: clamp(2rem, 5vw, 4.5rem);
+  --font-size-heading-panel: clamp(1.15rem, 2vw, 1.65rem);
+  --font-size-stat: 1.45rem;
+  --font-size-success: 0.95rem;
+  --font-size-success-detail: 0.88rem;
+  --font-stat: 700 var(--font-size-stat) / var(--line-height-tight) var(--font-family-display);
+  --font-success: 700 var(--font-size-success) / var(--line-height-body) var(--font-family-body);
+  --font-success-detail: 400 var(--font-size-success-detail) / var(--line-height-body)
+    var(--font-family-body);
+  --line-height-body: 1.5;
+  --line-height-editor: 1.55;
+  --line-height-tight: 1;
+  --line-height-title: 0.92;
+
+  background: var(--color-page);
+  color: var(--color-text);
+  font: var(--font-body);
+  font-synthesis: none;
+  /* stylelint-disable-next-line value-keyword-case */
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-inline-size: 20rem;
+  min-block-size: 100svb;
+  margin: 0;
+  background:
+    linear-gradient(90deg, var(--color-page-grid-inline) 0.0625rem, transparent 0.0625rem),
+    linear-gradient(0deg, var(--color-page-grid-block) 0.0625rem, transparent 0.0625rem),
+    var(--color-page);
+  background-size: 1.5rem 1.5rem;
+}
+
+css-validator-controller {
+  display: block;
+  min-block-size: 100svb;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.visually-hidden {
+  position: absolute;
+  inline-size: 0.0625rem;
+  block-size: 0.0625rem;
+  border: 0;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+a {
+  color: var(--color-link);
+  font: var(--font-link);
+  text-decoration-color: var(--color-link-underline);
+  text-underline-offset: 0.2em;
+}
+
+a:hover {
+  color: var(--color-link-hover);
+}
+
+.app-shell {
+  display: grid;
+  min-block-size: 0;
+  padding-block: clamp(1rem, 2vw, 1.5rem);
+  padding-inline: clamp(1rem, 2vw, 1.5rem);
+}
+
+.app-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 1.5rem;
+  margin-block: clamp(1rem, 2vw, 1.5rem) 0;
+  margin-inline: clamp(1rem, 2vw, 1.5rem);
+  padding-block: clamp(1rem, 2vw, 1.5rem);
+  padding-inline: clamp(1rem, 2vw, 1.5rem);
+  color: var(--color-panel);
+  background: var(--color-header);
+  border: 0.0625rem solid var(--color-header-border);
+  box-shadow: 0 1.125rem 3.75rem rgb(var(--color-header-rgb) / 0.24);
+}
+
+.eyebrow,
+.panel-kicker {
+  margin-block: 0 0.35rem;
+  margin-inline: 0;
+  color: var(--color-accent-strong);
+  font: var(--font-caption);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.panel-kicker {
+  color: var(--color-panel-kicker);
+  font: var(--font-caption);
+}
+
+h1,
+h2 {
+  margin: 0;
+  letter-spacing: 0;
+}
+
+h1 {
+  max-inline-size: 16ch;
+  font: var(--font-heading-page);
+}
+
+h2 {
+  color: var(--color-heading);
+  font: var(--font-heading-panel);
+}
+
+.overview {
+  max-inline-size: 68ch;
+  margin-block: 0.85rem 0;
+  margin-inline: 0;
+  color: var(--color-body);
+  font: var(--font-body);
+}
+
+.app-header a {
+  color: var(--color-accent);
+}
+
+.header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}
+
+.file-button,
+.primary-action {
+  display: inline-grid;
+  min-block-size: 2.6rem;
+  place-items: center;
+  border: 0.0625rem solid var(--color-header-control-border);
+  border-radius: 0.25rem;
+  padding-block: 0;
+  padding-inline: 1rem;
+  font: var(--font-control);
+  letter-spacing: 0.01em;
+}
+
+.file-button {
+  position: relative;
+  overflow: hidden;
+  color: var(--color-panel);
+  background: var(--color-header-control);
+}
+
+.file-button input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.primary-action {
+  color: var(--color-header);
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.file-button:hover,
+.primary-action:hover {
+  translate: 0 -0.0625rem;
+}
+
+.file-button:focus-within,
+.primary-action:focus-visible,
+.format-toggle input:focus-visible + span {
+  outline: 0.1875rem solid var(--color-focus);
+  outline-offset: 0.1875rem;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  gap: 1rem;
+  min-block-size: 0;
+}
+
+.panel {
+  display: grid;
+  grid-template-rows: auto minmax(20rem, 1fr) auto;
+  min-inline-size: 0;
+  min-block-size: 0;
+  background: var(--color-panel);
+  border: 0.0625rem solid var(--color-panel-border);
+  box-shadow: 0 0.625rem 1.875rem rgb(var(--color-header-rgb) / 0.12);
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-block-size: 5.75rem;
+  padding-block: 1rem;
+  padding-inline: 1rem;
+  border-block-end: 0.0625rem solid var(--color-panel-divider);
+}
+
+.input-panel {
+  grid-template-rows: auto auto minmax(20rem, 1fr);
+}
+
+.validation-status {
+  min-block-size: 0;
+}
+
+.file-chip {
+  overflow: hidden;
+  max-inline-size: min(22rem, 45vw);
+  padding-block: 0.3rem;
+  padding-inline: 0.55rem;
+  color: var(--color-ui-muted-strong);
+  background: var(--color-page);
+  border: 0.0625rem solid var(--color-pill-border);
+  border-radius: 62.4375rem;
+  font: var(--font-chip);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.format-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin: 0;
+  padding-block: 0.25rem;
+  padding-inline: 0.25rem;
+  background: var(--color-page);
+  border: 0.0625rem solid var(--color-header-border);
+  border-radius: 0.375rem;
+}
+
+.format-toggle legend {
+  position: absolute;
+  inline-size: 0.0625rem;
+  block-size: 0.0625rem;
+  border: 0;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.format-toggle label {
+  display: block;
+  cursor: pointer;
+}
+
+.format-toggle input {
+  position: absolute;
+  opacity: 0;
+}
+
+.format-toggle span {
+  display: block;
+  border-radius: 0.25rem;
+  padding-block: 0.35rem;
+  padding-inline: 0.65rem;
+  color: var(--color-toggle-text);
+  cursor: pointer;
+  font: var(--font-control);
+  letter-spacing: 0.01em;
+}
+
+.format-toggle input:checked + span {
+  color: var(--color-panel);
+  background: var(--color-heading);
+}
+
+.editor {
+  display: block;
+  min-inline-size: 0;
+  min-block-size: 0;
+}
+
+.code-editor-host,
+.cm-editor {
+  block-size: 100%;
+}
+
+.cm-editor {
+  color: var(--color-editor-text);
+  background: var(--color-editor);
+  font: var(--font-editor);
+}
+
+.cm-editor.cm-focused {
+  outline: 0.1875rem solid var(--color-focus);
+  outline-offset: -0.1875rem;
+}
+
+.cm-scroller {
+  line-height: var(--line-height-editor);
+}
+
+.cm-content,
+.cm-gutters {
+  min-block-size: 100%;
+}
+
+.cm-gutters {
+  color: var(--color-ui-subtle);
+  background: var(--color-editor-gutter);
+  border-inline-end: 0.0625rem solid var(--color-panel-rule);
+}
+
+.output-editor .cm-editor {
+  background: var(--color-editor-output);
+}
+
+.success-message {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0;
+  padding-block: 0.85rem;
+  padding-inline: 1rem;
+  color: var(--color-success-ink);
+  background: var(--color-success);
+  border-block-end: 0.0625rem solid var(--color-success-border);
+}
+
+.success-message strong {
+  font: var(--font-success);
+}
+
+.success-message span {
+  color: var(--color-success-muted);
+  font: var(--font-success-detail);
+}
+
+.result-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+  border-block-start: 0.0625rem solid var(--color-panel-divider);
+}
+
+.result-stats div {
+  min-inline-size: 0;
+  padding-block: 0.7rem 0.75rem;
+  padding-inline: 1rem;
+  border-inline-end: 0.0625rem solid var(--color-panel-rule);
+}
+
+.result-stats div:last-child {
+  border-inline-end: 0;
+}
+
+.result-stats dt {
+  color: var(--color-ui-muted);
+  font: var(--font-caption-strong);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.result-stats dd {
+  margin-block: 0.1rem 0;
+  margin-inline: 0;
+  color: var(--color-heading);
+  font: var(--font-stat);
+}
+
+@media (width <= 56.25rem) {
+  .app-shell {
+    min-block-size: auto;
+  }
+
+  .app-header,
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .header-actions {
+    justify-content: flex-start;
+  }
+
+  .panel {
+    min-block-size: 32rem;
+  }
+}
+
+@media (width <= 38.75rem) {
+  .app-shell {
+    padding-block: 0.7rem;
+    padding-inline: 0.7rem;
+  }
+
+  .app-header,
+  .panel-header {
+    padding-block: 0.85rem;
+    padding-inline: 0.85rem;
+  }
+
+  .output-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .format-toggle {
+    inline-size: 100%;
+  }
+
+  .format-toggle label {
+    flex: 1;
+  }
+
+  .format-toggle span {
+    text-align: center;
+  }
+
+  .result-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .success-message {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+}

@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Validate CSS custom property registrations and var() usages in the browser."
+    />
+    <title>CSS Property Type Validator</title>
+    <link rel="stylesheet" href="/src/styles.css" type="text/css" media="screen" />
+  </head>
+  <body>
+    <css-validator-controller>
+      <header class="app-header">
+        <div>
+          <p class="eyebrow">Browser validator</p>
+          <h1>CSS Property Type Validator</h1>
+          <p class="overview">
+            Paste or open a CSS file, then validate typed custom properties and var() usage locally
+            in your browser.
+            <a href="https://github.com/schalkneethling/css-property-type-validator">View repo</a>
+          </p>
+        </div>
+        <section class="header-actions" aria-labelledby="header-actions-title">
+          <h2 class="visually-hidden" id="header-actions-title">Validation actions</h2>
+          <label class="file-button" for="css-file-input">
+            <span>Open CSS</span>
+            <input id="css-file-input" class="js-file-input" type="file" accept=".css,text/css" />
+          </label>
+          <button class="primary-action js-validate-button" type="button">Validate</button>
+        </section>
+      </header>
+
+      <main class="app-shell">
+        <article class="workspace" aria-labelledby="workspace-title">
+          <h2 class="visually-hidden" id="workspace-title">Validator workspace</h2>
+          <section class="panel input-panel" aria-labelledby="input-title">
+            <div class="panel-header">
+              <div>
+                <p class="panel-kicker">Input</p>
+                <h2 id="input-title">CSS source</h2>
+              </div>
+              <span class="file-chip js-file-name">pasted.css</span>
+            </div>
+            <div class="validation-status js-validation-status" hidden></div>
+            <validator-code-editor
+              class="editor input-editor js-input-editor"
+              label="CSS input"
+              language="css"
+            ></validator-code-editor>
+          </section>
+
+          <section class="panel output-panel" aria-labelledby="output-title">
+            <div class="panel-header output-header">
+              <div>
+                <p class="panel-kicker">Output</p>
+                <h2 id="output-title">Validation result</h2>
+              </div>
+              <fieldset class="format-toggle">
+                <legend>Output format</legend>
+                <label for="output-format-human">
+                  <input
+                    id="output-format-human"
+                    class="js-output-format"
+                    type="radio"
+                    name="output-format"
+                    value="human"
+                    checked
+                  />
+                  <span>Human</span>
+                </label>
+                <label for="output-format-json">
+                  <input
+                    id="output-format-json"
+                    class="js-output-format"
+                    type="radio"
+                    name="output-format"
+                    value="json"
+                  />
+                  <span>JSON</span>
+                </label>
+              </fieldset>
+            </div>
+
+            <validator-code-editor
+              class="editor output-editor js-output-editor"
+              label="Validation output"
+              language="text"
+              readonly
+            ></validator-code-editor>
+
+            <section aria-labelledby="validation-summary-title">
+              <h3 class="visually-hidden" id="validation-summary-title">Validation summary</h3>
+              <dl class="result-stats" aria-live="polite">
+                <div>
+                  <dt>Diagnostics</dt>
+                  <dd class="js-stat-diagnostics">—</dd>
+                </div>
+                <div>
+                  <dt>Registered</dt>
+                  <dd class="js-stat-registered">—</dd>
+                </div>
+                <div>
+                  <dt>Validated</dt>
+                  <dd class="js-stat-validated">—</dd>
+                </div>
+                <div>
+                  <dt>Skipped</dt>
+                  <dd class="js-stat-skipped">—</dd>
+                </div>
+              </dl>
+            </section>
+          </section>
+        </article>
+      </main>
+    </css-validator-controller>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

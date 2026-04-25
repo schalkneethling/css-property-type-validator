@@ -1,9 +1,6 @@
-import type {
-  ValidationDiagnostic,
-  ValidationResult,
-} from "@schalkneethling/css-property-type-validator-core";
+import type { ValidationDiagnostic, ValidationResult } from "./types.js";
 
-type OutputFormat = "human" | "json";
+export type OutputFormat = "human" | "json";
 
 function formatLocation(diagnostic: ValidationDiagnostic): string {
   if (!diagnostic.loc) {

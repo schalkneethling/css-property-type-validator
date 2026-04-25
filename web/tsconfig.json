@@ -1,0 +1,21 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "ignoreDeprecations": "6.0",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "noEmit": true,
+    "paths": {
+      "@schalkneethling/css-property-type-validator-core": ["../packages/core/src/index.ts"]
+    },
+    "types": ["vite/client"]
+  },
+  "references": [
+    {
+      "path": "../packages/core"
+    }
+  ],
+  "include": ["src", "vite.config.ts", "playwright.config.ts", "tests"]
+}

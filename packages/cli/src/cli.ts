@@ -7,15 +7,16 @@ import process from "node:process";
 
 import { Command } from "commander";
 
-import { validateFiles } from "@schalkneethling/css-property-type-validator-core";
-import { formatValidationResult } from "./formatter.js";
+import {
+  formatValidationResult,
+  validateFiles,
+  type OutputFormat,
+} from "@schalkneethling/css-property-type-validator-core";
 
 import type {
   ResolveImport,
   ValidationInput,
 } from "@schalkneethling/css-property-type-validator-core";
-
-type OutputFormat = "human" | "json";
 
 async function loadInputs(patterns: string[]): Promise<ValidationInput[]> {
   const filePaths = new Set<string>();
