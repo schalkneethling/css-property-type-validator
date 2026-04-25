@@ -26,6 +26,21 @@ const SIMPLE_TYPE_SAMPLES: Record<string, string[]> = {
   url: ['url("https://example.com/example.png")'],
 };
 
+interface DefinitionSyntaxNode {
+  combinator?: string;
+  comma?: boolean;
+  min?: number;
+  name?: string;
+  term?: DefinitionSyntaxNode;
+  terms?: DefinitionSyntaxNode[];
+  type?: string;
+  value?: string;
+}
+
+interface DefinitionSyntaxParser {
+  parse: (syntax: string) => unknown;
+}
+
 function dedupe(values: string[]): string[] {
   return [...new Set(values)];
 }
@@ -48,7 +63,7 @@ function fromFunctionName(name: string): string[] {
   return [];
 }
 
-function fromNode(node: any): string[] {
+function fromNode(node: DefinitionSyntaxNode | null | undefined): string[] {
   if (!node) {
     return [];
   }
@@ -81,16 +96,16 @@ function fromNode(node: any): string[] {
     }
 
     case "Keyword":
-      return [node.name];
+      return node.name ? [node.name] : [];
 
     case "Type":
-      return SIMPLE_TYPE_SAMPLES[node.name] ?? fromFunctionName(node.name);
+      return node.name ? (SIMPLE_TYPE_SAMPLES[node.name] ?? fromFunctionName(node.name)) : [];
 
     case "Property":
-      return SIMPLE_TYPE_SAMPLES[node.name] ?? [];
+      return node.name ? (SIMPLE_TYPE_SAMPLES[node.name] ?? []) : [];
 
     case "Function":
-      return fromFunctionName(node.name);
+      return node.name ? fromFunctionName(node.name) : [];
 
     case "String":
       return [`"${node.value ?? "value"}"`];
@@ -100,11 +115,11 @@ function fromNode(node: any): string[] {
   }
 }
 
-export function buildRepresentativeSamples(syntax: string, definitionSyntax: any): string[] {
+export function buildRepresentativeSamples(syntax: string, definitionSyntax: unknown): string[] {
   if (syntax === "*") {
     return ["0"];
   }
 
-  const syntaxAst = definitionSyntax.parse(syntax);
-  return dedupe(fromNode(syntaxAst)).slice(0, 8);
+  const syntaxAst = (definitionSyntax as DefinitionSyntaxParser).parse(syntax);
+  return dedupe(fromNode(syntaxAst as DefinitionSyntaxNode)).slice(0, 8);
 }

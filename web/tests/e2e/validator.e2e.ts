@@ -21,11 +21,18 @@ const VALID_CSS = `@property --space {
 }`;
 
 async function replaceEditorContents(page: Page, css: string) {
-  const editor = page.getByRole("textbox", { name: "CSS input" });
+  await page.locator("validator-code-editor.js-input-editor").evaluate((editor, value) => {
+    const codeEditor = editor as HTMLElement & { value: string };
 
-  await editor.click();
-  await page.keyboard.press(process.platform === "darwin" ? "Meta+A" : "Control+A");
-  await page.keyboard.type(css);
+    codeEditor.value = value;
+    editor.dispatchEvent(
+      new CustomEvent("editor-change", {
+        bubbles: true,
+        composed: true,
+        detail: value,
+      }),
+    );
+  }, css);
 }
 
 test("renders the validator workspace", async ({ page }) => {

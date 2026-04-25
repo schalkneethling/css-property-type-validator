@@ -10,14 +10,13 @@ import { Command } from "commander";
 import {
   formatValidationResult,
   validateFiles,
+  type OutputFormat,
 } from "@schalkneethling/css-property-type-validator-core";
 
 import type {
   ResolveImport,
   ValidationInput,
 } from "@schalkneethling/css-property-type-validator-core";
-
-type OutputFormat = "human" | "json";
 
 async function loadInputs(patterns: string[]): Promise<ValidationInput[]> {
   const filePaths = new Set<string>();
@@ -100,58 +99,61 @@ async function main(): Promise<void> {
         patterns: string[],
         options: { format: OutputFormat; registry: string[]; registryOnly: boolean },
       ) => {
-      const format = resolveOutputFormat(options.format);
+        const format = resolveOutputFormat(options.format);
 
-      if (options.registryOnly) {
-        if (patterns.length === 0) {
+        if (options.registryOnly) {
+          if (patterns.length === 0) {
+            process.stderr.write(
+              "No CSS files matched the registration-only patterns. Pass one or more CSS files or glob patterns to --registry-only.\n",
+            );
+            process.exitCode = 2;
+            return;
+          }
+
+          const registryInputs = await loadInputs(patterns);
+
+          if (registryInputs.length === 0) {
+            process.stderr.write(
+              "No CSS files matched the registration-only patterns. Pass one or more CSS files or glob patterns to --registry-only.\n",
+            );
+            process.exitCode = 2;
+            return;
+          }
+
+          const additionalRegistryInputs = await loadRegistryInputs(
+            options.registry,
+            registryInputs,
+          );
+          const result = validateFiles([], {
+            registryInputs: [...registryInputs, ...additionalRegistryInputs],
+            resolveImport: createImportResolver(process.cwd()),
+          });
+          const output = formatValidationResult(result, format);
+
+          process.stdout.write(`${output}\n`);
+          process.exitCode = result.diagnostics.length > 0 ? 1 : 0;
+          return;
+        }
+
+        const inputs = await loadInputs(patterns);
+
+        if (inputs.length === 0) {
           process.stderr.write(
-            "No CSS files matched the registration-only patterns. Pass one or more CSS files or glob patterns to --registry-only.\n",
+            "No CSS files matched the validation patterns. Files passed via --registry are registration sources only.\n",
           );
           process.exitCode = 2;
           return;
         }
 
-        const registryInputs = await loadInputs(patterns);
-
-        if (registryInputs.length === 0) {
-          process.stderr.write(
-            "No CSS files matched the registration-only patterns. Pass one or more CSS files or glob patterns to --registry-only.\n",
-          );
-          process.exitCode = 2;
-          return;
-        }
-
-        const additionalRegistryInputs = await loadRegistryInputs(options.registry, registryInputs);
-        const result = validateFiles([], {
-          registryInputs: [...registryInputs, ...additionalRegistryInputs],
+        const registryInputs = await loadRegistryInputs(options.registry, inputs);
+        const result = validateFiles(inputs, {
+          registryInputs,
           resolveImport: createImportResolver(process.cwd()),
         });
         const output = formatValidationResult(result, format);
 
         process.stdout.write(`${output}\n`);
         process.exitCode = result.diagnostics.length > 0 ? 1 : 0;
-        return;
-      }
-
-      const inputs = await loadInputs(patterns);
-
-      if (inputs.length === 0) {
-        process.stderr.write(
-          "No CSS files matched the validation patterns. Files passed via --registry are registration sources only.\n",
-        );
-        process.exitCode = 2;
-        return;
-      }
-
-      const registryInputs = await loadRegistryInputs(options.registry, inputs);
-      const result = validateFiles(inputs, {
-        registryInputs,
-        resolveImport: createImportResolver(process.cwd()),
-      });
-      const output = formatValidationResult(result, format);
-
-      process.stdout.write(`${output}\n`);
-      process.exitCode = result.diagnostics.length > 0 ? 1 : 0;
       },
     );
 

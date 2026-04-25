@@ -35,7 +35,7 @@ function queryElement<T extends Element>(root: ParentNode, selector: string): T 
 }
 
 function requireCachedValue<T>(value: T | null, name: string): T {
-  if (!value) {
+  if (value === null) {
     throw new Error(`Missing cached element: ${name}`);
   }
 
@@ -117,10 +117,6 @@ class ValidatorController extends HTMLElement {
 
   #handleEditorChange = (event: Event): void => {
     this.#cssSource = (event as CustomEvent<string>).detail;
-
-    if (!this.#fileName) {
-      this.#fileName = "pasted.css";
-    }
   };
 
   #handleFileSelection = async (event: Event): Promise<void> => {
@@ -132,7 +128,7 @@ class ValidatorController extends HTMLElement {
     }
 
     this.#cssSource = await file.text();
-    this.#fileName = file.name;
+    this.#fileName = file.name || "pasted.css";
     requireCachedValue(this.#inputEditor, "input editor").value = this.#cssSource;
     requireCachedValue(this.#fileNameElement, "file name").textContent = this.#fileName;
     input.value = "";

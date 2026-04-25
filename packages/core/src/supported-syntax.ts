@@ -20,7 +20,14 @@ export const SUPPORTED_SYNTAX_COMPONENT_NAMES = Object.freeze([
   "<transform-list>",
 ] as readonly string[]);
 
-function validateNode(node: any): string | null {
+interface DefinitionSyntaxNode {
+  name?: string;
+  term?: DefinitionSyntaxNode;
+  terms?: DefinitionSyntaxNode[];
+  type?: string;
+}
+
+function validateNode(node: DefinitionSyntaxNode | null | undefined): string | null {
   if (!node) {
     return null;
   }
@@ -53,6 +60,6 @@ function validateNode(node: any): string | null {
   }
 }
 
-export function getFirstUnsupportedSyntaxComponentName(syntaxAst: any): string | null {
-  return validateNode(syntaxAst);
+export function getFirstUnsupportedSyntaxComponentName(syntaxAst: unknown): string | null {
+  return validateNode(syntaxAst as DefinitionSyntaxNode);
 }

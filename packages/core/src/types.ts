@@ -15,10 +15,7 @@ export interface ValidationInput {
   css: string;
 }
 
-export type ResolveImport = (
-  specifier: string,
-  fromPath: string,
-) => ValidationInput | null;
+export type ResolveImport = (specifier: string, fromPath: string) => ValidationInput | null;
 
 export interface RegisteredProperty {
   filePath: string;

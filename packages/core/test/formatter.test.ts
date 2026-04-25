@@ -47,6 +47,67 @@ describe("formatValidationResult", () => {
     );
   });
 
+  it("formats diagnostics without locations for human output", () => {
+    const result: ValidationResult = {
+      diagnostics: [
+        {
+          code: "incompatible-var-usage",
+          expectedProperty: "inline-size",
+          filePath: "component.css",
+          message: "Registered property --brand-color is incompatible.",
+          propertyName: "--brand-color",
+          registeredSyntax: "<color>",
+        },
+      ],
+      registry: [],
+      skippedDeclarations: 0,
+      validatedDeclarations: 1,
+    };
+
+    expect(formatValidationResult(result, "human")).toBe(
+      [
+        "component.css incompatible-var-usage",
+        "Registered property --brand-color is incompatible.",
+      ].join("\n"),
+    );
+  });
+
+  it("separates multiple diagnostics with a blank line for human output", () => {
+    const result: ValidationResult = {
+      diagnostics: [
+        {
+          code: "incompatible-var-usage",
+          expectedProperty: "inline-size",
+          filePath: "component.css",
+          message: "Registered property --brand-color is incompatible.",
+          propertyName: "--brand-color",
+          registeredSyntax: "<color>",
+        },
+        {
+          code: "incompatible-var-usage",
+          expectedProperty: "block-size",
+          filePath: "card.css",
+          message: "Registered property --space is incompatible.",
+          propertyName: "--space",
+          registeredSyntax: "<color>",
+        },
+      ],
+      registry: [],
+      skippedDeclarations: 0,
+      validatedDeclarations: 2,
+    };
+
+    expect(formatValidationResult(result, "human")).toBe(
+      [
+        "component.css incompatible-var-usage",
+        "Registered property --brand-color is incompatible.",
+        "",
+        "card.css incompatible-var-usage",
+        "Registered property --space is incompatible.",
+      ].join("\n"),
+    );
+  });
+
   it("formats the complete result as pretty JSON", () => {
     expect(formatValidationResult(PASSING_RESULT, "json")).toBe(
       JSON.stringify(PASSING_RESULT, null, 2),

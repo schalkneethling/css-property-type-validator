@@ -1,10 +1,12 @@
 import { css as cssLanguage } from "@codemirror/lang-css";
 import { json as jsonLanguage } from "@codemirror/lang-json";
-import { EditorState, type Extension } from "@codemirror/state";
+import { Annotation, Compartment, EditorState, type Extension } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import { basicSetup } from "codemirror";
 
 type EditorLanguage = "css" | "json" | "text";
+
+const programmaticChange = Annotation.define<boolean>();
 
 function languageExtension(language: EditorLanguage): Extension[] {
   if (language === "css") {
@@ -26,14 +28,25 @@ function toEditorLanguage(value: string | null): EditorLanguage {
   return "text";
 }
 
+function readonlyExtension(readonly: boolean): Extension[] {
+  if (!readonly) {
+    return [];
+  }
+
+  return [EditorState.readOnly.of(true), EditorView.editable.of(false)];
+}
+
 export class ValidatorCodeEditor extends HTMLElement {
   static observedAttributes = ["label", "language", "readonly"];
 
   #editorView: EditorView | null = null;
   #host: HTMLDivElement | null = null;
   #label = "Editor";
+  #labelCompartment = new Compartment();
   #language: EditorLanguage = "text";
+  #languageCompartment = new Compartment();
   #readonly = false;
+  #readonlyCompartment = new Compartment();
   #value = "";
 
   get label(): string {
@@ -42,7 +55,7 @@ export class ValidatorCodeEditor extends HTMLElement {
 
   set label(value: string) {
     this.#label = value;
-    this.#createEditor();
+    this.#reconfigureLabel();
   }
 
   get language(): EditorLanguage {
@@ -51,7 +64,10 @@ export class ValidatorCodeEditor extends HTMLElement {
 
   set language(value: EditorLanguage) {
     this.#language = value;
-    this.#createEditor();
+    this.#editorView?.dispatch({
+      effects: this.#languageCompartment.reconfigure(languageExtension(this.#language)),
+      annotations: programmaticChange.of(true),
+    });
   }
 
   get readonly(): boolean {
@@ -60,7 +76,10 @@ export class ValidatorCodeEditor extends HTMLElement {
 
   set readonly(value: boolean) {
     this.#readonly = value;
-    this.#createEditor();
+    this.#editorView?.dispatch({
+      effects: this.#readonlyCompartment.reconfigure(readonlyExtension(this.#readonly)),
+      annotations: programmaticChange.of(true),
+    });
   }
 
   get value(): string {
@@ -114,12 +133,13 @@ export class ValidatorCodeEditor extends HTMLElement {
     const extensions: Extension[] = [
       basicSetup,
       EditorView.lineWrapping,
-      EditorView.contentAttributes.of({
-        "aria-label": this.#label,
-        role: "textbox",
-      }),
+      this.#labelCompartment.of(this.#labelExtension()),
       EditorView.updateListener.of((update) => {
-        if (!update.docChanged || this.#readonly) {
+        const isProgrammatic = update.transactions.some((transaction) =>
+          transaction.annotation(programmaticChange),
+        );
+
+        if (!update.docChanged || this.#readonly || isProgrammatic) {
           return;
         }
 
@@ -132,17 +152,28 @@ export class ValidatorCodeEditor extends HTMLElement {
           }),
         );
       }),
-      ...languageExtension(this.#language),
+      this.#languageCompartment.of(languageExtension(this.#language)),
+      this.#readonlyCompartment.of(readonlyExtension(this.#readonly)),
     ];
-
-    if (this.#readonly) {
-      extensions.push(EditorState.readOnly.of(true), EditorView.editable.of(false));
-    }
 
     this.#editorView = new EditorView({
       doc: this.#value,
       extensions,
       parent: this.#host,
+    });
+  }
+
+  #labelExtension(): Extension {
+    return EditorView.contentAttributes.of({
+      "aria-label": this.#label,
+      role: "textbox",
+    });
+  }
+
+  #reconfigureLabel(): void {
+    this.#editorView?.dispatch({
+      effects: this.#labelCompartment.reconfigure(this.#labelExtension()),
+      annotations: programmaticChange.of(true),
     });
   }
 
@@ -159,6 +190,7 @@ export class ValidatorCodeEditor extends HTMLElement {
         to: currentValue.length,
         insert: this.#value,
       },
+      annotations: programmaticChange.of(true),
     });
   }
 }

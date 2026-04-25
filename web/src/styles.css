@@ -1,247 +1,247 @@
 @property --color-accent {
   syntax: "<color>";
   inherits: true;
-  initial-value: #f3b56d;
+  initial-value: transparent;
 }
 
 @property --color-accent-strong {
   syntax: "<color>";
   inherits: true;
-  initial-value: #f0b86b;
+  initial-value: transparent;
 }
 
 @property --color-body {
   syntax: "<color>";
   inherits: true;
-  initial-value: #d8d2c2;
+  initial-value: transparent;
 }
 
 @property --color-editor {
   syntax: "<color>";
   inherits: true;
-  initial-value: #fffaf0;
+  initial-value: transparent;
 }
 
 @property --color-editor-gutter {
   syntax: "<color>";
   inherits: true;
-  initial-value: #eee9dc;
+  initial-value: transparent;
 }
 
 @property --color-editor-output {
   syntax: "<color>";
   inherits: true;
-  initial-value: #fdf8ed;
+  initial-value: transparent;
 }
 
 @property --color-editor-text {
   syntax: "<color>";
   inherits: true;
-  initial-value: #212821;
+  initial-value: transparent;
 }
 
 @property --color-focus {
   syntax: "<color>";
   inherits: true;
-  initial-value: #69b7bc;
+  initial-value: transparent;
 }
 
 @property --color-header {
   syntax: "<color>";
   inherits: true;
-  initial-value: #1f251f;
+  initial-value: transparent;
 }
 
 @property --color-header-border {
   syntax: "<color>";
   inherits: true;
-  initial-value: rgb(248 243 231 / 0.18);
+  initial-value: transparent;
 }
 
 @property --color-header-control {
   syntax: "<color>";
   inherits: true;
-  initial-value: rgb(248 243 231 / 0.08);
+  initial-value: transparent;
 }
 
 @property --color-header-control-border {
   syntax: "<color>";
   inherits: true;
-  initial-value: rgb(248 243 231 / 0.25);
+  initial-value: transparent;
 }
 
 @property --color-header-rgb {
   syntax: "*";
   inherits: true;
-  initial-value: 31 37 31;
+  initial-value: 0 0 0;
 }
 
 @property --color-heading {
   syntax: "<color>";
   inherits: true;
-  initial-value: #202820;
+  initial-value: transparent;
 }
 
 @property --color-link {
   syntax: "<color>";
   inherits: true;
-  initial-value: #0b5f68;
+  initial-value: transparent;
 }
 
 @property --color-link-hover {
   syntax: "<color>";
   inherits: true;
-  initial-value: #073f45;
+  initial-value: transparent;
 }
 
 @property --color-link-underline {
   syntax: "<color>";
   inherits: true;
-  initial-value: rgb(11 95 104 / 0.35);
+  initial-value: transparent;
 }
 
 @property --color-page {
   syntax: "<color>";
   inherits: true;
-  initial-value: #e7e3d8;
+  initial-value: transparent;
 }
 
 @property --color-page-grid-block {
   syntax: "<color>";
   inherits: true;
-  initial-value: rgb(31 37 31 / 0.05);
+  initial-value: transparent;
 }
 
 @property --color-page-grid-inline {
   syntax: "<color>";
   inherits: true;
-  initial-value: rgb(31 37 31 / 0.06);
+  initial-value: transparent;
 }
 
 @property --color-panel {
   syntax: "<color>";
   inherits: true;
-  initial-value: #f8f3e7;
+  initial-value: transparent;
 }
 
 @property --color-panel-border {
   syntax: "<color>";
   inherits: true;
-  initial-value: rgb(31 37 31 / 0.2);
+  initial-value: transparent;
 }
 
 @property --color-panel-divider {
   syntax: "<color>";
   inherits: true;
-  initial-value: rgb(31 37 31 / 0.16);
+  initial-value: transparent;
 }
 
 @property --color-panel-kicker {
   syntax: "<color>";
   inherits: true;
-  initial-value: #a35622;
+  initial-value: transparent;
 }
 
 @property --color-panel-rule {
   syntax: "<color>";
   inherits: true;
-  initial-value: rgb(31 37 31 / 0.12);
+  initial-value: transparent;
 }
 
 @property --color-pill-border {
   syntax: "<color>";
   inherits: true;
-  initial-value: rgb(31 37 31 / 0.14);
+  initial-value: transparent;
 }
 
 @property --color-success {
   syntax: "<color>";
   inherits: true;
-  initial-value: #dcebc9;
+  initial-value: transparent;
 }
 
 @property --color-success-border {
   syntax: "<color>";
   inherits: true;
-  initial-value: rgb(22 57 34 / 0.18);
+  initial-value: transparent;
 }
 
 @property --color-success-ink {
   syntax: "<color>";
   inherits: true;
-  initial-value: #163922;
+  initial-value: transparent;
 }
 
 @property --color-success-muted {
   syntax: "<color>";
   inherits: true;
-  initial-value: #35543d;
+  initial-value: transparent;
 }
 
 @property --color-text {
   syntax: "<color>";
   inherits: true;
-  initial-value: #1f251f;
+  initial-value: transparent;
 }
 
 @property --color-toggle-text {
   syntax: "<color>";
   inherits: true;
-  initial-value: #4f594e;
+  initial-value: transparent;
 }
 
 @property --color-ui-muted {
   syntax: "<color>";
   inherits: true;
-  initial-value: #697267;
+  initial-value: transparent;
 }
 
 @property --color-ui-muted-strong {
   syntax: "<color>";
   inherits: true;
-  initial-value: #384238;
+  initial-value: transparent;
 }
 
 @property --color-ui-subtle {
   syntax: "<color>";
   inherits: true;
-  initial-value: #788073;
+  initial-value: transparent;
 }
 
 @property --font-body {
   syntax: "*";
   inherits: true;
-  initial-value: 400 0.98rem / 1.5 system-ui;
+  initial-value: 400 1px / 1 system-ui;
 }
 
 @property --font-caption {
   syntax: "*";
   inherits: true;
-  initial-value: 600 0.72rem / 1 system-ui;
+  initial-value: 600 1px / 1 system-ui;
 }
 
 @property --font-caption-strong {
   syntax: "*";
   inherits: true;
-  initial-value: 800 0.72rem / 1 system-ui;
+  initial-value: 800 1px / 1 system-ui;
 }
 
 @property --font-chip {
   syntax: "*";
   inherits: true;
-  initial-value: 400 0.78rem / 1.5 monospace;
+  initial-value: 400 1px / 1 monospace;
 }
 
 @property --font-control {
   syntax: "*";
   inherits: true;
-  initial-value: 600 0.82rem / 1.5 system-ui;
+  initial-value: 600 1px / 1 system-ui;
 }
 
 @property --font-editor {
   syntax: "*";
   inherits: true;
-  initial-value: 400 0.9rem / 1.55 monospace;
+  initial-value: 400 1px / 1 monospace;
 }
 
 @property --font-family-body {
@@ -265,19 +265,19 @@
 @property --font-heading-page {
   syntax: "*";
   inherits: true;
-  initial-value: 700 2rem / 0.92 serif;
+  initial-value: 700 1px / 1 serif;
 }
 
 @property --font-heading-panel {
   syntax: "*";
   inherits: true;
-  initial-value: 700 1.15rem / 1 serif;
+  initial-value: 700 1px / 1 serif;
 }
 
 @property --font-link {
   syntax: "*";
   inherits: true;
-  initial-value: 700 0.98rem / 1.5 system-ui;
+  initial-value: 700 1px / 1 system-ui;
 }
 
 @property --font-size-body {
@@ -343,31 +343,31 @@
 @property --font-stat {
   syntax: "*";
   inherits: true;
-  initial-value: 700 1.45rem / 1 serif;
+  initial-value: 700 1px / 1 serif;
 }
 
 @property --font-success {
   syntax: "*";
   inherits: true;
-  initial-value: 700 0.95rem / 1.5 system-ui;
+  initial-value: 700 1px / 1 system-ui;
 }
 
 @property --font-success-detail {
   syntax: "*";
   inherits: true;
-  initial-value: 400 0.88rem / 1.5 system-ui;
+  initial-value: 400 1px / 1 system-ui;
 }
 
 @property --line-height-body {
   syntax: "<number>";
   inherits: true;
-  initial-value: 1.5;
+  initial-value: 1;
 }
 
 @property --line-height-editor {
   syntax: "<number>";
   inherits: true;
-  initial-value: 1.55;
+  initial-value: 1;
 }
 
 @property --line-height-tight {
@@ -379,7 +379,7 @@
 @property --line-height-title {
   syntax: "<number>";
   inherits: true;
-  initial-value: 0.92;
+  initial-value: 1;
 }
 
 :root {
@@ -427,8 +427,8 @@
   --font-control: 600 var(--font-size-control) / var(--line-height-body) var(--font-family-body);
   --font-editor: 400 var(--font-size-editor) / var(--line-height-editor) var(--font-family-mono);
   --font-family-body: "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
-  --font-family-display: Georgia, "Times New Roman", serif;
-  --font-family-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  --font-family-display: "Georgia", "Times New Roman", serif;
+  --font-family-mono: "SFMono-Regular", "Consolas", "Liberation Mono", monospace;
   --font-heading-page: 700 var(--font-size-heading-page) / var(--line-height-title)
     var(--font-family-display);
   --font-heading-panel: 700 var(--font-size-heading-panel) / var(--line-height-tight)
@@ -457,6 +457,7 @@
   color: var(--color-text);
   font: var(--font-body);
   font-synthesis: none;
+  /* stylelint-disable-next-line value-keyword-case */
   text-rendering: optimizeLegibility;
 }
 
@@ -493,8 +494,10 @@ button {
   position: absolute;
   inline-size: 0.0625rem;
   block-size: 0.0625rem;
+  border: 0;
+  padding: 0;
   overflow: hidden;
-  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
   white-space: nowrap;
 }
 
@@ -692,8 +695,10 @@ h2 {
   position: absolute;
   inline-size: 0.0625rem;
   block-size: 0.0625rem;
+  border: 0;
+  padding: 0;
   overflow: hidden;
-  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
 }
 
 .format-toggle label {

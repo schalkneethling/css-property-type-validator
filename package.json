@@ -17,6 +17,10 @@
   "type": "module",
   "scripts": {
     "build": "pnpm -r --if-present run build",
+    "check": "vp check && pnpm run typecheck && pnpm test && pnpm run build",
+    "format": "vp check --fix",
+    "format:check": "vp check --no-lint",
+    "lint": "vp check --no-fmt",
     "test": "vp test run",
     "test:e2e": "pnpm --filter @schalkneethling/css-property-type-validator-web test:e2e",
     "typecheck": "tsc -b tsconfig.json",
@@ -27,8 +31,8 @@
   "devDependencies": {
     "@types/node": "^25.6.0",
     "cheerio": "^1.2.0",
-    "typescript": "^6.0.2",
-    "vite-plus": "^0.1.18"
+    "typescript": "^6.0.3",
+    "vite-plus": "^0.1.19"
   },
   "engines": {
     "node": ">=22.0.0"
