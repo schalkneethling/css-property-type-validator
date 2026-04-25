@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.8.0](https://github.com/schalkneethling/css-property-type-validator/compare/core-v0.7.0...core-v0.8.0) (2026-04-25)
+
+
+### Features
+
+* add browser validator app ([3748a45](https://github.com/schalkneethling/css-property-type-validator/commit/3748a456d74b1d339f77f994c3ef8a9eec4261a1))
+* add browser validator app ([583fb0b](https://github.com/schalkneethling/css-property-type-validator/commit/583fb0b612c7606d80084fa9e07074bfe6addd5a))
+
 ## [0.7.0](https://github.com/schalkneethling/css-property-type-validator/compare/core-v0.6.0...core-v0.7.0) (2026-04-22)
 
 ### Features
