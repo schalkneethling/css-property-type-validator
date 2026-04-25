@@ -1,0 +1,9 @@
+@property --brand-color {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+.card {
+  color: var(--brand-color);
+}

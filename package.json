@@ -18,6 +18,7 @@
   "scripts": {
     "build": "pnpm -r --if-present run build",
     "test": "vp test run",
+    "test:e2e": "pnpm --filter @schalkneethling/css-property-type-validator-web test:e2e",
     "typecheck": "tsc -b tsconfig.json",
     "check:supported-syntax-names": "node scripts/check-supported-syntax-names.mjs",
     "clean": "node scripts/clean.mjs",
