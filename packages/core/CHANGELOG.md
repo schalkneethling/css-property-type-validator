@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.0](https://github.com/schalkneethling/css-property-type-validator/compare/core-v0.8.0...core-v0.9.0) (2026-05-04)
+
+
+### Features
+
+* add fail-fast validation mode ([11e8773](https://github.com/schalkneethling/css-property-type-validator/commit/11e877352fe6a398af13dbe6207096a6dcced6d1))
+
 ## [0.8.0](https://github.com/schalkneethling/css-property-type-validator/compare/core-v0.7.0...core-v0.8.0) (2026-04-25)
 
 
