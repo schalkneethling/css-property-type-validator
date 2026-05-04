@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/schalkneethling/css-property-type-validator/compare/cli-v0.5.0...cli-v0.6.0) (2026-05-04)
+
+
+### Features
+
+* add fail-fast validation mode ([11e8773](https://github.com/schalkneethling/css-property-type-validator/commit/11e877352fe6a398af13dbe6207096a6dcced6d1))
+
 ## [0.5.0](https://github.com/schalkneethling/css-property-type-validator/compare/cli-v0.4.0...cli-v0.5.0) (2026-04-25)
 
 

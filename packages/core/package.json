@@ -1,6 +1,6 @@
 {
   "name": "@schalkneethling/css-property-type-validator-core",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "Standalone CSS custom property type validator core.",
   "keywords": [
     "css",

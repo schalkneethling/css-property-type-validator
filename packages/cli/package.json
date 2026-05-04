@@ -1,6 +1,6 @@
 {
   "name": "@schalkneethling/css-property-type-validator-cli",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "CLI for CSS custom property type validator.",
   "keywords": [
     "cli",
