@@ -23,6 +23,7 @@ css-property-type-validator "src/**/*.css"
 css-property-type-validator "src/**/*.css" --format json
 css-property-type-validator "src/**/*.css" --registry "src/tokens/**/*.css"
 css-property-type-validator "src/tokens/**/*.css" --registry-only
+css-property-type-validator "src/**/*.css" --failfast
 ```
 
 Use `--registry` multiple times to include shared registration sources:
@@ -34,6 +35,8 @@ css-property-type-validator "src/**/*.css" \
 ```
 
 The CLI follows local unconditioned `@import` rules while assembling the registry, including relative and root-relative imports. Remote and conditioned imports are skipped.
+
+By default, the CLI collects and reports all validation failures. Use `--failfast` to stop after the first validation failure, whether it comes from registry assembly, `@property` validation, or declaration usage validation. Exit codes and human/JSON output formats are unchanged.
 
 ## Exit Codes
 

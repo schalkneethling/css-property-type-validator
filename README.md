@@ -46,6 +46,7 @@ css-property-type-validator "src/**/*.css"
 css-property-type-validator "src/**/*.css" --format json
 css-property-type-validator "src/**/*.css" --registry "src/tokens/**/*.css"
 css-property-type-validator "src/tokens/**/*.css" --registry-only
+css-property-type-validator "src/**/*.css" --failfast
 ```
 
 Use `--registry` for shared `@property` definitions that should contribute registrations without validating ordinary declarations from those files:
@@ -61,6 +62,11 @@ css-property-type-validator "src/tokens/**/*.css" --registry-only
 ```
 
 Registry-only files still report parse errors and invalid `@property` registrations.
+
+By default, the CLI collects every validation failure it can find and reports the full result set.
+Use `--failfast` when you want it to stop after the first validation failure, including
+registration/import failures and declaration usage failures. Human and JSON output keep the same
+format; the diagnostics array simply contains the first issue found.
 
 ## Library Usage
 

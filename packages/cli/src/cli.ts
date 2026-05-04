@@ -83,6 +83,7 @@ async function main(): Promise<void> {
     .description("Validate @property registrations and var() usages across CSS files.")
     .argument("[patterns...]", "CSS files or glob patterns to validate")
     .option("-f, --format <format>", "output format: human or json", "human")
+    .option("--failfast", "stop after the first validation failure", false)
     .option(
       "-r, --registry <pattern>",
       "CSS file or glob pattern to use for shared @property registrations",
@@ -97,7 +98,12 @@ async function main(): Promise<void> {
     .action(
       async (
         patterns: string[],
-        options: { format: OutputFormat; registry: string[]; registryOnly: boolean },
+        options: {
+          failfast: boolean;
+          format: OutputFormat;
+          registry: string[];
+          registryOnly: boolean;
+        },
       ) => {
         const format = resolveOutputFormat(options.format);
 
@@ -125,6 +131,7 @@ async function main(): Promise<void> {
             registryInputs,
           );
           const result = validateFiles([], {
+            failFast: options.failfast,
             registryInputs: [...registryInputs, ...additionalRegistryInputs],
             resolveImport: createImportResolver(process.cwd()),
           });
@@ -147,6 +154,7 @@ async function main(): Promise<void> {
 
         const registryInputs = await loadRegistryInputs(options.registry, inputs);
         const result = validateFiles(inputs, {
+          failFast: options.failfast,
           registryInputs,
           resolveImport: createImportResolver(process.cwd()),
         });

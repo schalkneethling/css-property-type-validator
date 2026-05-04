@@ -27,6 +27,7 @@ import type {
 } from "./var-substitution.js";
 
 export interface ValidateFilesOptions {
+  failFast?: boolean;
   registryInputs?: ValidationInput[];
   resolveImport?: ResolveImport;
 }
@@ -545,12 +546,22 @@ export function validateFiles(
   }
 
   const registryResult = collectRegistry(registrySources, {
+    failFast: options.failFast,
     resolveImport: options.resolveImport,
   });
   const diagnostics = [...registryResult.diagnostics];
   const registry = registryMap(registryResult.registry);
   let skippedDeclarations = 0;
   let validatedDeclarations = 0;
+
+  if (options.failFast && diagnostics.length > 0) {
+    return {
+      diagnostics,
+      registry: registryResult.registry,
+      skippedDeclarations,
+      validatedDeclarations,
+    };
+  }
 
   for (const input of inputs) {
     let ast: CssValueAst;
@@ -560,19 +571,36 @@ export function validateFiles(
         filename: input.path,
         positions: true,
       });
-    } catch {
+    } catch (error) {
+      if (options.failFast) {
+        diagnostics.push({
+          code: "unparseable-stylesheet",
+          filePath: input.path,
+          loc: null,
+          message: `Could not parse stylesheet: ${(error as Error).message}`,
+        });
+        break;
+      }
       continue;
     }
 
     cssTree.walk(ast, {
       visit: "Declaration",
       enter(node: CssWalkNode) {
+        if (options.failFast && diagnostics.length > 0) {
+          return;
+        }
+
         const result = validateDeclaration(input.path, node as CssDeclarationNode, registry);
         diagnostics.push(...result.diagnostics);
         skippedDeclarations += result.skipped;
         validatedDeclarations += result.validated;
       },
     });
+
+    if (options.failFast && diagnostics.length > 0) {
+      break;
+    }
   }
 
   return {
