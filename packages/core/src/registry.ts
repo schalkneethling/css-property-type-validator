@@ -426,7 +426,7 @@ function processPropertyRule(
 
 export function collectRegistry(
   inputs: ValidationInput[],
-  options: { resolveImport?: ResolveImport } = {},
+  options: { failFast?: boolean; resolveImport?: ResolveImport } = {},
 ): {
   diagnostics: ValidationDiagnostic[];
   registry: RegisteredProperty[];
@@ -487,15 +487,24 @@ export function collectRegistry(
             message: `Could not resolve imported stylesheet "${importSpecifier}" from ${input.path}.`,
             snippet: cssTree.generate(node),
           });
+          if (options.failFast) {
+            break;
+          }
           continue;
         }
 
         processInput(resolvedImport);
+        if (options.failFast && diagnostics.length > 0) {
+          break;
+        }
         continue;
       }
 
       if (node.name === "property") {
         processPropertyRule(input, node, diagnostics, registry);
+        if (options.failFast && diagnostics.length > 0) {
+          break;
+        }
       }
     }
 
@@ -505,6 +514,9 @@ export function collectRegistry(
 
   for (const input of inputs) {
     processInput(input);
+    if (options.failFast && diagnostics.length > 0) {
+      break;
+    }
   }
 
   return {

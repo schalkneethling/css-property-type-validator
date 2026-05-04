@@ -58,6 +58,53 @@ describe("validateFiles", () => {
     expect(result.diagnostics[0]?.expectedProperty).toBe("inline-size");
   });
 
+  it("stops on the first registration validation failure when fail-fast is enabled", () => {
+    const result = validateFiles(
+      [
+        {
+          path: "/tmp/registry.css",
+          css: [
+            '@property --bad-color { syntax: "<color"; inherits: true; initial-value: transparent; }',
+            '@property --bad-space { syntax: "<length>"; inherits: maybe; initial-value: 0px; }',
+          ].join("\n"),
+        },
+      ],
+      { failFast: true },
+    );
+
+    expect(result.diagnostics).toHaveLength(1);
+    expect(result.diagnostics[0]?.code).toBe("invalid-property-registration");
+    expect(result.diagnostics[0]?.propertyName).toBe("--bad-color");
+    expect(result.validatedDeclarations).toBe(0);
+  });
+
+  it("stops on the first usage validation failure when fail-fast is enabled", () => {
+    const result = validateFiles(
+      [
+        {
+          path: "/tmp/registry.css",
+          css: [
+            '@property --brand-color { syntax: "<color>"; inherits: true; initial-value: transparent; }',
+            '@property --space { syntax: "<length>"; inherits: false; initial-value: 0px; }',
+          ].join("\n"),
+        },
+        {
+          path: "/tmp/usage.css",
+          css: [
+            ".card { inline-size: var(--brand-color); }",
+            ".stack { color: var(--space); }",
+          ].join("\n"),
+        },
+      ],
+      { failFast: true },
+    );
+
+    expect(result.diagnostics).toHaveLength(1);
+    expect(result.diagnostics[0]?.code).toBe("incompatible-var-usage");
+    expect(result.diagnostics[0]?.expectedProperty).toBe("inline-size");
+    expect(result.validatedDeclarations).toBe(1);
+  });
+
   it("ignores unregistered custom properties", () => {
     const result = runValidation({
       "/tmp/usage.css": ".card { inline-size: var(--space); }",
@@ -894,6 +941,7 @@ describe("validateFiles", () => {
     expect(cliResult.stdout).toContain("--format");
     expect(cliResult.stdout).toContain("--registry");
     expect(cliResult.stdout).toContain("--registry-only");
+    expect(cliResult.stdout).toContain("--failfast");
   });
 
   it("keeps human CLI output stable for a clean validation run", { timeout: 120000 }, () => {
@@ -949,6 +997,60 @@ describe("validateFiles", () => {
     );
     expect(cliResult.stdout).toContain("inline-size:var(--brand-color)");
   });
+
+  it(
+    "limits CLI json output to the first validation failure with --failfast",
+    { timeout: 120000 },
+    () => {
+      const repoRoot = path.resolve(import.meta.dirname, "../../..");
+      const fixtureDir = mkdtempSync(path.join(tmpdir(), "css-property-validator-"));
+      const validationPath = path.join(fixtureDir, "component.css");
+      const registryPath = path.join(fixtureDir, "tokens.css");
+
+      writeFileSync(
+        validationPath,
+        [".card { inline-size: var(--brand-color); }", ".stack { color: var(--space); }"].join(
+          "\n",
+        ),
+      );
+      writeFileSync(
+        registryPath,
+        [
+          '@property --brand-color { syntax: "<color>"; inherits: true; initial-value: transparent; }',
+          '@property --space { syntax: "<length>"; inherits: false; initial-value: 0px; }',
+        ].join("\n"),
+      );
+
+      const cliResult = spawnSync(
+        "node",
+        [
+          "packages/cli/dist/cli.js",
+          validationPath,
+          "--registry",
+          registryPath,
+          "--format",
+          "json",
+          "--failfast",
+        ],
+        {
+          cwd: repoRoot,
+          encoding: "utf8",
+        },
+      );
+
+      expect(cliResult.status).toBe(1);
+
+      const report = JSON.parse(cliResult.stdout) as {
+        diagnostics: Array<{ code: string; expectedProperty?: string }>;
+        validatedDeclarations: number;
+      };
+
+      expect(report.diagnostics).toHaveLength(1);
+      expect(report.diagnostics[0]?.code).toBe("incompatible-var-usage");
+      expect(report.diagnostics[0]?.expectedProperty).toBe("inline-size");
+      expect(report.validatedDeclarations).toBe(1);
+    },
+  );
 
   it("builds the public runtime and type exports", { timeout: 120000 }, async () => {
     const repoRoot = path.resolve(import.meta.dirname, "../../..");
