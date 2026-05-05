@@ -41,6 +41,47 @@ const result = validateFiles(
 console.log(result.diagnostics);
 ```
 
+Diagnostics include stable machine-readable fields for tooling integrations:
+
+```ts
+type ValidationDiagnostic = {
+  code:
+    | "invalid-property-registration"
+    | "incompatible-custom-property-assignment"
+    | "incompatible-var-usage"
+    | "unresolved-import"
+    | "unparseable-stylesheet";
+  phase: "parse" | "registry" | "assignment" | "usage" | "import";
+  reason:
+    | "missing-property-name"
+    | "missing-syntax-descriptor"
+    | "invalid-syntax-descriptor"
+    | "unsupported-syntax-component"
+    | "missing-inherits-descriptor"
+    | "invalid-inherits-descriptor"
+    | "missing-initial-value-descriptor"
+    | "invalid-initial-value"
+    | "incompatible-assignment-value"
+    | "incompatible-var-substitution"
+    | "incompatible-var-fallback"
+    | "unresolved-import"
+    | "unparseable-css";
+  severity: "error";
+  filePath: string;
+  loc: SourceLocation | null;
+  message: string;
+  descriptorName?: "syntax" | "inherits" | "initial-value";
+  propertyName?: string;
+  registeredSyntax?: string;
+  expectedProperty?: string;
+  actualValue?: string;
+  importSpecifier?: string;
+  snippet?: string;
+};
+```
+
+`code` is the broad diagnostic category, while `phase` and `reason` are intended for rule mapping, editor diagnostics, filtering, and stable automation. Existing fields such as `propertyName`, `registeredSyntax`, and `expectedProperty` remain available for integrations that already consume them.
+
 Provide `resolveImport` when registry assembly should follow local unconditioned imports:
 
 ```ts

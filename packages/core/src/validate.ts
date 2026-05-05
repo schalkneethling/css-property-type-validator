@@ -157,6 +157,9 @@ function toVarDiagnostic(
 
     return {
       code: "incompatible-var-usage",
+      phase: "usage",
+      reason: "incompatible-var-substitution",
+      severity: "error",
       filePath,
       loc: toLocation(varNode.loc),
       message: `Registered property ${registration.name} uses syntax "${registration.syntax}" which is incompatible with ${declaration.property} at this var() usage.`,
@@ -173,6 +176,9 @@ function toVarDiagnostic(
 
   return {
     code: "incompatible-var-usage",
+    phase: "usage",
+    reason: "incompatible-var-substitution",
+    severity: "error",
     filePath,
     loc: toLocation(declaration.value.loc),
     message: `Registered properties ${registeredNames} are jointly incompatible with ${declaration.property} at this declaration value.`,
@@ -194,6 +200,9 @@ function toPossibleVarDiagnostic(
 
   return {
     code: "incompatible-var-usage",
+    phase: "usage",
+    reason: "incompatible-var-substitution",
+    severity: "error",
     filePath,
     loc: toLocation(declaration.value.loc),
     message,
@@ -209,9 +218,13 @@ function toAssignmentDiagnostic(
 ): ValidationDiagnostic {
   return {
     code: "incompatible-custom-property-assignment",
+    phase: "assignment",
+    reason: "incompatible-assignment-value",
+    severity: "error",
     filePath,
     loc: toLocation(declaration.value.loc ?? declaration.loc),
     message: `Assigned value for registered property ${registration.name} does not match its syntax "${registration.syntax}".`,
+    actualValue: cssTree.generate(declaration.value).trim(),
     propertyName: registration.name,
     registeredSyntax: registration.syntax,
     snippet: cssTree.generate(declaration),
@@ -226,6 +239,9 @@ function toFallbackDiagnostic(
 ): ValidationDiagnostic {
   return {
     code: "incompatible-var-usage",
+    phase: "usage",
+    reason: "incompatible-var-fallback",
+    severity: "error",
     filePath,
     loc: toLocation(varNode.loc),
     message: `Fallback value in var() for registered property ${registration.name} is incompatible with ${declaration.property} at this var() usage.`,
@@ -572,13 +588,17 @@ export function validateFiles(
         positions: true,
       });
     } catch (error) {
+      diagnostics.push({
+        code: "unparseable-stylesheet",
+        phase: "parse",
+        reason: "unparseable-css",
+        severity: "error",
+        filePath: input.path,
+        loc: null,
+        message: `Could not parse stylesheet: ${(error as Error).message}`,
+      });
+
       if (options.failFast) {
-        diagnostics.push({
-          code: "unparseable-stylesheet",
-          filePath: input.path,
-          loc: null,
-          message: `Could not parse stylesheet: ${(error as Error).message}`,
-        });
         break;
       }
       continue;

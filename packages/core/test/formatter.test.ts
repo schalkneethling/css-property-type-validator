@@ -21,6 +21,9 @@ describe("formatValidationResult", () => {
       diagnostics: [
         {
           code: "incompatible-var-usage",
+          phase: "usage",
+          reason: "incompatible-var-substitution",
+          severity: "error",
           expectedProperty: "inline-size",
           filePath: "component.css",
           loc: {
@@ -52,8 +55,12 @@ describe("formatValidationResult", () => {
       diagnostics: [
         {
           code: "incompatible-var-usage",
+          phase: "usage",
+          reason: "incompatible-var-substitution",
+          severity: "error",
           expectedProperty: "inline-size",
           filePath: "component.css",
+          loc: null,
           message: "Registered property --brand-color is incompatible.",
           propertyName: "--brand-color",
           registeredSyntax: "<color>",
@@ -77,16 +84,24 @@ describe("formatValidationResult", () => {
       diagnostics: [
         {
           code: "incompatible-var-usage",
+          phase: "usage",
+          reason: "incompatible-var-substitution",
+          severity: "error",
           expectedProperty: "inline-size",
           filePath: "component.css",
+          loc: null,
           message: "Registered property --brand-color is incompatible.",
           propertyName: "--brand-color",
           registeredSyntax: "<color>",
         },
         {
           code: "incompatible-var-usage",
+          phase: "usage",
+          reason: "incompatible-var-substitution",
+          severity: "error",
           expectedProperty: "block-size",
           filePath: "card.css",
+          loc: null,
           message: "Registered property --space is incompatible.",
           propertyName: "--space",
           registeredSyntax: "<color>",
