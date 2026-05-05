@@ -33,14 +33,39 @@ export type DiagnosticCode =
   | "unresolved-import"
   | "unparseable-stylesheet";
 
+export type DiagnosticSeverity = "error";
+
+export type DiagnosticPhase = "parse" | "registry" | "assignment" | "usage" | "import";
+
+export type DiagnosticReason =
+  | "missing-property-name"
+  | "missing-syntax-descriptor"
+  | "invalid-syntax-descriptor"
+  | "unsupported-syntax-component"
+  | "missing-inherits-descriptor"
+  | "invalid-inherits-descriptor"
+  | "missing-initial-value-descriptor"
+  | "invalid-initial-value"
+  | "incompatible-assignment-value"
+  | "incompatible-var-substitution"
+  | "incompatible-var-fallback"
+  | "unresolved-import"
+  | "unparseable-css";
+
 export interface ValidationDiagnostic {
   code: DiagnosticCode;
+  phase: DiagnosticPhase;
+  reason: DiagnosticReason;
+  severity: DiagnosticSeverity;
   filePath: string;
   loc: SourceLocation | null;
   message: string;
+  descriptorName?: "syntax" | "inherits" | "initial-value";
   propertyName?: string;
   registeredSyntax?: string;
   expectedProperty?: string;
+  actualValue?: string;
+  importSpecifier?: string;
   snippet?: string;
 }
 

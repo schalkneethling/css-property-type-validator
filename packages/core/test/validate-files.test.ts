@@ -55,7 +55,24 @@ describe("validateFiles", () => {
 
     expect(result.diagnostics).toHaveLength(1);
     expect(result.diagnostics[0]?.code).toBe("incompatible-var-usage");
+    expect(result.diagnostics[0]?.phase).toBe("usage");
+    expect(result.diagnostics[0]?.reason).toBe("incompatible-var-substitution");
+    expect(result.diagnostics[0]?.severity).toBe("error");
     expect(result.diagnostics[0]?.expectedProperty).toBe("inline-size");
+  });
+
+  it("reports unparseable validation inputs without fail-fast", () => {
+    const result = validateFiles([
+      { path: "/tmp/broken.css", css: null as unknown as string },
+      { path: "/tmp/valid.css", css: ".card { color: red; }" },
+    ]);
+
+    expect(result.diagnostics).toHaveLength(2);
+    expect(result.diagnostics[1]?.code).toBe("unparseable-stylesheet");
+    expect(result.diagnostics[1]?.phase).toBe("parse");
+    expect(result.diagnostics[1]?.reason).toBe("unparseable-css");
+    expect(result.diagnostics[1]?.severity).toBe("error");
+    expect(result.diagnostics[1]?.filePath).toBe("/tmp/broken.css");
   });
 
   it("stops on the first registration validation failure when fail-fast is enabled", () => {
@@ -124,6 +141,9 @@ describe("validateFiles", () => {
 
     expect(result.diagnostics).toHaveLength(1);
     expect(result.diagnostics[0]?.code).toBe("invalid-property-registration");
+    expect(result.diagnostics[0]?.phase).toBe("registry");
+    expect(result.diagnostics[0]?.reason).toBe("invalid-syntax-descriptor");
+    expect(result.diagnostics[0]?.descriptorName).toBe("syntax");
   });
 
   it("reports missing string-valued syntax descriptors in @property rules", () => {
@@ -319,6 +339,9 @@ describe("validateFiles", () => {
 
     expect(result.diagnostics).toHaveLength(1);
     expect(result.diagnostics[0]?.code).toBe("incompatible-custom-property-assignment");
+    expect(result.diagnostics[0]?.phase).toBe("assignment");
+    expect(result.diagnostics[0]?.reason).toBe("incompatible-assignment-value");
+    expect(result.diagnostics[0]?.actualValue).toBe("10px");
     expect(result.diagnostics[0]?.propertyName).toBe("--brand-color");
     expect(result.diagnostics[0]?.expectedProperty).toBeUndefined();
     expect(result.validatedDeclarations).toBe(1);
@@ -409,6 +432,8 @@ describe("validateFiles", () => {
 
     expect(result.diagnostics).toHaveLength(1);
     expect(result.diagnostics[0]?.code).toBe("incompatible-var-usage");
+    expect(result.diagnostics[0]?.phase).toBe("usage");
+    expect(result.diagnostics[0]?.reason).toBe("incompatible-var-fallback");
     expect(result.diagnostics[0]?.message).toContain("Fallback value in var()");
     expect(result.diagnostics[0]?.message).toContain("--brand-color");
     expect(result.diagnostics[0]?.expectedProperty).toBe("color");
@@ -797,6 +822,9 @@ describe("validateFiles", () => {
 
     expect(result.diagnostics).toHaveLength(1);
     expect(result.diagnostics[0]?.code).toBe("unresolved-import");
+    expect(result.diagnostics[0]?.phase).toBe("import");
+    expect(result.diagnostics[0]?.reason).toBe("unresolved-import");
+    expect(result.diagnostics[0]?.importSpecifier).toBe("./missing.css");
     expect(result.diagnostics[0]?.message).toContain("./missing.css");
   });
 

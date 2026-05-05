@@ -282,6 +282,9 @@ function processPropertyRule(
   if (!propertyName) {
     diagnostics.push({
       code: "invalid-property-registration",
+      phase: "registry",
+      reason: "missing-property-name",
+      severity: "error",
       filePath: input.path,
       loc: toLocation(node.loc),
       message: "Found an @property rule without a custom property name.",
@@ -300,9 +303,13 @@ function processPropertyRule(
   if (!syntax) {
     diagnostics.push({
       code: "invalid-property-registration",
+      phase: "registry",
+      reason: "missing-syntax-descriptor",
+      severity: "error",
       filePath: input.path,
       loc: toLocation(node.loc),
       message: `@property ${propertyName} is missing a valid string-valued syntax descriptor.`,
+      descriptorName: "syntax",
       propertyName,
     });
     return;
@@ -317,9 +324,13 @@ function processPropertyRule(
   } catch (error) {
     diagnostics.push({
       code: "invalid-property-registration",
+      phase: "registry",
+      reason: "invalid-syntax-descriptor",
+      severity: "error",
       filePath: input.path,
       loc: toLocation(node.loc),
       message: `@property ${propertyName} has an invalid syntax descriptor "${syntax}": ${(error as Error).message}`,
+      descriptorName: "syntax",
       propertyName,
       registeredSyntax: syntax,
     });
@@ -335,9 +346,13 @@ function processPropertyRule(
     if (unsupportedName) {
       diagnostics.push({
         code: "invalid-property-registration",
+        phase: "registry",
+        reason: "unsupported-syntax-component",
+        severity: "error",
         filePath: input.path,
         loc: toLocation(node.loc),
         message: `@property ${propertyName} uses the unsupported syntax component name "${unsupportedName}".`,
+        descriptorName: "syntax",
         propertyName,
         registeredSyntax: syntax,
       });
@@ -352,9 +367,13 @@ function processPropertyRule(
   if (!inheritsDescriptor) {
     diagnostics.push({
       code: "invalid-property-registration",
+      phase: "registry",
+      reason: "missing-inherits-descriptor",
+      severity: "error",
       filePath: input.path,
       loc: toLocation(node.loc),
       message: `@property ${propertyName} is missing the required inherits descriptor.`,
+      descriptorName: "inherits",
       propertyName,
       registeredSyntax: syntax,
     });
@@ -364,9 +383,14 @@ function processPropertyRule(
   if (inherits === undefined) {
     diagnostics.push({
       code: "invalid-property-registration",
+      phase: "registry",
+      reason: "invalid-inherits-descriptor",
+      severity: "error",
       filePath: input.path,
       loc: toLocation(node.loc),
       message: `@property ${propertyName} must set inherits to true or false.`,
+      actualValue: inheritsRaw,
+      descriptorName: "inherits",
       propertyName,
       registeredSyntax: syntax,
     });
@@ -379,9 +403,13 @@ function processPropertyRule(
   if (syntax !== "*" && !initialValue) {
     diagnostics.push({
       code: "invalid-property-registration",
+      phase: "registry",
+      reason: "missing-initial-value-descriptor",
+      severity: "error",
       filePath: input.path,
       loc: toLocation(node.loc),
       message: `@property ${propertyName} is missing the required initial-value descriptor for non-universal syntax "${syntax}".`,
+      descriptorName: "initial-value",
       propertyName,
       registeredSyntax: syntax,
     });
@@ -398,9 +426,14 @@ function processPropertyRule(
     if (initialValueFailure) {
       diagnostics.push({
         code: "invalid-property-registration",
+        phase: "registry",
+        reason: "invalid-initial-value",
+        severity: "error",
         filePath: input.path,
         loc: toLocation(node.loc),
         message: initialValueFailure,
+        actualValue: initialValue,
+        descriptorName: "initial-value",
         propertyName,
         registeredSyntax: syntax,
       });
@@ -456,6 +489,9 @@ export function collectRegistry(
     } catch (error) {
       diagnostics.push({
         code: "unparseable-stylesheet",
+        phase: "parse",
+        reason: "unparseable-css",
+        severity: "error",
         filePath: input.path,
         loc: null,
         message: `Could not parse stylesheet: ${(error as Error).message}`,
@@ -482,9 +518,13 @@ export function collectRegistry(
         if (!resolvedImport) {
           diagnostics.push({
             code: "unresolved-import",
+            phase: "import",
+            reason: "unresolved-import",
+            severity: "error",
             filePath: input.path,
             loc: toLocation(node.loc),
             message: `Could not resolve imported stylesheet "${importSpecifier}" from ${input.path}.`,
+            importSpecifier,
             snippet: cssTree.generate(node),
           });
           if (options.failFast) {
