@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.0](https://github.com/schalkneethling/css-property-type-validator/compare/core-v0.9.0...core-v0.10.0) (2026-05-05)
+
+
+### Features
+
+* **core:** add structured diagnostic metadata ([a530cda](https://github.com/schalkneethling/css-property-type-validator/commit/a530cda4dfda1ae88727273e86c60aab0260e180))
+
 ## [0.9.0](https://github.com/schalkneethling/css-property-type-validator/compare/core-v0.8.0...core-v0.9.0) (2026-05-04)
 
 
