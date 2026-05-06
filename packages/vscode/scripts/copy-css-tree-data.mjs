@@ -17,7 +17,7 @@ try {
   } catch {
     throw new Error(
       "mdn-data is not resolved. Ensure it is installed as a devDependency of packages/vscode " +
-      "or as a transitive dependency of @schalkneethling/css-property-type-validator-core."
+        "or as a transitive dependency of @schalkneethling/css-property-type-validator-core.",
     );
   }
 }
