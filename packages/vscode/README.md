@@ -15,10 +15,7 @@ Shared registry files are configured with workspace-relative glob patterns:
 
 ```json
 {
-  "cssPropertyTypeValidator.registryFiles": [
-    "src/tokens/**/*.css",
-    "src/theme/**/*.css"
-  ]
+  "cssPropertyTypeValidator.registryFiles": ["src/tokens/**/*.css", "src/theme/**/*.css"]
 }
 ```
 

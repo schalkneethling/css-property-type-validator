@@ -1,4 +1,7 @@
-import type { SourceLocation, ValidationDiagnostic } from "@schalkneethling/css-property-type-validator-core";
+import type {
+  SourceLocation,
+  ValidationDiagnostic,
+} from "@schalkneethling/css-property-type-validator-core";
 
 export interface PlainPosition {
   character: number;

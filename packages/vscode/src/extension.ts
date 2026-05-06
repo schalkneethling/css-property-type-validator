@@ -23,7 +23,10 @@ const validationTimers = new Map<string, NodeJS.Timeout>();
 const diagnosticUris = new Set<string>();
 
 function isCssFileDocument(document: vscode.TextDocument): boolean {
-  return document.uri.scheme === DOCUMENT_SELECTOR.scheme && document.languageId === DOCUMENT_SELECTOR.language;
+  return (
+    document.uri.scheme === DOCUMENT_SELECTOR.scheme &&
+    document.languageId === DOCUMENT_SELECTOR.language
+  );
 }
 
 function getRegistryPatterns(): string[] {
@@ -99,12 +102,7 @@ function createImportResolver(): ResolveImport {
 function toVsCodeDiagnostic(diagnostic: ValidationDiagnostic): vscode.Diagnostic {
   const range = toPlainRange(diagnostic.loc);
   const vscodeDiagnostic = new vscode.Diagnostic(
-    new vscode.Range(
-      range.start.line,
-      range.start.character,
-      range.end.line,
-      range.end.character,
-    ),
+    new vscode.Range(range.start.line, range.start.character, range.end.line, range.end.character),
     diagnostic.message,
     vscode.DiagnosticSeverity.Error,
   );

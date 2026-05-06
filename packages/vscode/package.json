@@ -1,20 +1,8 @@
 {
   "name": "css-property-type-validator",
   "displayName": "CSS Property Type Validator",
-  "description": "Validate typed CSS custom property registrations and var() usage in CSS files.",
   "version": "0.1.0",
-  "publisher": "schalkneethling",
-  "license": "MIT",
-  "author": "Schalk Neethling",
-  "homepage": "https://github.com/schalkneethling/css-property-type-validator#readme",
-  "bugs": {
-    "url": "https://github.com/schalkneethling/css-property-type-validator/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/schalkneethling/css-property-type-validator.git",
-    "directory": "packages/vscode"
-  },
+  "description": "Validate typed CSS custom property registrations and var() usage in CSS files.",
   "categories": [
     "Linters",
     "Programming Languages"
@@ -26,16 +14,39 @@
     "validator",
     "vscode"
   ],
-  "icon": "resources/icon.png",
+  "homepage": "https://github.com/schalkneethling/css-property-type-validator#readme",
+  "bugs": {
+    "url": "https://github.com/schalkneethling/css-property-type-validator/issues"
+  },
+  "license": "MIT",
+  "author": "Schalk Neethling",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/schalkneethling/css-property-type-validator.git",
+    "directory": "packages/vscode"
+  },
+  "publisher": "schalkneethling",
   "type": "module",
   "main": "./dist/extension.cjs",
-  "engines": {
-    "vscode": "^1.118.0"
+  "scripts": {
+    "build": "pnpm run check-types && vp pack src/extension.ts -f cjs -d dist --platform node --target node22 --sourcemap --deps.neverBundle vscode --deps.alwaysBundle @schalkneethling/css-property-type-validator-core --deps.alwaysBundle css-tree --deps.onlyBundle css-tree --deps.onlyBundle source-map-js && node scripts/copy-css-tree-data.mjs",
+    "check-types": "tsc --noEmit -p tsconfig.json",
+    "compile-tests": "tsc -p tsconfig.test.json",
+    "package:vsix": "vsce package --no-dependencies",
+    "test": "pnpm run build && pnpm run compile-tests && node ./out/test/run.js",
+    "vscode:prepublish": "pnpm run build",
+    "watch": "vp pack src/extension.ts -f cjs -d dist --platform node --target node22 --sourcemap --deps.neverBundle vscode --deps.alwaysBundle @schalkneethling/css-property-type-validator-core --deps.alwaysBundle css-tree --deps.onlyBundle css-tree --deps.onlyBundle source-map-js --watch src"
   },
-  "activationEvents": [
-    "onLanguage:css",
-    "onCommand:cssPropertyTypeValidator.refresh"
-  ],
+  "dependencies": {
+    "@schalkneethling/css-property-type-validator-core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/vscode": "^1.118.0",
+    "@vscode/test-electron": "^2.5.2",
+    "@vscode/vsce": "^3.9.1",
+    "mocha": "^11.7.5"
+  },
   "contributes": {
     "commands": [
       {
@@ -57,23 +68,12 @@
       }
     }
   },
-  "scripts": {
-    "build": "pnpm run check-types && vp pack src/extension.ts -f cjs -d dist --platform node --target node22 --sourcemap --deps.neverBundle vscode --deps.alwaysBundle @schalkneethling/css-property-type-validator-core --deps.alwaysBundle css-tree --deps.onlyBundle css-tree --deps.onlyBundle source-map-js && node scripts/copy-css-tree-data.mjs",
-    "check-types": "tsc --noEmit -p tsconfig.json",
-    "compile-tests": "tsc -p tsconfig.test.json",
-    "package:vsix": "vsce package --no-dependencies",
-    "test": "pnpm run build && pnpm run compile-tests && node ./out/test/run.js",
-    "vscode:prepublish": "pnpm run build",
-    "watch": "vp pack src/extension.ts -f cjs -d dist --platform node --target node22 --sourcemap --deps.neverBundle vscode --deps.alwaysBundle @schalkneethling/css-property-type-validator-core --deps.alwaysBundle css-tree --deps.onlyBundle css-tree --deps.onlyBundle source-map-js --watch src"
-  },
-  "dependencies": {
-    "@schalkneethling/css-property-type-validator-core": "workspace:*"
-  },
-  "devDependencies": {
-    "@types/mocha": "^10.0.10",
-    "@types/vscode": "^1.118.0",
-    "@vscode/test-electron": "^2.5.2",
-    "@vscode/vsce": "^3.9.1",
-    "mocha": "^11.7.5"
+  "activationEvents": [
+    "onCommand:cssPropertyTypeValidator.refresh",
+    "onLanguage:css"
+  ],
+  "icon": "resources/icon.png",
+  "engines": {
+    "vscode": "^1.118.0"
   }
 }
