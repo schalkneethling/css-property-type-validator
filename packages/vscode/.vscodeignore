@@ -1,0 +1,11 @@
+.vscode/**
+.vp/**
+node_modules/**
+out/**
+scripts/**
+src/**
+test/**
+tsconfig.json
+tsconfig.test.json
+*.tsbuildinfo
+*.vsix
