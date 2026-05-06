@@ -1,7 +1,7 @@
 {
   "name": "css-property-type-validator",
   "displayName": "CSS Property Type Validator",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Validate typed CSS custom property registrations and var() usage in CSS files.",
   "categories": [
     "Linters",
