@@ -4,9 +4,24 @@ import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 
 const packageRoot = dirname(dirname(fileURLToPath(import.meta.url)));
+const vscodeRequire = createRequire(join(packageRoot, "package.json"));
 const coreRequire = createRequire(join(packageRoot, "../core/package.json"));
 const cssTreePackageJsonPath = coreRequire.resolve("css-tree/package.json");
-const mdnDataPackageJsonPath = coreRequire.resolve("mdn-data/package.json");
+
+let mdnDataPackageJsonPath;
+try {
+  mdnDataPackageJsonPath = vscodeRequire.resolve("mdn-data/package.json");
+} catch {
+  try {
+    mdnDataPackageJsonPath = coreRequire.resolve("mdn-data/package.json");
+  } catch {
+    throw new Error(
+      "mdn-data is not resolved. Ensure it is installed as a devDependency of packages/vscode " +
+      "or as a transitive dependency of @schalkneethling/css-property-type-validator-core."
+    );
+  }
+}
+
 const cssTreeRoot = dirname(cssTreePackageJsonPath);
 const mdnDataRoot = dirname(mdnDataPackageJsonPath);
 const generatedDataRoot = join(packageRoot, "data");

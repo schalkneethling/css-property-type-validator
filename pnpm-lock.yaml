@@ -58,6 +58,9 @@ importers:
       '@vscode/vsce':
         specifier: ^3.9.1
         version: 3.9.1
+      mdn-data:
+        specifier: ^2.27.1
+        version: 2.27.1
       mocha:
         specifier: ^11.7.5
         version: 11.7.5
