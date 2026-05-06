@@ -45,6 +45,7 @@ suite("CSS Property Type Validator extension", () => {
   });
 
   teardown(async () => {
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
     await vscode.workspace
       .getConfiguration("cssPropertyTypeValidator")
       .update("registryFiles", undefined, vscode.ConfigurationTarget.Workspace);
@@ -78,6 +79,43 @@ suite("CSS Property Type Validator extension", () => {
 
     await vscode.workspace.applyEdit(edit);
     await waitForDiagnostics(document.uri, 0);
+  });
+
+  test("reports diagnostics when only a registry file is configured", async () => {
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+    const registryUri = await writeWorkspaceFile(
+      "registry-only-tokens.css",
+      '@property --bad { syntax: "<color"; inherits: true; initial-value: transparent; }',
+    );
+
+    await vscode.workspace
+      .getConfiguration("cssPropertyTypeValidator")
+      .update("registryFiles", ["registry-only-tokens.css"], vscode.ConfigurationTarget.Workspace);
+    await vscode.commands.executeCommand("cssPropertyTypeValidator.refresh");
+
+    const diagnostics = await waitForDiagnostics(registryUri, 1);
+    assert.equal(diagnostics[0]?.code, "invalid-syntax-descriptor");
+  });
+
+  test("keeps configured registry diagnostics after closing the registry document", async () => {
+    const registryUri = await writeWorkspaceFile(
+      "closable-tokens.css",
+      '@property --bad-space { syntax: "<length>"; inherits: maybe; initial-value: 0px; }',
+    );
+
+    await vscode.workspace
+      .getConfiguration("cssPropertyTypeValidator")
+      .update("registryFiles", ["closable-tokens.css"], vscode.ConfigurationTarget.Workspace);
+
+    const document = await vscode.workspace.openTextDocument(registryUri);
+    await vscode.window.showTextDocument(document);
+    await vscode.commands.executeCommand("cssPropertyTypeValidator.refresh");
+
+    const diagnostics = await waitForDiagnostics(registryUri, 1);
+    assert.equal(diagnostics[0]?.code, "invalid-inherits-descriptor");
+
+    await vscode.commands.executeCommand("workbench.action.closeActiveEditor");
+    await waitForDiagnostics(registryUri, 1);
   });
 
   test("uses configured registry files and refreshes diagnostics", async () => {

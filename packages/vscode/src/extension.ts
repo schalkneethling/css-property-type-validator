@@ -159,12 +159,6 @@ function getOpenCssInputs(): ValidationInput[] {
 
 function validateOpenCssDocuments(): void {
   const inputs = getOpenCssInputs();
-
-  if (inputs.length === 0) {
-    setDiagnostics([]);
-    return;
-  }
-
   const result = validateFiles(inputs, {
     registryInputs,
     resolveImport: createImportResolver(),
@@ -210,8 +204,7 @@ function handleClosedDocument(document: vscode.TextDocument): void {
     return;
   }
 
-  diagnosticCollection.delete(document.uri);
-  diagnosticUris.delete(document.uri.toString());
+  validateOpenCssDocuments();
 }
 
 async function handleConfigurationChanged(event: vscode.ConfigurationChangeEvent): Promise<void> {

@@ -39,10 +39,12 @@ export function run(): Promise<void> {
   return new Promise((resolve, reject) => {
     mocha.run((failures) => {
       if (failures > 0) {
+        mocha.dispose();
         reject(new Error(`${failures} test failure${failures === 1 ? "" : "s"}`));
         return;
       }
 
+      mocha.dispose();
       resolve();
     });
   });

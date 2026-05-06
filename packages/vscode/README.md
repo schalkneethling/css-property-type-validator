@@ -28,7 +28,7 @@ Registry files contribute `@property` registrations and registration diagnostics
 ## Known Limits
 
 - V1 validates CSS files only.
-- Desktop VS Code-compatible editors are supported; web extension hosts such as vscode.dev and github.dev are out of scope for this version.
+- Desktop VS Code-compatible editors are supported; web extension hosts such as vscode.dev and GitHub.dev are out of scope for this version.
 - Embedded HTML style blocks, SCSS, Less, PostCSS, Vue, Svelte, JSX, and TSX are out of scope for this version.
 - The extension does not provide autofixes.
 
