@@ -44,3 +44,5 @@ Manual release paths:
 
 - VS Code Marketplace: upload the generated VSIX manually, or publish later with `vsce publish` after configuring a Marketplace publisher and PAT.
 - OpenVSX: publish the same generated VSIX with `ovsx publish <file> -p <token>` after namespace setup.
+
+Maintainers: see [MAINTAINING.md](./MAINTAINING.md) for the packaging/runtime checklist and the `css-tree`/`mdn-data` pitfalls that matter for published VSIX builds.
