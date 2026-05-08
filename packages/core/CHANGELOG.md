@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.11.0](https://github.com/schalkneethling/css-property-type-validator/compare/core-v0.10.0...core-v0.11.0) (2026-05-08)
+
+
+### Features
+
+* **core:** report unresolved var references ([7486179](https://github.com/schalkneethling/css-property-type-validator/commit/74861797495d30650416b786a2ff79e60dd3ddf6))
+* **core:** report unresolved var references ([a583c98](https://github.com/schalkneethling/css-property-type-validator/commit/a583c9894f26a1437da5956a6552cfa63652165c))
+
+
+### Bug Fixes
+
+* **core:** reuse parsed stylesheets during validation ([f30aa55](https://github.com/schalkneethling/css-property-type-validator/commit/f30aa5566579f01cdb24c4f231094b654020fc89))
+* **core:** skip known property collection after fail-fast diagnostics ([55a6c45](https://github.com/schalkneethling/css-property-type-validator/commit/55a6c452fe648d33c1b6ef81a4cbcff4afa5b7a5))
+* **core:** treat protocol-relative imports as absolute ([9534ae7](https://github.com/schalkneethling/css-property-type-validator/commit/9534ae77f796db2ef1e479f52b4373267b313598))
+
 ## [0.10.0](https://github.com/schalkneethling/css-property-type-validator/compare/core-v0.9.0...core-v0.10.0) (2026-05-05)
 
 
