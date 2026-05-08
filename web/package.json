@@ -15,12 +15,12 @@
     "@codemirror/lang-css": "6.3.1",
     "@codemirror/lang-json": "6.0.2",
     "@codemirror/state": "6.6.0",
-    "@codemirror/view": "6.41.1",
+    "@codemirror/view": "6.42.1",
     "@schalkneethling/css-property-type-validator-core": "workspace:*",
     "codemirror": "6.0.2"
   },
   "devDependencies": {
     "@playwright/test": "1.59.1",
-    "vite": "8.0.10"
+    "vite": "8.0.11"
   }
 }
