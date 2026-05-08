@@ -49,6 +49,7 @@ export type DiagnosticReason =
   | "incompatible-assignment-value"
   | "incompatible-var-substitution"
   | "incompatible-var-fallback"
+  | "unresolved-var-reference"
   | "unresolved-import"
   | "unparseable-css";
 

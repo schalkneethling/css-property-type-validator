@@ -1,5 +1,6 @@
 import * as cssTree from "css-tree";
 
+import { getImportSpecifier, isAbsoluteImportUrl, type CssAtruleNode } from "./imports.js";
 import { buildRepresentativeSamples } from "./syntax-samples.js";
 import { collectRegistry } from "./registry.js";
 import {
@@ -51,6 +52,8 @@ interface CssWalkNode {
 
 type CssLocation = NonNullable<ValidationDiagnostic["loc"]>;
 
+const PROPERTY_RULE_DESCRIPTOR_NAMES = Object.freeze(["syntax", "inherits", "initial-value"]);
+
 function toLocation(loc: unknown): ValidationDiagnostic["loc"] {
   if (!loc) {
     return null;
@@ -69,8 +72,110 @@ function registryMap(registry: RegisteredProperty[]): Map<string, RegisteredProp
   return new Map(registry.map((entry) => [entry.name, entry]));
 }
 
+function customPropertySet(properties: Iterable<string>): Set<string> {
+  return new Set([...properties].filter(isCustomPropertyName));
+}
+
 function isCustomPropertyName(propertyName: string): boolean {
   return propertyName.startsWith("--");
+}
+
+function isPropertyRuleDescriptorName(propertyName: string): boolean {
+  return PROPERTY_RULE_DESCRIPTOR_NAMES.includes(propertyName);
+}
+
+function mergeInto(target: Set<string>, source: Iterable<string>): void {
+  for (const value of source) {
+    target.add(value);
+  }
+}
+
+function collectKnownCustomProperties(
+  inputs: ValidationInput[],
+  registryInputs: ValidationInput[],
+  registry: Map<string, RegisteredProperty>,
+  resolveImport?: ResolveImport,
+): Map<string, Set<string>> {
+  const byPath = new Map<string, Set<string>>();
+
+  function collectForInput(input: ValidationInput, activePaths = new Set<string>()): Set<string> {
+    const cached = byPath.get(input.path);
+
+    if (cached) {
+      return cached;
+    }
+
+    const known = new Set<string>();
+    byPath.set(input.path, known);
+
+    if (activePaths.has(input.path)) {
+      return known;
+    }
+
+    activePaths.add(input.path);
+
+    let ast: CssValueAst;
+
+    try {
+      ast = cssTree.parse(input.css, {
+        filename: input.path,
+        positions: true,
+      });
+    } catch {
+      activePaths.delete(input.path);
+      return known;
+    }
+
+    cssTree.walk(ast, {
+      visit: "Declaration",
+      enter(node: CssWalkNode) {
+        const declaration = node as CssDeclarationNode;
+
+        if (isCustomPropertyName(declaration.property)) {
+          known.add(declaration.property);
+        }
+      },
+    });
+
+    for (const node of Array.from(
+      (ast as { children?: ArrayLike<unknown> }).children ?? [],
+    ) as CssAtruleNode[]) {
+      if (node.type !== "Atrule" || node.name !== "import") {
+        continue;
+      }
+
+      const importSpecifier = getImportSpecifier(node);
+
+      if (!importSpecifier || isAbsoluteImportUrl(importSpecifier) || !resolveImport) {
+        continue;
+      }
+
+      const importedInput = resolveImport(importSpecifier, input.path);
+
+      if (!importedInput) {
+        continue;
+      }
+
+      mergeInto(known, collectForInput(importedInput, activePaths));
+    }
+
+    activePaths.delete(input.path);
+    return known;
+  }
+
+  const globalCustomProperties = customPropertySet(registry.keys());
+
+  for (const input of registryInputs) {
+    mergeInto(globalCustomProperties, collectForInput(input));
+  }
+
+  for (const input of inputs) {
+    const visibleProperties = new Set(globalCustomProperties);
+    mergeInto(visibleProperties, collectForInput(input));
+    byPath.set(input.path, visibleProperties);
+  }
+
+  return byPath;
 }
 
 function collectVarFunctions(value: CssValueAst): VarFunctionNode[] {
@@ -252,6 +357,26 @@ function toFallbackDiagnostic(
   };
 }
 
+function toUnresolvedVarDiagnostic(
+  filePath: string,
+  declaration: CssDeclarationNode,
+  propertyName: string,
+  varNode: VarFunctionNode,
+): ValidationDiagnostic {
+  return {
+    code: "incompatible-var-usage",
+    phase: "usage",
+    reason: "unresolved-var-reference",
+    severity: "error",
+    filePath,
+    loc: toLocation(varNode.loc),
+    message: `Custom property ${propertyName} is not defined in the known CSS inputs for this file, and no fallback was provided. This is a static check of the CSS files and imports available to the validator, not a full browser cascade evaluation.`,
+    propertyName,
+    expectedProperty: declaration.property,
+    snippet: cssTree.generate(declaration),
+  };
+}
+
 function toPreciseMultiVarDiagnostic(
   filePath: string,
   declaration: CssDeclarationNode,
@@ -310,8 +435,14 @@ function validateDeclaration(
   filePath: string,
   declaration: CssDeclarationNode,
   registry: Map<string, RegisteredProperty>,
+  knownCustomProperties: Set<string>,
 ): { diagnostics: ValidationDiagnostic[]; skipped: number; validated: number } {
   const diagnostics: ValidationDiagnostic[] = [];
+
+  if (isPropertyRuleDescriptorName(declaration.property)) {
+    return { diagnostics, skipped: 0, validated: 0 };
+  }
+
   const valueToValidate = getDeclarationValueForValidation(declaration);
 
   if (!valueToValidate) {
@@ -363,6 +494,18 @@ function validateDeclaration(
     return { diagnostics, skipped: 1, validated: 0 };
   }
 
+  for (const entry of varMetadata) {
+    if (
+      entry.propertyName &&
+      !knownCustomProperties.has(entry.propertyName) &&
+      getVarFallbackSource(entry.varNode) === null
+    ) {
+      diagnostics.push(
+        toUnresolvedVarDiagnostic(filePath, declaration, entry.propertyName, entry.varNode),
+      );
+    }
+  }
+
   const registeredEntries = varMetadata.filter(
     (
       entry,
@@ -375,7 +518,11 @@ function validateDeclaration(
 
   if (isCustomPropertyName(declaration.property)) {
     if (registeredEntries.length !== varMetadata.length) {
-      return { diagnostics, skipped: 1, validated: 0 };
+      return {
+        diagnostics,
+        skipped: diagnostics.length > 0 ? 0 : 1,
+        validated: 0,
+      };
     }
   }
 
@@ -386,7 +533,11 @@ function validateDeclaration(
 
   // Mixed registered and unregistered var() usages still leave unresolved values in the declaration.
   if (registeredEntries.length !== varMetadata.length) {
-    return { diagnostics, skipped: 1, validated: 0 };
+    return {
+      diagnostics,
+      skipped: diagnostics.length > 0 ? 0 : 1,
+      validated: 0,
+    };
   }
 
   // Universal-syntax registrations compute like unregistered custom properties,
@@ -567,6 +718,12 @@ export function validateFiles(
   });
   const diagnostics = [...registryResult.diagnostics];
   const registry = registryMap(registryResult.registry);
+  const knownCustomPropertiesByPath = collectKnownCustomProperties(
+    inputs,
+    registryInputs,
+    registry,
+    options.resolveImport,
+  );
   let skippedDeclarations = 0;
   let validatedDeclarations = 0;
 
@@ -611,7 +768,14 @@ export function validateFiles(
           return;
         }
 
-        const result = validateDeclaration(input.path, node as CssDeclarationNode, registry);
+        const knownCustomProperties =
+          knownCustomPropertiesByPath.get(input.path) ?? customPropertySet(registry.keys());
+        const result = validateDeclaration(
+          input.path,
+          node as CssDeclarationNode,
+          registry,
+          knownCustomProperties,
+        );
         diagnostics.push(...result.diagnostics);
         skippedDeclarations += result.skipped;
         validatedDeclarations += result.validated;

@@ -1,5 +1,6 @@
 import * as cssTree from "css-tree";
 
+import { getImportSpecifier, isAbsoluteImportUrl } from "./imports.js";
 import { getFirstUnsupportedSyntaxComponentName } from "./supported-syntax.js";
 
 import type {
@@ -39,11 +40,6 @@ interface CssAtruleNode extends CssNodeWithLoc {
 
 interface CssStringNode {
   type: "String";
-  value?: string;
-}
-
-interface CssUrlNode {
-  type: "Url";
   value?: string;
 }
 
@@ -242,33 +238,6 @@ function getRawDescriptor(declaration: CssDeclarationNode | undefined): string |
   }
 
   return cssTree.generate(declaration.value).trim();
-}
-
-function getImportSpecifier(importRule: CssAtruleNode): string | null {
-  const preludeChildren = Array.from(importRule.prelude?.children ?? []) as Array<
-    CssStringNode | CssUrlNode
-  >;
-
-  if (preludeChildren.length !== 1) {
-    return null;
-  }
-
-  const firstPreludeNode = preludeChildren[0];
-
-  if (firstPreludeNode?.type === "String" || firstPreludeNode?.type === "Url") {
-    return String(firstPreludeNode.value ?? "");
-  }
-
-  return null;
-}
-
-function isAbsoluteImportUrl(importSpecifier: string): boolean {
-  try {
-    new URL(importSpecifier);
-    return true;
-  } catch {
-    return false;
-  }
 }
 
 function processPropertyRule(

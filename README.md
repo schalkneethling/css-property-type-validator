@@ -1,6 +1,6 @@
 # CSS Property Type Validator
 
-Validate CSS custom property registrations declared with `@property`, then check whether registered custom properties are used compatibly through `var()`.
+Validate CSS custom property registrations declared with `@property`, then check whether registered custom properties are used compatibly through `var()` and whether referenced custom properties are known to the validator.
 
 Use it when your design tokens or component styles rely on typed custom properties and you want CI to catch mistakes such as a color token being used for `inline-size`, or a length token being assigned an invalid value.
 
@@ -12,7 +12,8 @@ Use it when your design tokens or component styles rely on typed custom properti
 - Checks registered `var()` usages against the consuming CSS property
 - Checks simple `var()` fallback branches against the consuming CSS property
 - Validates authored values assigned directly to registered custom properties
-- Ignores unregistered custom properties
+- Reports unknown no-fallback `var()` references from known CSS inputs
+- Ignores unknown custom properties when that `var()` call provides a fallback
 - Skips ambiguous cases conservatively to avoid false positives
 
 ## Packages
@@ -130,7 +131,9 @@ Locations are included when available.
 
 The validator assembles one registry from the full set of validation inputs, registry-only inputs, and resolved local imports. It then checks each validation input against that combined registry.
 
-When a resolver is available, the core follows local unconditioned `@import` rules while assembling the registry. The CLI provides a resolver for relative and root-relative local CSS imports. Remote imports and conditioned imports are intentionally out of scope for now.
+When a resolver is available, the core follows local unconditioned `@import` rules while assembling the registry and known custom property inputs. The CLI provides a resolver for relative and root-relative local CSS imports. Remote imports and conditioned imports are intentionally out of scope for now.
+
+Unresolved `var()` diagnostics are static known-inputs checks. They report `var(--token)` when `--token` is absent from known files/imports/registry inputs and no fallback is provided, but they do not attempt a full browser cascade evaluation for a specific DOM element.
 
 Compatibility checks are conservative:
 

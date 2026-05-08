@@ -81,6 +81,21 @@ suite("CSS Property Type Validator extension", () => {
     await waitForDiagnostics(document.uri, 0);
   });
 
+  test("reports unresolved var references for open CSS documents", async () => {
+    const componentUri = await writeWorkspaceFile(
+      "unresolved-var-component.css",
+      ".card { color: var(--missing-color); }",
+    );
+    const document = await vscode.workspace.openTextDocument(componentUri);
+
+    await vscode.window.showTextDocument(document);
+
+    const diagnostics = await waitForDiagnostics(document.uri, 1);
+    assert.equal(diagnostics[0]?.source, "CSS Property Type Validator");
+    assert.equal(diagnostics[0]?.code, "unresolved-var-reference");
+    assert.match(diagnostics[0]?.message ?? "", /not a full browser cascade evaluation/);
+  });
+
   test("reports diagnostics when only a registry file is configured", async () => {
     await vscode.commands.executeCommand("workbench.action.closeAllEditors");
     const registryUri = await writeWorkspaceFile(
