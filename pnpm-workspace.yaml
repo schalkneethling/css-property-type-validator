@@ -1,3 +1,6 @@
 packages:
   - "packages/*"
   - "web"
+allowBuilds:
+  "@vscode/vsce-sign": true
+  keytar: true
