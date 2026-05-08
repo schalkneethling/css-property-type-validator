@@ -718,12 +718,6 @@ export function validateFiles(
   });
   const diagnostics = [...registryResult.diagnostics];
   const registry = registryMap(registryResult.registry);
-  const knownCustomPropertiesByPath = collectKnownCustomProperties(
-    inputs,
-    registryInputs,
-    registry,
-    options.resolveImport,
-  );
   let skippedDeclarations = 0;
   let validatedDeclarations = 0;
 
@@ -735,6 +729,13 @@ export function validateFiles(
       validatedDeclarations,
     };
   }
+
+  const knownCustomPropertiesByPath = collectKnownCustomProperties(
+    inputs,
+    registryInputs,
+    registry,
+    options.resolveImport,
+  );
 
   for (const input of inputs) {
     let ast: CssValueAst;
