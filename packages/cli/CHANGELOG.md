@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.0](https://github.com/schalkneethling/css-property-type-validator/compare/cli-v0.6.0...cli-v0.7.0) (2026-05-08)
+
+
+### Features
+
+* **core:** report unresolved var references ([7486179](https://github.com/schalkneethling/css-property-type-validator/commit/74861797495d30650416b786a2ff79e60dd3ddf6))
+* **core:** report unresolved var references ([a583c98](https://github.com/schalkneethling/css-property-type-validator/commit/a583c9894f26a1437da5956a6552cfa63652165c))
+
 ## [0.6.0](https://github.com/schalkneethling/css-property-type-validator/compare/cli-v0.5.0...cli-v0.6.0) (2026-05-04)
 
 
