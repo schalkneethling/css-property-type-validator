@@ -881,6 +881,28 @@ describe("validateFiles", () => {
     expect(result.validatedDeclarations).toBe(0);
   });
 
+  it("skips protocol-relative URL imports when assembling known inputs", () => {
+    const result = validateFiles(
+      [
+        {
+          path: "/tmp/main.css",
+          css: '@import "//cdn.example.com/tokens.css";\n.card { inline-size: var(--space); }',
+        },
+      ],
+      {
+        resolveImport: () => {
+          throw new Error("protocol-relative imports should be skipped before resolution");
+        },
+      },
+    );
+
+    expect(result.diagnostics).toHaveLength(1);
+    expect(result.diagnostics[0]?.reason).toBe("unresolved-var-reference");
+    expect(result.diagnostics[0]?.propertyName).toBe("--space");
+    expect(result.registry).toHaveLength(0);
+    expect(result.validatedDeclarations).toBe(0);
+  });
+
   it("skips conditioned imports when assembling known inputs", () => {
     const result = validateFiles(
       [

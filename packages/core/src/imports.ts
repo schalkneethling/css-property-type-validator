@@ -37,6 +37,10 @@ export function getImportSpecifier(importRule: CssAtruleNode): string | null {
 }
 
 export function isAbsoluteImportUrl(importSpecifier: string): boolean {
+  if (importSpecifier.startsWith("//")) {
+    return true;
+  }
+
   try {
     new URL(importSpecifier);
     return true;
