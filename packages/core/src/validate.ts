@@ -54,6 +54,18 @@ type CssLocation = NonNullable<ValidationDiagnostic["loc"]>;
 
 const PROPERTY_RULE_DESCRIPTOR_NAMES = Object.freeze(["syntax", "inherits", "initial-value"]);
 
+type ParsedStylesheet = CssValueAst & { children?: ArrayLike<unknown> };
+
+type ParsedStylesheetResult =
+  | {
+      ast: ParsedStylesheet;
+      error: null;
+    }
+  | {
+      ast: null;
+      error: Error;
+    };
+
 function toLocation(loc: unknown): ValidationDiagnostic["loc"] {
   if (!loc) {
     return null;
@@ -90,10 +102,42 @@ function mergeInto(target: Set<string>, source: Iterable<string>): void {
   }
 }
 
+function parseStylesheet(
+  input: ValidationInput,
+  parsedAstByPath: Map<string, ParsedStylesheetResult>,
+): ParsedStylesheetResult {
+  const cached = parsedAstByPath.get(input.path);
+
+  if (cached) {
+    return cached;
+  }
+
+  let result: ParsedStylesheetResult;
+
+  try {
+    result = {
+      ast: cssTree.parse(input.css, {
+        filename: input.path,
+        positions: true,
+      }) as ParsedStylesheet,
+      error: null,
+    };
+  } catch (error) {
+    result = {
+      ast: null,
+      error: error as Error,
+    };
+  }
+
+  parsedAstByPath.set(input.path, result);
+  return result;
+}
+
 function collectKnownCustomProperties(
   inputs: ValidationInput[],
   registryInputs: ValidationInput[],
   registry: Map<string, RegisteredProperty>,
+  parsedAstByPath: Map<string, ParsedStylesheetResult>,
   resolveImport?: ResolveImport,
 ): Map<string, Set<string>> {
   const byPath = new Map<string, Set<string>>();
@@ -114,19 +158,14 @@ function collectKnownCustomProperties(
 
     activePaths.add(input.path);
 
-    let ast: CssValueAst;
+    const parsed = parseStylesheet(input, parsedAstByPath);
 
-    try {
-      ast = cssTree.parse(input.css, {
-        filename: input.path,
-        positions: true,
-      });
-    } catch {
+    if (!parsed.ast) {
       activePaths.delete(input.path);
       return known;
     }
 
-    cssTree.walk(ast, {
+    cssTree.walk(parsed.ast, {
       visit: "Declaration",
       enter(node: CssWalkNode) {
         const declaration = node as CssDeclarationNode;
@@ -137,9 +176,7 @@ function collectKnownCustomProperties(
       },
     });
 
-    for (const node of Array.from(
-      (ast as { children?: ArrayLike<unknown> }).children ?? [],
-    ) as CssAtruleNode[]) {
+    for (const node of Array.from(parsed.ast.children ?? []) as CssAtruleNode[]) {
       if (node.type !== "Atrule" || node.name !== "import") {
         continue;
       }
@@ -730,22 +767,19 @@ export function validateFiles(
     };
   }
 
+  const parsedAstByPath = new Map<string, ParsedStylesheetResult>();
   const knownCustomPropertiesByPath = collectKnownCustomProperties(
     inputs,
     registryInputs,
     registry,
+    parsedAstByPath,
     options.resolveImport,
   );
 
   for (const input of inputs) {
-    let ast: CssValueAst;
+    const parsed = parseStylesheet(input, parsedAstByPath);
 
-    try {
-      ast = cssTree.parse(input.css, {
-        filename: input.path,
-        positions: true,
-      });
-    } catch (error) {
+    if (!parsed.ast) {
       diagnostics.push({
         code: "unparseable-stylesheet",
         phase: "parse",
@@ -753,7 +787,7 @@ export function validateFiles(
         severity: "error",
         filePath: input.path,
         loc: null,
-        message: `Could not parse stylesheet: ${(error as Error).message}`,
+        message: `Could not parse stylesheet: ${parsed.error.message}`,
       });
 
       if (options.failFast) {
@@ -762,7 +796,7 @@ export function validateFiles(
       continue;
     }
 
-    cssTree.walk(ast, {
+    cssTree.walk(parsed.ast, {
       visit: "Declaration",
       enter(node: CssWalkNode) {
         if (options.failFast && diagnostics.length > 0) {
