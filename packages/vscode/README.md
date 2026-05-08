@@ -5,7 +5,7 @@ Validate typed CSS custom property registrations and `var()` usage directly in V
 ## Features
 
 - Validates plain CSS documents as you edit.
-- Reports native editor diagnostics for invalid `@property` registrations, incompatible registered custom property assignments, incompatible `var()` usage, unresolved imports, and parse failures.
+- Reports native editor diagnostics for invalid `@property` registrations, incompatible registered custom property assignments, incompatible `var()` usage, unknown no-fallback `var()` references, unresolved imports, and parse failures.
 - Supports shared `@property` registry files through workspace settings.
 - Refreshes registry inputs and open-document diagnostics with one command.
 
@@ -30,6 +30,7 @@ Registry files contribute `@property` registrations and registration diagnostics
 - V1 validates CSS files only.
 - Desktop VS Code-compatible editors are supported; web extension hosts such as vscode.dev and GitHub.dev are out of scope for this version.
 - Embedded HTML style blocks, SCSS, Less, PostCSS, Vue, Svelte, JSX, and TSX are out of scope for this version.
+- Unresolved `var()` diagnostics are static known-inputs checks, not full browser cascade evaluations for a specific DOM element.
 - The extension does not provide autofixes.
 
 ## Packaging And Release

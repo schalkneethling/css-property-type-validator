@@ -2,7 +2,7 @@
 
 Core validation engine for CSS Property Type Validator.
 
-It reads CSS `@property` registrations, builds a registry of typed custom properties, validates registration descriptors, checks compatible `var()` usage against consuming CSS properties, validates simple fallback branches, and checks authored assignments to registered custom properties.
+It reads CSS `@property` registrations, builds a registry of typed custom properties, validates registration descriptors, checks compatible `var()` usage against consuming CSS properties, reports unresolved no-fallback `var()` references from known CSS inputs, validates simple fallback branches, and checks authored assignments to registered custom properties.
 
 ## Install
 
@@ -64,6 +64,7 @@ type ValidationDiagnostic = {
     | "incompatible-assignment-value"
     | "incompatible-var-substitution"
     | "incompatible-var-fallback"
+    | "unresolved-var-reference"
     | "unresolved-import"
     | "unparseable-css";
   severity: "error";
@@ -82,7 +83,7 @@ type ValidationDiagnostic = {
 
 `code` is the broad diagnostic category, while `phase` and `reason` are intended for rule mapping, editor diagnostics, filtering, and stable automation. Existing fields such as `propertyName`, `registeredSyntax`, and `expectedProperty` remain available for integrations that already consume them.
 
-Provide `resolveImport` when registry assembly should follow local unconditioned imports:
+Provide `resolveImport` when registry assembly and known custom property checks should follow local unconditioned imports:
 
 ```ts
 const result = validateFiles(inputs, {
@@ -96,7 +97,8 @@ const result = validateFiles(inputs, {
 ## Notes
 
 - `registryInputs` contribute registrations and registration diagnostics without validating ordinary declarations from those files.
-- Unregistered custom properties are ignored.
+- `unresolved-var-reference` is a static known-inputs diagnostic. It reports `var(--token)` when `--token` is absent from known files/imports/registry inputs and no fallback is provided; it does not attempt a full browser cascade evaluation for a specific DOM element.
+- Unknown custom properties with fallbacks, such as `var(--token, red)`, do not report `unresolved-var-reference`.
 - Ambiguous cases are skipped conservatively to avoid false positives.
 - Remote and conditioned imports are out of scope unless a future validation model can handle them safely.
 

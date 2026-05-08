@@ -20,6 +20,10 @@ const VALID_CSS = `@property --space {
   inline-size: var(--space);
 }`;
 
+const UNRESOLVED_CSS = `.card {
+  color: var(--missing-color);
+}`;
+
 async function replaceEditorContents(page: Page, css: string) {
   await page.locator("validator-code-editor.js-input-editor").evaluate((editor, value) => {
     const codeEditor = editor as HTMLElement & { value: string };
@@ -103,6 +107,15 @@ test("switches diagnostics to pretty JSON", async ({ page }) => {
 
   await expect(page.getByText('"diagnostics": [')).toBeVisible();
   await expect(page.getByText('"code": "incompatible-var-usage"')).toBeVisible();
+});
+
+test("shows unresolved var diagnostics in the browser output", async ({ page }) => {
+  await page.goto("/");
+  await replaceEditorContents(page, UNRESOLVED_CSS);
+  await page.getByRole("button", { name: "Validate" }).click();
+
+  await expect(page.getByText("Custom property --missing-color is not defined")).toBeVisible();
+  await expect(page.getByText("not a full browser cascade evaluation")).toBeVisible();
 });
 
 test("shows the success state for valid CSS", async ({ page }) => {

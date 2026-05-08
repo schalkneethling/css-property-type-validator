@@ -122,12 +122,14 @@ describe("validateFiles", () => {
     expect(result.validatedDeclarations).toBe(1);
   });
 
-  it("ignores unregistered custom properties", () => {
+  it("reports unresolved unregistered custom properties without fallbacks", () => {
     const result = runValidation({
       "/tmp/usage.css": ".card { inline-size: var(--space); }",
     });
 
-    expect(result.diagnostics).toHaveLength(0);
+    expect(result.diagnostics).toHaveLength(1);
+    expect(result.diagnostics[0]?.reason).toBe("unresolved-var-reference");
+    expect(result.diagnostics[0]?.propertyName).toBe("--space");
     expect(result.validatedDeclarations).toBe(0);
   });
 
@@ -374,15 +376,17 @@ describe("validateFiles", () => {
     expect(result.validatedDeclarations).toBe(1);
   });
 
-  it("skips assignment-site validation when var() references are mixed registered and unregistered", () => {
+  it("reports unresolved assignment-site var() references without fallbacks", () => {
     const result = runValidation({
       "/tmp/registry.css":
         '@property --space { syntax: "<length>"; inherits: false; initial-value: 0px; }',
       "/tmp/usage.css": ":root { --space: var(--unknown-space); }",
     });
 
-    expect(result.diagnostics).toHaveLength(0);
-    expect(result.skippedDeclarations).toBe(1);
+    expect(result.diagnostics).toHaveLength(1);
+    expect(result.diagnostics[0]?.reason).toBe("unresolved-var-reference");
+    expect(result.diagnostics[0]?.propertyName).toBe("--unknown-space");
+    expect(result.skippedDeclarations).toBe(0);
     expect(result.validatedDeclarations).toBe(0);
   });
 
@@ -567,25 +571,62 @@ describe("validateFiles", () => {
     expect(result.validatedDeclarations).toBe(1);
   });
 
-  it("skips mixed registered and unregistered multi-var() declarations", () => {
+  it("reports unknown no-fallback var() references", () => {
+    const result = runValidation({
+      "/tmp/usage.css": ".card { color: var(--shared-color-white); }",
+    });
+
+    expect(result.diagnostics).toHaveLength(1);
+    expect(result.diagnostics[0]?.code).toBe("incompatible-var-usage");
+    expect(result.diagnostics[0]?.phase).toBe("usage");
+    expect(result.diagnostics[0]?.reason).toBe("unresolved-var-reference");
+    expect(result.diagnostics[0]?.propertyName).toBe("--shared-color-white");
+    expect(result.diagnostics[0]?.expectedProperty).toBe("color");
+    expect(result.diagnostics[0]?.message).toContain("known CSS inputs");
+    expect(result.diagnostics[0]?.message).toContain("not a full browser cascade evaluation");
+  });
+
+  it("accepts unknown var() references that provide a fallback", () => {
+    const result = runValidation({
+      "/tmp/usage.css": ".card { color: var(--shared-color-white, white); }",
+    });
+
+    expect(result.diagnostics).toHaveLength(0);
+    expect(result.validatedDeclarations).toBe(0);
+  });
+
+  it("accepts var() references to custom properties declared in the same file", () => {
+    const result = runValidation({
+      "/tmp/usage.css":
+        ":root { --shared-color-white: white; }\n.card { color: var(--shared-color-white); }",
+    });
+
+    expect(result.diagnostics).toHaveLength(0);
+  });
+
+  it("reports unknown no-fallback var() references in mixed multi-var() declarations", () => {
     const result = runValidation({
       "/tmp/registry.css":
         '@property --space { syntax: "<length>"; inherits: false; initial-value: 0px; }',
       "/tmp/usage.css": ".card { margin: var(--space) var(--unknown-gap); }",
     });
 
-    expect(result.diagnostics).toHaveLength(0);
-    expect(result.skippedDeclarations).toBe(1);
+    expect(result.diagnostics).toHaveLength(1);
+    expect(result.diagnostics[0]?.reason).toBe("unresolved-var-reference");
+    expect(result.diagnostics[0]?.propertyName).toBe("--unknown-gap");
+    expect(result.skippedDeclarations).toBe(0);
   });
 
-  it("skips multi-var() declarations when one var() cannot be fully resolved", () => {
+  it("reports unknown no-fallback var() references when one multi-var() cannot be fully resolved", () => {
     const result = runValidation({
       "/tmp/registry.css": SHARED_REGISTRY,
       "/tmp/usage.css": ".card { border: var(--border-width) solid var(--missing-color); }",
     });
 
-    expect(result.diagnostics).toHaveLength(0);
-    expect(result.skippedDeclarations).toBe(1);
+    expect(result.diagnostics).toHaveLength(1);
+    expect(result.diagnostics[0]?.reason).toBe("unresolved-var-reference");
+    expect(result.diagnostics[0]?.propertyName).toBe("--missing-color");
+    expect(result.skippedDeclarations).toBe(0);
     expect(result.validatedDeclarations).toBe(0);
   });
 
@@ -676,6 +717,50 @@ describe("validateFiles", () => {
     expect(result.registry).toHaveLength(1);
     expect(result.registry[0]?.filePath).toBe("/tmp/tokens.css");
     expect(result.validatedDeclarations).toBe(1);
+  });
+
+  it("uses imports from validation inputs when checking known custom properties", () => {
+    const cssByPath = {
+      "/tmp/main.css": '@import "./tokens.css";\n.card { color: var(--surface-color); }',
+      "/tmp/tokens.css": ":root { --surface-color: canvas; }",
+    };
+
+    const result = validateFiles([{ path: "/tmp/main.css", css: cssByPath["/tmp/main.css"] }], {
+      resolveImport: createTestResolver(cssByPath),
+    });
+
+    expect(result.diagnostics).toHaveLength(0);
+  });
+
+  it("uses registry-only inputs when checking known custom properties", () => {
+    const result = validateFiles(
+      [{ path: "/tmp/component.css", css: ".card { color: var(--surface-color); }" }],
+      {
+        registryInputs: [
+          {
+            path: "/tmp/tokens.css",
+            css: ":root { --surface-color: canvas; }",
+          },
+        ],
+      },
+    );
+
+    expect(result.diagnostics).toHaveLength(0);
+  });
+
+  it("reports unknown custom properties missing from the resolved import path", () => {
+    const cssByPath = {
+      "/tmp/main.css": '@import "./tokens.css";\n.card { color: var(--missing-color); }',
+      "/tmp/tokens.css": ":root { --surface-color: canvas; }",
+    };
+
+    const result = validateFiles([{ path: "/tmp/main.css", css: cssByPath["/tmp/main.css"] }], {
+      resolveImport: createTestResolver(cssByPath),
+    });
+
+    expect(result.diagnostics).toHaveLength(1);
+    expect(result.diagnostics[0]?.reason).toBe("unresolved-var-reference");
+    expect(result.diagnostics[0]?.propertyName).toBe("--missing-color");
   });
 
   it("follows nested imports from registry-only inputs", () => {
@@ -774,7 +859,7 @@ describe("validateFiles", () => {
     expect(result.validatedDeclarations).toBe(1);
   });
 
-  it("skips absolute URL imports when assembling the registry", () => {
+  it("skips absolute URL imports when assembling known inputs", () => {
     const result = validateFiles(
       [
         {
@@ -789,12 +874,36 @@ describe("validateFiles", () => {
       },
     );
 
-    expect(result.diagnostics).toHaveLength(0);
+    expect(result.diagnostics).toHaveLength(1);
+    expect(result.diagnostics[0]?.reason).toBe("unresolved-var-reference");
+    expect(result.diagnostics[0]?.propertyName).toBe("--space");
     expect(result.registry).toHaveLength(0);
     expect(result.validatedDeclarations).toBe(0);
   });
 
-  it("skips conditioned imports when assembling the registry", () => {
+  it("skips protocol-relative URL imports when assembling known inputs", () => {
+    const result = validateFiles(
+      [
+        {
+          path: "/tmp/main.css",
+          css: '@import "//cdn.example.com/tokens.css";\n.card { inline-size: var(--space); }',
+        },
+      ],
+      {
+        resolveImport: () => {
+          throw new Error("protocol-relative imports should be skipped before resolution");
+        },
+      },
+    );
+
+    expect(result.diagnostics).toHaveLength(1);
+    expect(result.diagnostics[0]?.reason).toBe("unresolved-var-reference");
+    expect(result.diagnostics[0]?.propertyName).toBe("--space");
+    expect(result.registry).toHaveLength(0);
+    expect(result.validatedDeclarations).toBe(0);
+  });
+
+  it("skips conditioned imports when assembling known inputs", () => {
     const result = validateFiles(
       [
         {
@@ -809,7 +918,9 @@ describe("validateFiles", () => {
       },
     );
 
-    expect(result.diagnostics).toHaveLength(0);
+    expect(result.diagnostics).toHaveLength(1);
+    expect(result.diagnostics[0]?.reason).toBe("unresolved-var-reference");
+    expect(result.diagnostics[0]?.propertyName).toBe("--space");
     expect(result.registry).toHaveLength(0);
     expect(result.validatedDeclarations).toBe(0);
   });
@@ -903,13 +1014,14 @@ describe("validateFiles", () => {
         expectedProperty?: string;
         message: string;
         propertyName?: string;
+        reason?: string;
         snippet?: string;
       }>;
       skippedDeclarations: number;
       validatedDeclarations: number;
     };
 
-    expect(report.diagnostics).toHaveLength(21);
+    expect(report.diagnostics).toHaveLength(22);
     expect(
       report.diagnostics.some((diagnostic) => diagnostic.code === "invalid-property-registration"),
     ).toBe(true);
@@ -952,6 +1064,13 @@ describe("validateFiles", () => {
         (diagnostic) =>
           diagnostic.snippet === "border:var(--brand-color) solid var(--brand-color)" &&
           diagnostic.message.includes("may be incompatible"),
+      ),
+    ).toBe(true);
+    expect(
+      report.diagnostics.some(
+        (diagnostic) =>
+          diagnostic.reason === "unresolved-var-reference" &&
+          diagnostic.message.includes("not a full browser cascade evaluation"),
       ),
     ).toBe(true);
     expect(report.skippedDeclarations).toBe(0);
@@ -1025,6 +1144,46 @@ describe("validateFiles", () => {
     );
     expect(cliResult.stdout).toContain("inline-size:var(--brand-color)");
   });
+
+  it(
+    "includes unresolved var() diagnostics in CLI human and json output",
+    { timeout: 120000 },
+    () => {
+      const repoRoot = path.resolve(import.meta.dirname, "../../..");
+      const fixtureDir = mkdtempSync(path.join(tmpdir(), "css-property-validator-"));
+      const validationPath = path.join(fixtureDir, "component.css");
+
+      writeFileSync(validationPath, ".card { color: var(--missing-color); }\n");
+
+      const humanResult = spawnSync("node", ["packages/cli/dist/cli.js", validationPath], {
+        cwd: repoRoot,
+        encoding: "utf8",
+      });
+
+      expect(humanResult.status).toBe(1);
+      expect(humanResult.stdout).toContain(`${validationPath}:1:16 incompatible-var-usage`);
+      expect(humanResult.stdout).toContain("Custom property --missing-color is not defined");
+      expect(humanResult.stdout).toContain("not a full browser cascade evaluation");
+      expect(humanResult.stdout).toContain("color:var(--missing-color)");
+
+      const jsonResult = spawnSync(
+        "node",
+        ["packages/cli/dist/cli.js", validationPath, "--format", "json"],
+        {
+          cwd: repoRoot,
+          encoding: "utf8",
+        },
+      );
+      const report = JSON.parse(jsonResult.stdout) as {
+        diagnostics: Array<{ propertyName?: string; reason?: string; message: string }>;
+      };
+
+      expect(jsonResult.status).toBe(1);
+      expect(report.diagnostics[0]?.reason).toBe("unresolved-var-reference");
+      expect(report.diagnostics[0]?.propertyName).toBe("--missing-color");
+      expect(report.diagnostics[0]?.message).toContain("known CSS inputs");
+    },
+  );
 
   it(
     "limits CLI json output to the first validation failure with --failfast",
