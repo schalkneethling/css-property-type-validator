@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.1](https://github.com/schalkneethling/css-property-type-validator/compare/core-v0.11.0...core-v0.11.1) (2026-05-10)
+
+
+### Bug Fixes
+
+* make unknown custom property checks opt-in ([4eb0d09](https://github.com/schalkneethling/css-property-type-validator/commit/4eb0d0992dca84626a8564fae7c38d5f22a128eb))
+
 ## [0.11.0](https://github.com/schalkneethling/css-property-type-validator/compare/core-v0.10.0...core-v0.11.0) (2026-05-08)
 
 
