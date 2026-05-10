@@ -2,7 +2,7 @@
 
 Command-line interface for CSS Property Type Validator.
 
-Use it locally or in CI to validate CSS `@property` registrations, registered `var()` usage, unresolved no-fallback `var()` references from known CSS inputs, simple fallback branches, and authored assignments to registered custom properties.
+Use it locally or in CI to validate CSS `@property` registrations, registered `var()` usage, simple fallback branches, and authored assignments to registered custom properties. Static unresolved no-fallback `var()` checks are available as an opt-in.
 
 ## Install
 
@@ -23,6 +23,7 @@ css-property-type-validator "src/**/*.css"
 css-property-type-validator "src/**/*.css" --format json
 css-property-type-validator "src/**/*.css" --registry "src/tokens/**/*.css"
 css-property-type-validator "src/tokens/**/*.css" --registry-only
+css-property-type-validator "src/**/*.css" --check-unknown-custom-properties --tokens "src/tokens/**/*.css"
 css-property-type-validator "src/**/*.css" --failfast
 ```
 
@@ -36,7 +37,9 @@ css-property-type-validator "src/**/*.css" \
 
 The CLI follows local unconditioned `@import` rules while assembling the registry and known custom property inputs, including relative and root-relative imports. Remote and conditioned imports are skipped.
 
-Unresolved `var()` diagnostics are static known-inputs checks. They report `var(--token)` when `--token` is absent from known files/imports/registry inputs and no fallback is provided, but they do not attempt a full browser cascade evaluation for a specific DOM element.
+Unresolved `var()` diagnostics are static known-inputs checks enabled with `--check-unknown-custom-properties`. Use `--tokens` to seed known custom property names from token files without validating ordinary declarations from those files. These diagnostics do not attempt a full browser cascade evaluation for a specific DOM element.
+
+The CLI prints a warning when unresolved checks are enabled without `--tokens`, and when `--tokens` is provided without enabling unresolved checks.
 
 By default, the CLI collects and reports all validation failures. Use `--failfast` to stop after the first validation failure, whether it comes from registry assembly, `@property` validation, or declaration usage validation. Exit codes and human/JSON output formats are unchanged.
 

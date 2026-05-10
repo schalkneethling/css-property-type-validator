@@ -1,6 +1,6 @@
 # CSS Property Type Validator
 
-Validate CSS custom property registrations declared with `@property`, then check whether registered custom properties are used compatibly through `var()` and whether referenced custom properties are known to the validator.
+Validate CSS custom property registrations declared with `@property`, then check whether registered custom properties are used compatibly through `var()`.
 
 Use it when your design tokens or component styles rely on typed custom properties and you want CI to catch mistakes such as a color token being used for `inline-size`, or a length token being assigned an invalid value.
 
@@ -12,7 +12,7 @@ Use it when your design tokens or component styles rely on typed custom properti
 - Checks registered `var()` usages against the consuming CSS property
 - Checks simple `var()` fallback branches against the consuming CSS property
 - Validates authored values assigned directly to registered custom properties
-- Reports unknown no-fallback `var()` references from known CSS inputs
+- Optionally reports unknown no-fallback `var()` references from configured known custom property inputs
 - Ignores unknown custom properties when that `var()` call provides a fallback
 - Skips ambiguous cases conservatively to avoid false positives
 
@@ -47,6 +47,7 @@ css-property-type-validator "src/**/*.css"
 css-property-type-validator "src/**/*.css" --format json
 css-property-type-validator "src/**/*.css" --registry "src/tokens/**/*.css"
 css-property-type-validator "src/tokens/**/*.css" --registry-only
+css-property-type-validator "src/**/*.css" --check-unknown-custom-properties --tokens "src/tokens/**/*.css"
 css-property-type-validator "src/**/*.css" --failfast
 ```
 
@@ -63,6 +64,16 @@ css-property-type-validator "src/tokens/**/*.css" --registry-only
 ```
 
 Registry-only files still report parse errors and invalid `@property` registrations.
+
+Use `--check-unknown-custom-properties` to opt in to static no-fallback `var()` reference checks. Use `--tokens` with that flag to seed known custom property names from one or more token files without validating ordinary declarations from those files:
+
+```bash
+css-property-type-validator "src/components/**/*.css" \
+  --check-unknown-custom-properties \
+  --tokens "src/tokens/**/*.css"
+```
+
+The CLI prints a warning when unresolved checks are enabled without `--tokens`, and when `--tokens` is provided without enabling unresolved checks.
 
 By default, the CLI collects every validation failure it can find and reports the full result set.
 Use `--failfast` when you want it to stop after the first validation failure, including
@@ -133,7 +144,11 @@ The validator assembles one registry from the full set of validation inputs, reg
 
 When a resolver is available, the core follows local unconditioned `@import` rules while assembling the registry and known custom property inputs. The CLI provides a resolver for relative and root-relative local CSS imports. Remote imports and conditioned imports are intentionally out of scope for now.
 
-Unresolved `var()` diagnostics are static known-inputs checks. They report `var(--token)` when `--token` is absent from known files/imports/registry inputs and no fallback is provided, but they do not attempt a full browser cascade evaluation for a specific DOM element.
+Unresolved `var()` diagnostics are opt-in static known-inputs checks. They report `var(--token)` when `--token` is absent from known files/imports/registry/token inputs and no fallback is provided, but they do not attempt a full browser cascade evaluation for a specific DOM element.
+
+Consumers should follow the same pattern as the CLI, web app, and VS Code extension: expose the unresolved-reference check as off by default, and expose token-file configuration beside it so projects can provide their real custom property source of truth.
+
+The browser UI accepts one or more selected CSS token files. Recursive folder selection is not exposed because directory upload is not consistently standardized across browsers.
 
 Compatibility checks are conservative:
 

@@ -2,7 +2,7 @@
 
 Core validation engine for CSS Property Type Validator.
 
-It reads CSS `@property` registrations, builds a registry of typed custom properties, validates registration descriptors, checks compatible `var()` usage against consuming CSS properties, reports unresolved no-fallback `var()` references from known CSS inputs, validates simple fallback branches, and checks authored assignments to registered custom properties.
+It reads CSS `@property` registrations, builds a registry of typed custom properties, validates registration descriptors, checks compatible `var()` usage against consuming CSS properties, optionally reports unresolved no-fallback `var()` references from known custom property inputs, validates simple fallback branches, and checks authored assignments to registered custom properties.
 
 ## Install
 
@@ -23,6 +23,13 @@ const result = validateFiles(
     },
   ],
   {
+    checkUnresolvedCustomProperties: true,
+    knownCustomPropertyInputs: [
+      {
+        path: "project-tokens.css",
+        css: ":root { --brand-color: rebeccapurple; }",
+      },
+    ],
     registryInputs: [
       {
         path: "tokens.css",
@@ -83,7 +90,7 @@ type ValidationDiagnostic = {
 
 `code` is the broad diagnostic category, while `phase` and `reason` are intended for rule mapping, editor diagnostics, filtering, and stable automation. Existing fields such as `propertyName`, `registeredSyntax`, and `expectedProperty` remain available for integrations that already consume them.
 
-Provide `resolveImport` when registry assembly and known custom property checks should follow local unconditioned imports:
+Provide `resolveImport` when registry assembly and opt-in known custom property checks should follow local unconditioned imports:
 
 ```ts
 const result = validateFiles(inputs, {
@@ -97,8 +104,12 @@ const result = validateFiles(inputs, {
 ## Notes
 
 - `registryInputs` contribute registrations and registration diagnostics without validating ordinary declarations from those files.
-- `unresolved-var-reference` is a static known-inputs diagnostic. It reports `var(--token)` when `--token` is absent from known files/imports/registry inputs and no fallback is provided; it does not attempt a full browser cascade evaluation for a specific DOM element.
+- `checkUnresolvedCustomProperties` defaults to `false`; integrations should expose it as opt-in.
+- `knownCustomPropertyInputs` seed the known custom property set for `unresolved-var-reference` without becoming validation targets.
+- If the same file is also present in the validation inputs, its ordinary declarations are still validated as part of the normal validation path.
+- `unresolved-var-reference` is a static known-inputs diagnostic. When enabled, it reports `var(--token)` when `--token` is absent from known files/imports/registry/token inputs and no fallback is provided; it does not attempt a full browser cascade evaluation for a specific DOM element.
 - Unknown custom properties with fallbacks, such as `var(--token, red)`, do not report `unresolved-var-reference`.
+- Other consumers should follow the CLI, web, and VS Code pattern: keep unresolved checks off by default and pair the opt-in with token-file configuration.
 - Ambiguous cases are skipped conservatively to avoid false positives.
 - Remote and conditioned imports are out of scope unless a future validation model can handle them safely.
 

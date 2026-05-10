@@ -19,6 +19,8 @@ const VALIDATION_DEBOUNCE_MS = 300;
 
 let diagnosticCollection: vscode.DiagnosticCollection;
 let registryInputs: ValidationInput[] = [];
+let knownCustomPropertyInputs: ValidationInput[] = [];
+let lastConfigurationWarningKey: string | null = null;
 const validationTimers = new Map<string, NodeJS.Timeout>();
 const diagnosticUris = new Set<string>();
 
@@ -30,10 +32,24 @@ function isCssFileDocument(document: vscode.TextDocument): boolean {
 }
 
 function getRegistryPatterns(): string[] {
+  return getConfigurationPatterns("registryFiles");
+}
+
+function getTokenPatterns(): string[] {
+  return getConfigurationPatterns("tokenFiles");
+}
+
+function getConfigurationPatterns(name: string): string[] {
   return vscode.workspace
     .getConfiguration("cssPropertyTypeValidator")
-    .get<string[]>("registryFiles", [])
+    .get<string[]>(name, [])
     .filter((pattern) => pattern.trim().length > 0);
+}
+
+function shouldCheckUnknownCustomProperties(): boolean {
+  return vscode.workspace
+    .getConfiguration("cssPropertyTypeValidator")
+    .get<boolean>("checkUnknownCustomProperties", false);
 }
 
 async function readWorkspaceFile(uri: vscode.Uri): Promise<string> {
@@ -41,9 +57,8 @@ async function readWorkspaceFile(uri: vscode.Uri): Promise<string> {
   return new TextDecoder().decode(bytes);
 }
 
-async function loadRegistryInputs(): Promise<ValidationInput[]> {
+async function loadConfiguredInputs(patterns: string[]): Promise<ValidationInput[]> {
   const workspaceFolders = vscode.workspace.workspaceFolders ?? [];
-  const patterns = getRegistryPatterns();
   const inputsByPath = new Map<string, ValidationInput>();
 
   for (const folder of workspaceFolders) {
@@ -65,6 +80,39 @@ async function loadRegistryInputs(): Promise<ValidationInput[]> {
   }
 
   return [...inputsByPath.values()].sort((left, right) => left.path.localeCompare(right.path));
+}
+
+async function loadRegistryInputs(): Promise<ValidationInput[]> {
+  return loadConfiguredInputs(getRegistryPatterns());
+}
+
+async function loadKnownCustomPropertyInputs(): Promise<ValidationInput[]> {
+  return shouldCheckUnknownCustomProperties() ? loadConfiguredInputs(getTokenPatterns()) : [];
+}
+
+function showUnknownCustomPropertyConfigurationWarning(): void {
+  const shouldCheck = shouldCheckUnknownCustomProperties();
+  const tokenPatterns = getTokenPatterns();
+  let nextWarningKey: string | null = null;
+  let message: string | null = null;
+
+  if (shouldCheck && tokenPatterns.length === 0) {
+    nextWarningKey = "enabled-without-token-files";
+    message =
+      "CSS Property Type Validator: unknown custom property checks are enabled without tokenFiles. Configure tokenFiles to avoid false positives from project-wide custom properties outside the validation/import path.";
+  } else if (!shouldCheck && tokenPatterns.length > 0) {
+    nextWarningKey = "token-files-disabled";
+    message =
+      "CSS Property Type Validator: tokenFiles are ignored unless checkUnknownCustomProperties is enabled.";
+  }
+
+  if (!message || nextWarningKey === lastConfigurationWarningKey) {
+    lastConfigurationWarningKey = nextWarningKey;
+    return;
+  }
+
+  lastConfigurationWarningKey = nextWarningKey;
+  void vscode.window.showWarningMessage(message);
 }
 
 function getWorkspaceFolderForPath(filePath: string): vscode.WorkspaceFolder | undefined {
@@ -160,6 +208,8 @@ function getOpenCssInputs(): ValidationInput[] {
 function validateOpenCssDocuments(): void {
   const inputs = getOpenCssInputs();
   const result = validateFiles(inputs, {
+    checkUnresolvedCustomProperties: shouldCheckUnknownCustomProperties(),
+    knownCustomPropertyInputs,
     registryInputs,
     resolveImport: createImportResolver(),
   });
@@ -189,7 +239,9 @@ function scheduleValidation(document: vscode.TextDocument, delay = VALIDATION_DE
 }
 
 async function reloadRegistryAndValidate(): Promise<void> {
+  showUnknownCustomPropertyConfigurationWarning();
   registryInputs = await loadRegistryInputs();
+  knownCustomPropertyInputs = await loadKnownCustomPropertyInputs();
   validateOpenCssDocuments();
 }
 
@@ -208,7 +260,11 @@ function handleClosedDocument(document: vscode.TextDocument): void {
 }
 
 async function handleConfigurationChanged(event: vscode.ConfigurationChangeEvent): Promise<void> {
-  if (event.affectsConfiguration("cssPropertyTypeValidator.registryFiles")) {
+  if (
+    event.affectsConfiguration("cssPropertyTypeValidator.registryFiles") ||
+    event.affectsConfiguration("cssPropertyTypeValidator.tokenFiles") ||
+    event.affectsConfiguration("cssPropertyTypeValidator.checkUnknownCustomProperties")
+  ) {
     await reloadRegistryAndValidate();
   }
 }

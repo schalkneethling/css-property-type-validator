@@ -52,6 +52,9 @@ test("renders the validator workspace", async ({ page }) => {
           - /url: https://github.com/schalkneethling/css-property-type-validator
       - region "Validation actions":
         - heading "Validation actions" [level=2]
+        - checkbox "Unknown custom properties"
+        - text: Unknown custom properties Open Tokens
+        - button "Open Tokens" [disabled]
         - text: Open CSS
         - button "Open CSS"
         - button "Validate"
@@ -109,13 +112,47 @@ test("switches diagnostics to pretty JSON", async ({ page }) => {
   await expect(page.getByText('"code": "incompatible-var-usage"')).toBeVisible();
 });
 
-test("shows unresolved var diagnostics in the browser output", async ({ page }) => {
+test("does not show unresolved var diagnostics by default", async ({ page }) => {
   await page.goto("/");
   await replaceEditorContents(page, UNRESOLVED_CSS);
   await page.getByRole("button", { name: "Validate" }).click();
 
+  await expect(page.getByRole("status")).toContainText("No validation issues found.");
+  await expect(page.getByText("Custom property --missing-color is not defined")).toBeHidden();
+});
+
+test("shows unresolved var diagnostics when enabled", async ({ page }) => {
+  await page.goto("/");
+  await replaceEditorContents(page, UNRESOLVED_CSS);
+  await page.getByLabel("Unknown custom properties").check();
+  await page.getByRole("button", { name: "Validate" }).click();
+
   await expect(page.getByText("Custom property --missing-color is not defined")).toBeVisible();
   await expect(page.getByText("not a full browser cascade evaluation")).toBeVisible();
+});
+
+test("warns when unresolved var checks are enabled without token files", async ({ page }) => {
+  await page.goto("/");
+  await replaceEditorContents(page, `.card {\n  color: var(--missing-color, red);\n}`);
+  await page.getByLabel("Unknown custom properties").check();
+  await page.getByRole("button", { name: "Validate" }).click();
+
+  await expect(page.getByText("Configuration warning.")).toBeVisible();
+  await expect(page.getByText("Choose token files")).toBeVisible();
+});
+
+test("uses token files for unresolved var diagnostics when enabled", async ({ page }) => {
+  await page.goto("/");
+  await replaceEditorContents(page, `.card {\n  color: var(--surface-color);\n}`);
+  await page.getByLabel("Unknown custom properties").check();
+  await page.getByLabel("Open Tokens").setInputFiles({
+    name: "tokens.css",
+    mimeType: "text/css",
+    buffer: Buffer.from(":root { --surface-color: canvas; }\n"),
+  });
+  await page.getByRole("button", { name: "Validate" }).click();
+
+  await expect(page.getByRole("status")).toContainText("No validation issues found.");
 });
 
 test("shows the success state for valid CSS", async ({ page }) => {
