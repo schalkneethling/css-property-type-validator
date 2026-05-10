@@ -1,7 +1,7 @@
 {
   "name": "css-property-type-validator",
   "displayName": "CSS Property Type Validator",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Validate typed CSS custom property registrations and var() usage in CSS files.",
   "categories": [
     "Linters",
@@ -65,6 +65,19 @@
             "type": "string"
           },
           "description": "Workspace-relative CSS file glob patterns to use as shared @property registry inputs."
+        },
+        "cssPropertyTypeValidator.checkUnknownCustomProperties": {
+          "type": "boolean",
+          "default": false,
+          "description": "Report var() references without fallbacks when the custom property is missing from known custom property inputs."
+        },
+        "cssPropertyTypeValidator.tokenFiles": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "description": "Workspace-relative CSS file glob patterns to use as known custom property token sources when unknown custom property checking is enabled."
         }
       }
     }

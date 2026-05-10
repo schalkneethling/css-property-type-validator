@@ -28,7 +28,9 @@ import type {
 } from "./var-substitution.js";
 
 export interface ValidateFilesOptions {
+  checkUnresolvedCustomProperties?: boolean;
   failFast?: boolean;
+  knownCustomPropertyInputs?: ValidationInput[];
   registryInputs?: ValidationInput[];
   resolveImport?: ResolveImport;
 }
@@ -135,14 +137,38 @@ function parseStylesheet(
 
 function collectKnownCustomProperties(
   inputs: ValidationInput[],
+  knownCustomPropertyInputs: ValidationInput[],
   registryInputs: ValidationInput[],
   registry: Map<string, RegisteredProperty>,
+  diagnostics: ValidationDiagnostic[],
   parsedAstByPath: Map<string, ParsedStylesheetResult>,
   resolveImport?: ResolveImport,
 ): Map<string, Set<string>> {
   const byPath = new Map<string, Set<string>>();
+  const reportedKnownInputParsePaths = new Set<string>();
 
-  function collectForInput(input: ValidationInput, activePaths = new Set<string>()): Set<string> {
+  function reportKnownInputParseFailure(input: ValidationInput, error: Error): void {
+    if (reportedKnownInputParsePaths.has(input.path)) {
+      return;
+    }
+
+    reportedKnownInputParsePaths.add(input.path);
+    diagnostics.push({
+      code: "unparseable-stylesheet",
+      phase: "parse",
+      reason: "unparseable-css",
+      severity: "error",
+      filePath: input.path,
+      loc: null,
+      message: `Could not parse known custom property input ${input.path}: ${error.message}`,
+    });
+  }
+
+  function collectForInput(
+    input: ValidationInput,
+    activePaths = new Set<string>(),
+    reportParseFailures = false,
+  ): Set<string> {
     const cached = byPath.get(input.path);
 
     if (cached) {
@@ -161,6 +187,10 @@ function collectKnownCustomProperties(
     const parsed = parseStylesheet(input, parsedAstByPath);
 
     if (!parsed.ast) {
+      if (reportParseFailures) {
+        reportKnownInputParseFailure(input, parsed.error);
+      }
+
       activePaths.delete(input.path);
       return known;
     }
@@ -193,7 +223,7 @@ function collectKnownCustomProperties(
         continue;
       }
 
-      mergeInto(known, collectForInput(importedInput, activePaths));
+      mergeInto(known, collectForInput(importedInput, activePaths, reportParseFailures));
     }
 
     activePaths.delete(input.path);
@@ -201,6 +231,10 @@ function collectKnownCustomProperties(
   }
 
   const globalCustomProperties = customPropertySet(registry.keys());
+
+  for (const input of knownCustomPropertyInputs) {
+    mergeInto(globalCustomProperties, collectForInput(input, new Set<string>(), true));
+  }
 
   for (const input of registryInputs) {
     mergeInto(globalCustomProperties, collectForInput(input));
@@ -399,6 +433,7 @@ function toUnresolvedVarDiagnostic(
   declaration: CssDeclarationNode,
   propertyName: string,
   varNode: VarFunctionNode,
+  knownSourceDescription: string,
 ): ValidationDiagnostic {
   return {
     code: "incompatible-var-usage",
@@ -407,7 +442,7 @@ function toUnresolvedVarDiagnostic(
     severity: "error",
     filePath,
     loc: toLocation(varNode.loc),
-    message: `Custom property ${propertyName} is not defined in the known CSS inputs for this file, and no fallback was provided. This is a static check of the CSS files and imports available to the validator, not a full browser cascade evaluation.`,
+    message: `Custom property ${propertyName} is not defined in the ${knownSourceDescription} for this file, and no fallback was provided. This is a static check of the CSS files and imports available to the validator, not a full browser cascade evaluation.`,
     propertyName,
     expectedProperty: declaration.property,
     snippet: cssTree.generate(declaration),
@@ -473,6 +508,10 @@ function validateDeclaration(
   declaration: CssDeclarationNode,
   registry: Map<string, RegisteredProperty>,
   knownCustomProperties: Set<string>,
+  options: {
+    checkUnresolvedCustomProperties: boolean;
+    knownSourceDescription: string;
+  },
 ): { diagnostics: ValidationDiagnostic[]; skipped: number; validated: number } {
   const diagnostics: ValidationDiagnostic[] = [];
 
@@ -533,12 +572,19 @@ function validateDeclaration(
 
   for (const entry of varMetadata) {
     if (
+      options.checkUnresolvedCustomProperties &&
       entry.propertyName &&
       !knownCustomProperties.has(entry.propertyName) &&
       getVarFallbackSource(entry.varNode) === null
     ) {
       diagnostics.push(
-        toUnresolvedVarDiagnostic(filePath, declaration, entry.propertyName, entry.varNode),
+        toUnresolvedVarDiagnostic(
+          filePath,
+          declaration,
+          entry.propertyName,
+          entry.varNode,
+          options.knownSourceDescription,
+        ),
       );
     }
   }
@@ -737,6 +783,12 @@ export function validateFiles(
   options: ValidateFilesOptions = {},
 ): ValidationResult {
   const registryInputs = options.registryInputs ?? [];
+  const knownCustomPropertyInputs = options.knownCustomPropertyInputs ?? [];
+  const checkUnresolvedCustomProperties = options.checkUnresolvedCustomProperties ?? false;
+  const knownSourceDescription =
+    knownCustomPropertyInputs.length > 0
+      ? "configured known custom property inputs"
+      : "known CSS inputs";
   const registrySources = [...inputs];
   const seenRegistryPaths = new Set(inputs.map((input) => input.path));
 
@@ -768,13 +820,26 @@ export function validateFiles(
   }
 
   const parsedAstByPath = new Map<string, ParsedStylesheetResult>();
-  const knownCustomPropertiesByPath = collectKnownCustomProperties(
-    inputs,
-    registryInputs,
-    registry,
-    parsedAstByPath,
-    options.resolveImport,
-  );
+  const knownCustomPropertiesByPath = checkUnresolvedCustomProperties
+    ? collectKnownCustomProperties(
+        inputs,
+        knownCustomPropertyInputs,
+        registryInputs,
+        registry,
+        diagnostics,
+        parsedAstByPath,
+        options.resolveImport,
+      )
+    : new Map<string, Set<string>>();
+
+  if (options.failFast && diagnostics.length > 0) {
+    return {
+      diagnostics,
+      registry: registryResult.registry,
+      skippedDeclarations,
+      validatedDeclarations,
+    };
+  }
 
   for (const input of inputs) {
     const parsed = parseStylesheet(input, parsedAstByPath);
@@ -810,6 +875,10 @@ export function validateFiles(
           node as CssDeclarationNode,
           registry,
           knownCustomProperties,
+          {
+            checkUnresolvedCustomProperties,
+            knownSourceDescription,
+          },
         );
         diagnostics.push(...result.diagnostics);
         skippedDeclarations += result.skipped;

@@ -49,6 +49,12 @@ suite("CSS Property Type Validator extension", () => {
     await vscode.workspace
       .getConfiguration("cssPropertyTypeValidator")
       .update("registryFiles", undefined, vscode.ConfigurationTarget.Workspace);
+    await vscode.workspace
+      .getConfiguration("cssPropertyTypeValidator")
+      .update("tokenFiles", undefined, vscode.ConfigurationTarget.Workspace);
+    await vscode.workspace
+      .getConfiguration("cssPropertyTypeValidator")
+      .update("checkUnknownCustomProperties", undefined, vscode.ConfigurationTarget.Workspace);
   });
 
   test("reports and clears diagnostics for an open CSS document", async () => {
@@ -81,9 +87,25 @@ suite("CSS Property Type Validator extension", () => {
     await waitForDiagnostics(document.uri, 0);
   });
 
-  test("reports unresolved var references for open CSS documents", async () => {
+  test("does not report unresolved var references by default", async () => {
     const componentUri = await writeWorkspaceFile(
       "unresolved-var-component.css",
+      ".card { color: var(--missing-color); }",
+    );
+    const document = await vscode.workspace.openTextDocument(componentUri);
+
+    await vscode.window.showTextDocument(document);
+    await vscode.commands.executeCommand("cssPropertyTypeValidator.refresh");
+
+    await waitForDiagnostics(document.uri, 0);
+  });
+
+  test("reports unresolved var references when enabled", async () => {
+    await vscode.workspace
+      .getConfiguration("cssPropertyTypeValidator")
+      .update("checkUnknownCustomProperties", true, vscode.ConfigurationTarget.Workspace);
+    const componentUri = await writeWorkspaceFile(
+      "enabled-unresolved-var-component.css",
       ".card { color: var(--missing-color); }",
     );
     const document = await vscode.workspace.openTextDocument(componentUri);
@@ -94,6 +116,27 @@ suite("CSS Property Type Validator extension", () => {
     assert.equal(diagnostics[0]?.source, "CSS Property Type Validator");
     assert.equal(diagnostics[0]?.code, "unresolved-var-reference");
     assert.match(diagnostics[0]?.message ?? "", /not a full browser cascade evaluation/);
+  });
+
+  test("uses configured token files for unresolved var references", async () => {
+    await writeWorkspaceFile("known-tokens.css", ":root { --surface-color: canvas; }");
+    const componentUri = await writeWorkspaceFile(
+      "token-backed-component.css",
+      ".card { color: var(--surface-color); }",
+    );
+
+    await vscode.workspace
+      .getConfiguration("cssPropertyTypeValidator")
+      .update("checkUnknownCustomProperties", true, vscode.ConfigurationTarget.Workspace);
+    await vscode.workspace
+      .getConfiguration("cssPropertyTypeValidator")
+      .update("tokenFiles", ["known-tokens.css"], vscode.ConfigurationTarget.Workspace);
+
+    const document = await vscode.workspace.openTextDocument(componentUri);
+    await vscode.window.showTextDocument(document);
+    await vscode.commands.executeCommand("cssPropertyTypeValidator.refresh");
+
+    await waitForDiagnostics(componentUri, 0);
   });
 
   test("reports diagnostics when only a registry file is configured", async () => {

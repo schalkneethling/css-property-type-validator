@@ -56,6 +56,26 @@
         </div>
         <section class="header-actions" aria-labelledby="header-actions-title">
           <h2 class="visually-hidden" id="header-actions-title">Validation actions</h2>
+          <label class="check-toggle" for="unknown-custom-properties-input">
+            <input
+              id="unknown-custom-properties-input"
+              class="js-check-unknown-custom-properties"
+              type="checkbox"
+            />
+            <span>Unknown custom properties</span>
+          </label>
+          <label class="file-button" for="token-file-input">
+            <span>Open Tokens</span>
+            <input
+              id="token-file-input"
+              class="js-token-file-input"
+              type="file"
+              accept=".css,text/css"
+              multiple
+              disabled
+              title="Select one or more CSS token files. Folder upload is not supported."
+            />
+          </label>
           <label class="file-button" for="css-file-input">
             <span>Open CSS</span>
             <input id="css-file-input" class="js-file-input" type="file" accept=".css,text/css" />

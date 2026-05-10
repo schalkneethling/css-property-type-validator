@@ -1,6 +1,6 @@
 {
   "name": "@schalkneethling/css-property-type-validator-web",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Browser UI for CSS Property Type Validator.",
   "type": "module",

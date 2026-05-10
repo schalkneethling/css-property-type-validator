@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.1
+
+- Make unresolved no-fallback custom property diagnostics opt-in.
+- Add `checkUnknownCustomProperties` and `tokenFiles` workspace settings.
+
 ## 0.1.1
 
 - Include bundled mdn-data JSON files required by the packaged extension runtime.

@@ -18,6 +18,15 @@ import type {
   ValidationInput,
 } from "@schalkneethling/css-property-type-validator-core";
 
+interface CliOptions {
+  checkUnknownCustomProperties: boolean;
+  failfast: boolean;
+  format: OutputFormat;
+  registry: string[];
+  registryOnly: boolean;
+  tokens: string[];
+}
+
 async function loadInputs(patterns: string[]): Promise<ValidationInput[]> {
   const filePaths = new Set<string>();
 
@@ -75,6 +84,25 @@ function resolveOutputFormat(format: string): OutputFormat {
   return format === "json" ? "json" : "human";
 }
 
+function writeUnknownCustomPropertyConfigurationWarnings(options: CliOptions): void {
+  if (options.checkUnknownCustomProperties && options.tokens.length === 0) {
+    process.stderr.write(
+      "Warning: --check-unknown-custom-properties is enabled without --tokens. Configure one or more token files to avoid false positives from project-wide custom properties outside the validation/import path.\n",
+    );
+  }
+
+  if (!options.checkUnknownCustomProperties && options.tokens.length > 0) {
+    process.stderr.write(
+      "Warning: --tokens is ignored unless --check-unknown-custom-properties is enabled.\n",
+    );
+  }
+}
+
+async function loadKnownCustomPropertyInputs(options: CliOptions): Promise<ValidationInput[]> {
+  writeUnknownCustomPropertyConfigurationWarnings(options);
+  return options.checkUnknownCustomProperties ? loadInputs(options.tokens) : [];
+}
+
 async function main(): Promise<void> {
   const program = new Command();
 
@@ -85,8 +113,19 @@ async function main(): Promise<void> {
     .option("-f, --format <format>", "output format: human or json", "human")
     .option("--failfast", "stop after the first validation failure", false)
     .option(
+      "--check-unknown-custom-properties",
+      "report no-fallback var() references that are missing from known custom property inputs",
+      false,
+    )
+    .option(
       "-r, --registry <pattern>",
       "CSS file or glob pattern to use for shared @property registrations",
+      (value: string, previous: string[] = []) => [...previous, value],
+      [],
+    )
+    .option(
+      "--tokens <pattern>",
+      "CSS file or glob pattern to use as known custom property token sources",
       (value: string, previous: string[] = []) => [...previous, value],
       [],
     )
@@ -95,75 +134,68 @@ async function main(): Promise<void> {
       "validate @property registrations from the provided input patterns without validating ordinary declarations",
       false,
     )
-    .action(
-      async (
-        patterns: string[],
-        options: {
-          failfast: boolean;
-          format: OutputFormat;
-          registry: string[];
-          registryOnly: boolean;
-        },
-      ) => {
-        const format = resolveOutputFormat(options.format);
+    .action(async (patterns: string[], options: CliOptions) => {
+      const format = resolveOutputFormat(options.format);
 
-        if (options.registryOnly) {
-          if (patterns.length === 0) {
-            process.stderr.write(
-              "No CSS files matched the registration-only patterns. Pass one or more CSS files or glob patterns to --registry-only.\n",
-            );
-            process.exitCode = 2;
-            return;
-          }
-
-          const registryInputs = await loadInputs(patterns);
-
-          if (registryInputs.length === 0) {
-            process.stderr.write(
-              "No CSS files matched the registration-only patterns. Pass one or more CSS files or glob patterns to --registry-only.\n",
-            );
-            process.exitCode = 2;
-            return;
-          }
-
-          const additionalRegistryInputs = await loadRegistryInputs(
-            options.registry,
-            registryInputs,
-          );
-          const result = validateFiles([], {
-            failFast: options.failfast,
-            registryInputs: [...registryInputs, ...additionalRegistryInputs],
-            resolveImport: createImportResolver(process.cwd()),
-          });
-          const output = formatValidationResult(result, format);
-
-          process.stdout.write(`${output}\n`);
-          process.exitCode = result.diagnostics.length > 0 ? 1 : 0;
-          return;
-        }
-
-        const inputs = await loadInputs(patterns);
-
-        if (inputs.length === 0) {
+      if (options.registryOnly) {
+        if (patterns.length === 0) {
           process.stderr.write(
-            "No CSS files matched the validation patterns. Files passed via --registry are registration sources only.\n",
+            "No CSS files matched the registration-only patterns. Pass one or more CSS files or glob patterns to --registry-only.\n",
           );
           process.exitCode = 2;
           return;
         }
 
-        const registryInputs = await loadRegistryInputs(options.registry, inputs);
-        const result = validateFiles(inputs, {
+        const registryInputs = await loadInputs(patterns);
+
+        if (registryInputs.length === 0) {
+          process.stderr.write(
+            "No CSS files matched the registration-only patterns. Pass one or more CSS files or glob patterns to --registry-only.\n",
+          );
+          process.exitCode = 2;
+          return;
+        }
+
+        const additionalRegistryInputs = await loadRegistryInputs(options.registry, registryInputs);
+        const knownCustomPropertyInputs = await loadKnownCustomPropertyInputs(options);
+        const result = validateFiles([], {
+          checkUnresolvedCustomProperties: options.checkUnknownCustomProperties,
           failFast: options.failfast,
-          registryInputs,
+          knownCustomPropertyInputs,
+          registryInputs: [...registryInputs, ...additionalRegistryInputs],
           resolveImport: createImportResolver(process.cwd()),
         });
         const output = formatValidationResult(result, format);
 
         process.stdout.write(`${output}\n`);
         process.exitCode = result.diagnostics.length > 0 ? 1 : 0;
-      },
-    );
+        return;
+      }
+
+      const inputs = await loadInputs(patterns);
+
+      if (inputs.length === 0) {
+        process.stderr.write(
+          "No CSS files matched the validation patterns. Files passed via --registry are registration sources only.\n",
+        );
+        process.exitCode = 2;
+        return;
+      }
+
+      const registryInputs = await loadRegistryInputs(options.registry, inputs);
+      const knownCustomPropertyInputs = await loadKnownCustomPropertyInputs(options);
+      const result = validateFiles(inputs, {
+        checkUnresolvedCustomProperties: options.checkUnknownCustomProperties,
+        failFast: options.failfast,
+        knownCustomPropertyInputs,
+        registryInputs,
+        resolveImport: createImportResolver(process.cwd()),
+      });
+      const output = formatValidationResult(result, format);
+
+      process.stdout.write(`${output}\n`);
+      process.exitCode = result.diagnostics.length > 0 ? 1 : 0;
+    });
 
   await program.parseAsync(process.argv);
 }
