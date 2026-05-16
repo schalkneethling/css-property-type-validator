@@ -45,7 +45,7 @@
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",
-    "@types/vscode": "^1.118.0",
+    "@types/vscode": "^1.120.0",
     "@vscode/test-electron": "^2.5.2",
     "@vscode/vsce": "^3.9.1",
     "mdn-data": "^2.28.1",
