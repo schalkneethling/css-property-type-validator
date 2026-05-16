@@ -43,6 +43,9 @@ jobs:
       - name: Typecheck
         run: pnpm run typecheck
 
+      - name: Check generated VS Code data
+        run: pnpm run check:vscode-data
+
       - name: Run tests
         run: pnpm test
 
