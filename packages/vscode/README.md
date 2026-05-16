@@ -49,6 +49,14 @@ The extension warns when unknown custom property checks are enabled without `tok
 
 ## Packaging And Release
 
+Refresh the checked-in MDN and css-tree snapshots after dependency updates:
+
+```bash
+pnpm run update:vscode-data
+```
+
+The repository CI runs `pnpm run check:vscode-data` and fails with an explicit regeneration hint when the checked-in snapshot drifts from the installed dependency data. Regenerate the snapshot locally and commit the result before merging dependency updates.
+
 Build and package a VSIX:
 
 ```bash

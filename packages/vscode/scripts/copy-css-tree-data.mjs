@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
@@ -29,23 +29,44 @@ const generatedPatchPath = join(generatedDataRoot, "patch.json");
 const bundledEntryPath = join(packageRoot, "dist/extension.cjs");
 
 const mdnDataFiles = ["at-rules.json", "properties.json", "syntaxes.json"];
+const mode = process.argv.includes("--write") ? "write" : "check";
 
-async function ensureGeneratedJson(sourcePath, targetPath, message) {
+function getUpdateHint(targetPath) {
+  return `${targetPath} differs from its source dependency. Run \`pnpm run update:vscode-data\` to regenerate and format the checked-in snapshot.`;
+}
+
+async function syncGeneratedJson(sourcePath, targetPath) {
   const sourceData = JSON.parse(await readFile(sourcePath, "utf8"));
   const sourceDataKey = JSON.stringify(sourceData);
 
   try {
     const existingData = JSON.parse(await readFile(targetPath, "utf8"));
 
-    if (JSON.stringify(existingData) !== sourceDataKey) {
-      throw new Error(message);
+    if (JSON.stringify(existingData) === sourceDataKey) {
+      return;
     }
+
+    if (mode === "write") {
+      await writeFile(targetPath, `${JSON.stringify(sourceData, null, 2)}\n`);
+      return;
+    }
+
+    throw new Error(getUpdateHint(targetPath));
   } catch (error) {
+    if (error instanceof Error && error.message === getUpdateHint(targetPath)) {
+      throw error;
+    }
+
     if (error?.code !== "ENOENT") {
       throw error;
     }
 
-    await writeFile(targetPath, `${JSON.stringify(sourceData, null, 2)}\n`);
+    if (mode === "write") {
+      await writeFile(targetPath, `${JSON.stringify(sourceData, null, 2)}\n`);
+      return;
+    }
+
+    throw new Error(getUpdateHint(targetPath));
   }
 }
 
@@ -53,18 +74,19 @@ await mkdir(join(generatedDataRoot, "mdn-data/css"), { recursive: true });
 
 // These JSON files are generated from core's css-tree/mdn-data dependencies and
 // formatted by the repo formatter. Keep them stable during normal builds.
-await ensureGeneratedJson(
-  join(cssTreeRoot, "data/patch.json"),
-  generatedPatchPath,
-  "packages/vscode/data/patch.json differs from core's css-tree data. Regenerate and format the file before building the extension.",
-);
+await syncGeneratedJson(join(cssTreeRoot, "data/patch.json"), generatedPatchPath);
 
 for (const fileName of mdnDataFiles) {
-  await ensureGeneratedJson(
+  await syncGeneratedJson(
     join(mdnDataRoot, "css", fileName),
     join(generatedDataRoot, "mdn-data/css", fileName),
-    `packages/vscode/data/mdn-data/css/${fileName} differs from core's mdn-data dependency. Regenerate and format the file before building the extension.`,
   );
+}
+
+try {
+  await access(bundledEntryPath);
+} catch {
+  process.exit(0);
 }
 
 let bundledEntry = await readFile(bundledEntryPath, "utf8");

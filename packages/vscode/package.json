@@ -29,13 +29,16 @@
   "type": "module",
   "main": "./dist/extension.cjs",
   "scripts": {
-    "build": "pnpm run check-types && vp pack src/extension.ts -f cjs -d dist --platform node --target node22 --sourcemap --deps.neverBundle vscode --deps.alwaysBundle @schalkneethling/css-property-type-validator-core --deps.alwaysBundle css-tree --deps.onlyBundle css-tree --deps.onlyBundle source-map-js && node scripts/copy-css-tree-data.mjs",
+    "build": "pnpm run check-types && pnpm run bundle && pnpm run check:data",
+    "bundle": "vp pack src/extension.ts -f cjs -d dist --platform node --target node22 --sourcemap --deps.neverBundle vscode --deps.alwaysBundle @schalkneethling/css-property-type-validator-core --deps.alwaysBundle css-tree --deps.onlyBundle css-tree --deps.onlyBundle source-map-js",
+    "check:data": "node scripts/copy-css-tree-data.mjs --check",
     "check-types": "tsc --noEmit -p tsconfig.json",
     "compile-tests": "tsc -p tsconfig.test.json",
     "package:vsix": "vsce package --no-dependencies",
     "test": "pnpm run build && pnpm run compile-tests && node ./out/test/run.js",
+    "sync:data": "node scripts/copy-css-tree-data.mjs --write",
     "vscode:prepublish": "pnpm run build",
-    "watch": "vp pack src/extension.ts -f cjs -d dist --platform node --target node22 --sourcemap --deps.neverBundle vscode --deps.alwaysBundle @schalkneethling/css-property-type-validator-core --deps.alwaysBundle css-tree --deps.onlyBundle css-tree --deps.onlyBundle source-map-js --watch src"
+    "watch": "pnpm run bundle -- --watch src"
   },
   "dependencies": {
     "@schalkneethling/css-property-type-validator-core": "workspace:*"

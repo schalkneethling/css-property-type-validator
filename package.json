@@ -17,6 +17,7 @@
   "type": "module",
   "scripts": {
     "build": "pnpm -r --if-present run build",
+    "check:vscode-data": "pnpm --filter ./packages/vscode run check:data",
     "check": "vp check && pnpm run typecheck && pnpm test && pnpm run build",
     "format": "vp check --fix",
     "format:check": "vp check --no-lint",
@@ -24,6 +25,7 @@
     "test": "vp test run",
     "test:e2e": "pnpm --filter @schalkneethling/css-property-type-validator-web test:e2e",
     "typecheck": "tsc -b tsconfig.json",
+    "update:vscode-data": "pnpm --filter ./packages/vscode run sync:data && pnpm run format",
     "check:supported-syntax-names": "node scripts/check-supported-syntax-names.mjs",
     "clean": "node scripts/clean.mjs",
     "example": "pnpm run build && node packages/cli/dist/cli.js fixtures/imports/main.css"
@@ -37,5 +39,5 @@
   "engines": {
     "node": ">=22.0.0"
   },
-  "packageManager": "pnpm@10.33.0"
+  "packageManager": "pnpm@11.1.2"
 }
