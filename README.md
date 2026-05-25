@@ -20,6 +20,7 @@ Use it when your design tokens or component styles rely on typed custom properti
 
 - [`@schalkneethling/css-property-type-validator-core`](https://www.npmjs.com/package/@schalkneethling/css-property-type-validator-core): validation engine for programmatic use
 - [`@schalkneethling/css-property-type-validator-cli`](https://www.npmjs.com/package/@schalkneethling/css-property-type-validator-cli): command-line wrapper for local development and CI
+- [`@schalkneethling/stylelint-plugin-css-property-type-validator`](https://www.npmjs.com/package/@schalkneethling/stylelint-plugin-css-property-type-validator): Stylelint plugin for existing lint workflows
 
 ## Try The CLI
 
@@ -79,6 +80,26 @@ By default, the CLI collects every validation failure it can find and reports th
 Use `--failfast` when you want it to stop after the first validation failure, including
 registration/import failures and declaration usage failures. Human and JSON output keep the same
 format; the diagnostics array simply contains the first issue found.
+
+## Stylelint Usage
+
+```js
+export default {
+  plugins: ["@schalkneethling/stylelint-plugin-css-property-type-validator"],
+  rules: {
+    "css-property-type-validator/valid-property-types": [
+      true,
+      {
+        registryFiles: ["src/tokens/**/*.css"],
+        checkUnknownCustomProperties: false,
+        tokenFiles: [],
+      },
+    ],
+  },
+};
+```
+
+Use the Stylelint plugin when Stylelint already owns the set of CSS files being linted. `registryFiles` and `tokenFiles` provide project context without changing Stylelint's lint targets.
 
 ## Library Usage
 
@@ -146,7 +167,7 @@ When a resolver is available, the core follows local unconditioned `@import` rul
 
 Unresolved `var()` diagnostics are opt-in static known-inputs checks. They report `var(--token)` when `--token` is absent from known files/imports/registry/token inputs and no fallback is provided, but they do not attempt a full browser cascade evaluation for a specific DOM element.
 
-Consumers should follow the same pattern as the CLI, web app, and VS Code extension: expose the unresolved-reference check as off by default, and expose token-file configuration beside it so projects can provide their real custom property source of truth.
+Consumers should follow the same pattern as the CLI, web app, VS Code extension, and Stylelint plugin: expose the unresolved-reference check as off by default, and expose token-file configuration beside it so projects can provide their real custom property source of truth.
 
 The browser UI accepts one or more selected CSS token files. Recursive folder selection is not exposed because directory upload is not consistently standardized across browsers.
 

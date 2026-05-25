@@ -1,26 +1,82 @@
-# To get started with Dependabot version updates, you'll need to specify which
-# package ecosystems to update and where the package manifests are located.
-# Please see the documentation for all configuration options:
-# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
-
 version: 2
 updates:
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "daily"
+    cooldown:
+      default-days: 7
+      semver-major-days: 7
+      semver-minor-days: 3
+      semver-patch-days: 2
+      include:
+        - "*"
 
   - package-ecosystem: "npm"
     directory: "/packages/core"
     schedule:
-      interval: "weekly"
+      interval: "daily"
+    cooldown:
+      default-days: 7
+      semver-major-days: 7
+      semver-minor-days: 3
+      semver-patch-days: 2
+      include:
+        - "*"
 
   - package-ecosystem: "npm"
     directory: "/packages/cli"
     schedule:
-      interval: "weekly"
+      interval: "daily"
+    cooldown:
+      default-days: 7
+      semver-major-days: 7
+      semver-minor-days: 3
+      semver-patch-days: 2
+      include:
+        - "*"
+
+  - package-ecosystem: "npm"
+    directory: "/packages/stylelint"
+    schedule:
+      interval: "daily"
+    cooldown:
+      default-days: 7
+      semver-major-days: 7
+      semver-minor-days: 3
+      semver-patch-days: 2
+      include:
+        - "*"
 
   - package-ecosystem: "npm"
     directory: "/packages/vscode"
     schedule:
-      interval: "weekly"
+      interval: "daily"
+    cooldown:
+      default-days: 7
+      semver-major-days: 7
+      semver-minor-days: 3
+      semver-patch-days: 2
+      include:
+        - "*"
+
+  - package-ecosystem: "npm"
+    directory: "/web"
+    schedule:
+      interval: "daily"
+    cooldown:
+      default-days: 7
+      semver-major-days: 7
+      semver-minor-days: 3
+      semver-patch-days: 2
+      include:
+        - "*"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    cooldown:
+      default-days: 7
+      include:
+        - "*"
