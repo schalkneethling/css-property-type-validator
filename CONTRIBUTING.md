@@ -50,10 +50,10 @@ Spec-driven behavior should include a short comment with the relevant reason or 
 
 ## Releases
 
-This project uses Release Please and conventional commits. Use commit or pull request titles such as:
+This project uses manual GitHub releases for publishing npm packages. Commit and pull request titles should follow conventional commit style so the release history stays easy to scan, for example:
 
 - `feat: support a new validation case`
 - `fix: avoid a false positive for fallback values`
 - `docs: clarify registry-only usage`
 
-See [RELEASING.md](./RELEASING.md) for the release workflow and npm trusted publishing details.
+See [RELEASING.md](./RELEASING.md) for the manual release workflow and npm trusted publishing details.

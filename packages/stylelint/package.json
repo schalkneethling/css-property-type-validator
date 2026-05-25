@@ -1,12 +1,13 @@
 {
-  "name": "@schalkneethling/css-property-type-validator-core",
-  "version": "0.11.1",
-  "description": "Standalone CSS custom property type validator core.",
+  "name": "@schalkneethling/stylelint-plugin-css-property-type-validator",
+  "version": "0.1.0-beta.0",
+  "description": "Stylelint plugin for CSS Property Type Validator.",
   "keywords": [
     "css",
     "custom-properties",
-    "design-tokens",
     "property",
+    "stylelint",
+    "stylelint-plugin",
     "validator"
   ],
   "homepage": "https://github.com/schalkneethling/css-property-type-validator#readme",
@@ -18,10 +19,14 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/schalkneethling/css-property-type-validator.git",
-    "directory": "packages/core"
+    "directory": "packages/stylelint"
   },
   "files": [
-    "dist",
+    "dist/index.*",
+    "dist/rules/valid-property-types.d.ts",
+    "dist/rules/valid-property-types.d.ts.map",
+    "dist/rules/valid-property-types.js",
+    "dist/rules/valid-property-types.js.map",
     "README.md"
   ],
   "type": "module",
@@ -40,9 +45,13 @@
     "build": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "css-tree": "^3.2.1"
+    "@schalkneethling/css-property-type-validator-core": "workspace:*"
   },
   "devDependencies": {
+    "stylelint": "^17.12.0",
     "vitest": "^4.1.7"
+  },
+  "peerDependencies": {
+    "stylelint": "^17.0.0"
   }
 }

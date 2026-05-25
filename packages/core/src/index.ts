@@ -2,6 +2,7 @@ export { validateFiles } from "./validate.js";
 export type { ValidateFilesOptions } from "./validate.js";
 export { formatValidationResult } from "./formatter.js";
 export type { OutputFormat } from "./formatter.js";
+export { isAbsoluteImportUrl } from "./imports.js";
 
 export type {
   RegisteredProperty,
