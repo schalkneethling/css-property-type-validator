@@ -92,7 +92,7 @@ ever touches the repository.
 ### 2.2 · npm CLI version requirement
 
 The publish step **must** use npm CLI ≥ 11.5.1 for automatic OIDC trusted publishing.
-Node.js 24 bundles npm 11.5.1; with older CI images, add a step before publishing:
+Node 24.8.0 bundles npm 11.6.0; with older CI images, add a step before publishing:
 
 ```yaml
 - run: npm i -g npm

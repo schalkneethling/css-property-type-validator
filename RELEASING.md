@@ -58,7 +58,7 @@ Use `stylelint-v0.1.0-beta.0` for the first Stylelint beta release.
 3. Run the local verification gate:
 
    ```bash
-   pnpm install
+   pnpm install --frozen-lockfile --ignore-scripts
    pnpm run check
    pnpm run check:supported-syntax-names
    pnpm run build

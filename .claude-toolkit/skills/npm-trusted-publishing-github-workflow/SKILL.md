@@ -289,6 +289,6 @@ Repo changes cannot create npm's trusted publisher entry. Remind the user to ver
 - repository owner/name matches the repo
 - workflow filename matches `.github/workflows/publish.yml`
 - publish environment matches the workflow if npm is configured with one
-- at least one allowed action is selected: configurations created after 20 May 2026 require explicitly selecting an allowed action (for example, allow `npm publish`), or the publish will be rejected
+- configurations created after 20 May 2026 must explicitly select at least one allowed action (for example, `npm publish` and/or `npm stage publish`), otherwise the trusted publisher configuration will not permit the associated publish
 
 The first version of a brand-new package cannot be published via OIDC, because npm requires the package to exist before its trusted-publisher settings can be edited. Publish the initial version manually or with a token, then configure trusted publishing for subsequent releases.

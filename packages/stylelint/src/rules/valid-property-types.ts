@@ -163,8 +163,13 @@ function hasLocalImport(root: PostCssRoot): boolean {
       return;
     }
 
-    const match = atRule.params.match(/^(?:url\()?["']?([^"')\s]+)["']?\)?/u);
-    const specifier = match?.[1];
+    const match = atRule.params.match(
+      /^\s*(?:url\(\s*(?:"([^"]+)"|'([^']+)'|([^)]*?))\s*\)|"([^"]+)"|'([^']+)'|([^\s;]+))/u,
+    );
+    const specifier = match
+      ?.slice(1)
+      .find((value) => value !== undefined)
+      ?.trim();
 
     if (specifier && !isAbsoluteImportUrl(specifier)) {
       hasImport = true;

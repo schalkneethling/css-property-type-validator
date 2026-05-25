@@ -153,7 +153,7 @@ describe(ruleName, () => {
 
   it("warns instead of inventing import resolution for inputs without file paths", async () => {
     const result = await stylelint.lint({
-      code: '@import "./tokens.css";',
+      code: '@import "token file.css";\n@import url( "tokens.css" );',
       config: {
         plugins: [plugin],
         rules: {
