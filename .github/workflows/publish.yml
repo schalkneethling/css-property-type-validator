@@ -92,6 +92,27 @@ jobs:
       - name: Pack Stylelint package
         run: pnpm --filter @schalkneethling/stylelint-plugin-css-property-type-validator pack --pack-destination package
 
+      - name: Verify Stylelint package against published dependencies
+        if: startsWith(github.event.release.tag_name, 'stylelint-v')
+        run: |
+          tarball="$(find package -type f -name "schalkneethling-stylelint-plugin-css-property-type-validator-*.tgz" -print -quit)"
+
+          if [ -z "$tarball" ]; then
+            echo "No Stylelint package tarball found."
+            find package -maxdepth 2 -type f -print
+            exit 1
+          fi
+
+          temp_dir="$(mktemp -d)"
+          npm --prefix "$temp_dir" install --ignore-scripts --no-audit --no-fund "$tarball" stylelint
+          cd "$temp_dir"
+          node --input-type=module --eval "
+            const plugin = await import('@schalkneethling/stylelint-plugin-css-property-type-validator');
+            if (plugin.ruleName !== 'css-property-type-validator/valid-property-types') {
+              throw new Error('Stylelint plugin did not expose the expected ruleName.');
+            }
+          "
+
       - name: Upload package tarballs
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:

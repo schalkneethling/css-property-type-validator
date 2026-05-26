@@ -51,9 +51,11 @@ Publish by creating and publishing a GitHub Release whose tag identifies the pac
 
 Use `stylelint-v0.1.0-beta.0` for the first Stylelint beta release.
 
+Packages that depend on workspace packages must only be released after their workspace dependencies have already been published at the versions that will be written into the packed package. For example, if the Stylelint plugin uses a new core export, bump and publish core first, or use an `all-vX.Y.Z` release so core is published before the plugin.
+
 ## Manual Release Steps
 
-1. Update the target package version in its `package.json`.
+1. Update the target package version in its `package.json`. If the target package depends on another workspace package whose public API changed, update that dependency package version too.
 2. Update the relevant changelog or release notes.
 3. Run the local verification gate:
 
@@ -74,7 +76,7 @@ Use `stylelint-v0.1.0-beta.0` for the first Stylelint beta release.
    ```
 
 5. Merge the release-prep PR.
-6. Create and publish a GitHub Release with the matching tag prefix.
+6. Create and publish a GitHub Release with the matching tag prefix. Use `all-vX.Y.Z` when releasing a package together with a workspace dependency it relies on.
 7. Confirm the `Publish` workflow completes and the package appears on npm.
 
 ## Security Notes
