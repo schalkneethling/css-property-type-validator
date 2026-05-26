@@ -103,6 +103,7 @@ jobs:
             exit 1
           fi
 
+          tarball="$(realpath "$tarball")"
           temp_dir="$(mktemp -d)"
           npm --prefix "$temp_dir" install --ignore-scripts --no-audit --no-fund "$tarball" stylelint
           cd "$temp_dir"
