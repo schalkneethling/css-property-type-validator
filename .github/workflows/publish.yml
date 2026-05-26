@@ -147,6 +147,7 @@ jobs:
 
           publish_matching() {
             pattern="$1"
+            dist_tag="${2:-}"
             tarball="$(find package -type f -name "$pattern" -print -quit)"
 
             if [ -z "$tarball" ]; then
@@ -155,7 +156,13 @@ jobs:
               exit 1
             fi
 
-            npm publish "$(realpath "$tarball")" --ignore-scripts --access public
+            publish_args=(publish "$(realpath "$tarball")" --ignore-scripts --access public)
+
+            if [ -n "$dist_tag" ]; then
+              publish_args+=(--tag "$dist_tag")
+            fi
+
+            npm "${publish_args[@]}"
           }
 
           case "$tag" in
@@ -166,12 +173,12 @@ jobs:
               publish_matching "schalkneethling-css-property-type-validator-cli-*.tgz"
               ;;
             stylelint-v*)
-              publish_matching "schalkneethling-stylelint-plugin-css-property-type-validator-*.tgz"
+              publish_matching "schalkneethling-stylelint-plugin-css-property-type-validator-*.tgz" beta
               ;;
             all-v*)
               publish_matching "schalkneethling-css-property-type-validator-core-*.tgz"
               publish_matching "schalkneethling-css-property-type-validator-cli-*.tgz"
-              publish_matching "schalkneethling-stylelint-plugin-css-property-type-validator-*.tgz"
+              publish_matching "schalkneethling-stylelint-plugin-css-property-type-validator-*.tgz" beta
               ;;
             *)
               echo "Release tag must start with core-v, cli-v, stylelint-v, or all-v."
