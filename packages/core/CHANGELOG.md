@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.11.2](https://github.com/schalkneethling/css-property-type-validator/compare/core-v0.11.1...core-v0.11.2) (2026-05-26)
+
+### Bug Fixes
+
+- publish the import URL helper used by downstream packages.
+
 ## [0.11.1](https://github.com/schalkneethling/css-property-type-validator/compare/core-v0.11.0...core-v0.11.1) (2026-05-10)
 
 

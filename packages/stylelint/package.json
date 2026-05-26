@@ -1,6 +1,6 @@
 {
   "name": "@schalkneethling/stylelint-plugin-css-property-type-validator",
-  "version": "0.1.0-beta.0",
+  "version": "0.1.0-beta.1",
   "description": "Stylelint plugin for CSS Property Type Validator.",
   "keywords": [
     "css",
