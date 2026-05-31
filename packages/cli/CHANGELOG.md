@@ -1,5 +1,12 @@
 # Changelog
 
+
+## 0.8.0 (2026-05-31)
+
+### Features
+
+- Add experimental @property registration generation.
+
 ## [0.7.1](https://github.com/schalkneethling/css-property-type-validator/compare/cli-v0.7.0...cli-v0.7.1) (2026-05-10)
 
 

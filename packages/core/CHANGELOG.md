@@ -1,5 +1,12 @@
 # Changelog
 
+
+## 0.12.0 (2026-05-31)
+
+### Features
+
+- Add experimental @property registration generation.
+
 ## [0.11.2](https://github.com/schalkneethling/css-property-type-validator/compare/core-v0.11.1...core-v0.11.2) (2026-05-26)
 
 ### Bug Fixes
