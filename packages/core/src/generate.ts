@@ -131,9 +131,10 @@ function exactVarReference(value: string): string | null {
     return null;
   }
 
-  const [node] = valueChildren(parsedValue) as CssFunctionNode[];
+  const nodes = valueChildren(parsedValue);
+  const [node] = nodes as CssFunctionNode[];
 
-  if (!node || node.type !== "Function" || node.name !== "var") {
+  if (nodes.length !== 1 || !node || node.type !== "Function" || node.name !== "var") {
     return null;
   }
 
@@ -333,6 +334,16 @@ export function generatePropertyRegistrations(
       continue;
     }
 
+    if (resolvedValues.unresolvedAliases.length > 0) {
+      const unresolvedAliases = resolvedValues.unresolvedAliases.join(", ");
+      candidates.push({
+        ...baseCandidate,
+        reason: `Observed values include aliases through var(). Include declarations for ${unresolvedAliases} so the generator can infer a complete concrete syntax.`,
+        status: "conflict",
+      });
+      continue;
+    }
+
     const syntax = inferSyntax(resolvedValues.values);
 
     if (!syntax) {
@@ -385,7 +396,17 @@ export function generatePropertyRegistrations(
   if (validationResult.diagnostics.length > 0) {
     diagnostics.push(...validationResult.diagnostics);
 
+    const invalidPropertyNames = new Set(
+      validationResult.diagnostics
+        .map((diagnostic) => diagnostic.propertyName)
+        .filter((propertyName): propertyName is string => Boolean(propertyName)),
+    );
+
     for (const candidate of generatedRules) {
+      if (!invalidPropertyNames.has(candidate.name)) {
+        continue;
+      }
+
       candidate.status = "invalid-generated";
       candidate.reason = "Generated registration failed validation.";
     }

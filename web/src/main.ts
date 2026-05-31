@@ -184,8 +184,7 @@ class ValidatorController extends HTMLElement {
   #handleEditorChange = (event: Event): void => {
     this.#cssSource = (event as CustomEvent<string>).detail;
     this.#fileInputs = [];
-    this.#result = null;
-    this.#generationResult = null;
+    this.#resetResults();
   };
 
   #handleUnknownCustomPropertiesChange = (event: Event): void => {
@@ -214,6 +213,7 @@ class ValidatorController extends HTMLElement {
       files.length === 1 ? file.name || "pasted.css" : `${files.length} CSS files selected`;
     requireCachedValue(this.#inputEditor, "input editor").value = this.#cssSource;
     requireCachedValue(this.#fileNameElement, "file name").textContent = this.#fileName;
+    this.#resetResults();
     input.value = "";
   };
 
@@ -227,6 +227,7 @@ class ValidatorController extends HTMLElement {
         css: await file.text(),
       })),
     );
+    this.#resetResults();
     input.value = "";
   };
 
@@ -280,6 +281,14 @@ class ValidatorController extends HTMLElement {
         ];
   }
 
+  #resetResults(): void {
+    this.#result = null;
+    this.#generationResult = null;
+    this.#renderOutput();
+    this.#renderStatus();
+    this.#renderStats();
+  }
+
   #updateDefaultExample(nextMode: AppMode): void {
     const nextDefault = nextMode === "validate" ? VALIDATION_DEFAULT_CSS : GENERATION_DEFAULT_CSS;
     const currentIsDefault =
@@ -313,11 +322,20 @@ class ValidatorController extends HTMLElement {
     checkUnknownCustomPropertiesInput.disabled = this.#mode !== "validate";
     tokenFileInput.disabled =
       this.#mode === "validate" ? !this.#checkUnknownCustomProperties : false;
-    outputTitle.textContent = this.#mode === "validate" ? "Validation result" : "properties.css";
+    outputTitle.textContent = this.#outputTitleText();
+  }
+
+  #outputTitleText(): string {
+    if (this.#mode === "validate") {
+      return "Validation result";
+    }
+
+    return this.#outputFormat === "json" ? "Generation result" : "properties.css";
   }
 
   #renderOutput(): void {
     const outputEditor = requireCachedValue(this.#outputEditor, "output editor");
+    requireCachedValue(this.#outputTitle, "output title").textContent = this.#outputTitleText();
 
     if (this.#mode === "generate") {
       outputEditor.language = this.#outputFormat === "json" ? "json" : "css";

@@ -1320,6 +1320,29 @@ describe("validateFiles", () => {
     expect(readFileSync(outputPath, "utf8")).toBe("keep me\n");
   });
 
+  it("overwrites existing generated output when --force is passed", { timeout: 120000 }, () => {
+    const repoRoot = path.resolve(import.meta.dirname, "../../..");
+    const fixtureDir = mkdtempSync(path.join(tmpdir(), "css-property-validator-"));
+    const inputPath = path.join(fixtureDir, "tokens.css");
+    const outputPath = path.join(fixtureDir, "properties.css");
+
+    writeFileSync(inputPath, ":root { --brand-color: red; }\n");
+    writeFileSync(outputPath, "keep me\n");
+
+    const cliResult = spawnSync(
+      "node",
+      ["packages/cli/dist/cli.js", "generate", inputPath, "--out", outputPath, "--force"],
+      {
+        cwd: repoRoot,
+        encoding: "utf8",
+      },
+    );
+
+    expect(cliResult.status).toBe(0);
+    expect(readFileSync(outputPath, "utf8")).not.toBe("keep me\n");
+    expect(readFileSync(outputPath, "utf8")).toContain("@property --brand-color");
+  });
+
   it("prints structured generation output as JSON", { timeout: 120000 }, () => {
     const repoRoot = path.resolve(import.meta.dirname, "../../..");
     const fixtureDir = mkdtempSync(path.join(tmpdir(), "css-property-validator-"));
@@ -1339,6 +1362,26 @@ describe("validateFiles", () => {
 
     expect(cliResult.status).toBe(0);
     expect(report.generatedCount).toBe(1);
+  });
+
+  it("rejects unsupported generation output formats", { timeout: 120000 }, () => {
+    const repoRoot = path.resolve(import.meta.dirname, "../../..");
+    const fixtureDir = mkdtempSync(path.join(tmpdir(), "css-property-validator-"));
+    const inputPath = path.join(fixtureDir, "tokens.css");
+
+    writeFileSync(inputPath, ":root { --brand-color: red; }\n");
+
+    const cliResult = spawnSync(
+      "node",
+      ["packages/cli/dist/cli.js", "generate", inputPath, "--format", "jsoon"],
+      {
+        cwd: repoRoot,
+        encoding: "utf8",
+      },
+    );
+
+    expect(cliResult.status).toBe(2);
+    expect(cliResult.stderr).toContain('Unsupported generate format "jsoon"');
   });
 
   it("keeps human CLI output stable for a clean validation run", { timeout: 120000 }, () => {

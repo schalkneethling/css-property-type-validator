@@ -46,9 +46,17 @@ function parseGenerateArguments(args: string[]): { options: GenerateOptions; pat
     },
     strict: true,
   });
-  const format = parsed.values.format === "json" ? "json" : "css";
+  const requestedFormat = parsed.values.format;
+  const format =
+    requestedFormat === undefined || requestedFormat === "css" || requestedFormat === "json"
+      ? (requestedFormat ?? "css")
+      : null;
   const force = typeof parsed.values.force === "boolean" ? parsed.values.force : false;
   const out = typeof parsed.values.out === "string" ? parsed.values.out : "properties.css";
+
+  if (!format) {
+    throw new Error(`Unsupported generate format "${requestedFormat}". Use "css" or "json".`);
+  }
 
   return {
     options: {

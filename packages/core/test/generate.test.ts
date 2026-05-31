@@ -103,4 +103,45 @@ describe("generatePropertyRegistrations", () => {
     expect(result.candidates[0]?.status).toBe("conflict");
     expect(result.candidates[0]?.reason).toContain("Include declarations for --brand-color");
   });
+
+  it("does not treat multi-token var() values as exact aliases", () => {
+    const result = generatePropertyRegistrations([
+      {
+        path: "/tmp/tokens.css",
+        css: ":root { --border: var(--brand-color) solid; --brand-color: red; }",
+      },
+    ]);
+
+    const border = result.candidates.find((candidate) => candidate.name === "--border");
+
+    expect(border?.status).toBe("conflict");
+    expect(border?.reason).toContain("do not share one supported syntax");
+  });
+
+  it("keeps resolved aliases generated when unrelated aliases are unresolved", () => {
+    const result = generatePropertyRegistrations([
+      {
+        path: "/tmp/tokens.css",
+        css: [
+          ":root {",
+          "  --known: red;",
+          "  --known-alias: var(--known);",
+          "  --unknown-alias: var(--unknown);",
+          "}",
+        ].join("\n"),
+      },
+    ]);
+
+    const knownAlias = result.candidates.find((candidate) => candidate.name === "--known-alias");
+    const unknownAlias = result.candidates.find(
+      (candidate) => candidate.name === "--unknown-alias",
+    );
+
+    expect(knownAlias?.status).toBe("generated");
+    expect(knownAlias?.syntax).toBe("<color>");
+    expect(knownAlias?.initialValue).toBe("red");
+    expect(result.css).toContain("@property --known-alias");
+    expect(unknownAlias?.status).toBe("conflict");
+    expect(unknownAlias?.reason).toContain("--unknown");
+  });
 });
