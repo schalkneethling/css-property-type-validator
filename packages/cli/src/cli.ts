@@ -1,14 +1,16 @@
 #!/usr/bin/env node
 
-import { readFileSync } from "node:fs";
-import { glob, readFile } from "node:fs/promises";
+import { existsSync, readFileSync } from "node:fs";
+import { glob, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
+import { parseArgs } from "node:util";
 
 import { Command } from "commander";
 
 import {
   formatValidationResult,
+  generatePropertyRegistrations,
   validateFiles,
   type OutputFormat,
 } from "@schalkneethling/css-property-type-validator-core";
@@ -25,6 +27,97 @@ interface CliOptions {
   registry: string[];
   registryOnly: boolean;
   tokens: string[];
+}
+
+interface GenerateOptions {
+  force: boolean;
+  format: "css" | "json";
+  out: string;
+}
+
+function parseGenerateArguments(args: string[]): { options: GenerateOptions; patterns: string[] } {
+  const parsed = parseArgs({
+    allowPositionals: true,
+    args,
+    options: {
+      force: { type: "boolean" },
+      format: { type: "string" },
+      out: { type: "string" },
+    },
+    strict: true,
+  });
+  const requestedFormat = parsed.values.format;
+  const format =
+    requestedFormat === undefined || requestedFormat === "css" || requestedFormat === "json"
+      ? (requestedFormat ?? "css")
+      : null;
+  const force = typeof parsed.values.force === "boolean" ? parsed.values.force : false;
+  const out = typeof parsed.values.out === "string" ? parsed.values.out : "properties.css";
+
+  if (!format) {
+    throw new Error(`Unsupported generate format "${requestedFormat}". Use "css" or "json".`);
+  }
+
+  return {
+    options: {
+      force,
+      format,
+      out,
+    },
+    patterns: parsed.positionals,
+  };
+}
+
+function pluralize(count: number, singular: string, plural = `${singular}s`): string {
+  const pluralRules = new Intl.PluralRules("en");
+  return pluralRules.select(count) === "one" ? singular : plural;
+}
+
+async function runGenerateCommand(args: string[]): Promise<void> {
+  const { options, patterns } = parseGenerateArguments(args);
+  const inputs = await loadInputs(patterns);
+
+  if (!inputs.length) {
+    process.stderr.write(
+      "No CSS files matched the generation patterns. Pass one or more CSS files or glob patterns.\n",
+    );
+    process.exitCode = 2;
+    return;
+  }
+
+  const result = generatePropertyRegistrations(inputs, { outFile: options.out });
+
+  if (options.format === "json") {
+    process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+    process.exitCode = result.diagnostics.length > 0 ? 1 : 0;
+    return;
+  }
+
+  if (existsSync(options.out) && !options.force) {
+    process.stderr.write(
+      `${options.out} already exists. Use --force to overwrite it or --out to specify another file.\n`,
+    );
+    process.exitCode = 2;
+    return;
+  }
+
+  await writeFile(options.out, result.css, "utf8");
+
+  process.stdout.write(
+    `Generated ${result.generatedCount} @property ${pluralize(result.generatedCount, "registration")} in ${options.out}.\n`,
+  );
+
+  if (result.reviewCount > 0 || result.diagnostics.length > 0) {
+    process.stdout.write(
+      `Review ${result.reviewCount} ${pluralize(result.reviewCount, "item")} with --format json. Share feedback at https://github.com/schalkneethling/css-property-type-validator/issues/98\n`,
+    );
+  } else {
+    process.stdout.write(
+      "Share feedback at https://github.com/schalkneethling/css-property-type-validator/issues/98\n",
+    );
+  }
+
+  process.exitCode = result.diagnostics.length > 0 ? 1 : 0;
 }
 
 async function loadInputs(patterns: string[]): Promise<ValidationInput[]> {
@@ -104,11 +197,20 @@ async function loadKnownCustomPropertyInputs(options: CliOptions): Promise<Valid
 }
 
 async function main(): Promise<void> {
+  if (process.argv[2] === "generate") {
+    await runGenerateCommand(process.argv.slice(3));
+    return;
+  }
+
   const program = new Command();
 
   program
     .name("css-property-type-validator")
     .description("Validate @property registrations and var() usages across CSS files.")
+    .addHelpText(
+      "after",
+      "\nCommands:\n  generate [options] <patterns...>  Experimentally generate @property registrations from existing CSS.",
+    )
     .argument("[patterns...]", "CSS files or glob patterns to validate")
     .option("-f, --format <format>", "output format: human or json", "human")
     .option("--failfast", "stop after the first validation failure", false)

@@ -1,6 +1,8 @@
 import {
   formatValidationResult,
+  generatePropertyRegistrations,
   validateFiles,
+  type GeneratePropertyRegistrationsResult,
   type OutputFormat,
   type ValidationInput,
   type ValidationResult,
@@ -8,7 +10,7 @@ import {
 
 import "./components/code-editor.js";
 
-const DEFAULT_CSS = `@property --brand-color {
+const VALIDATION_DEFAULT_CSS = `@property --brand-color {
   syntax: "<color>";
   inherits: true;
   initial-value: transparent;
@@ -18,7 +20,21 @@ const DEFAULT_CSS = `@property --brand-color {
   inline-size: var(--brand-color);
 }`;
 
+const GENERATION_DEFAULT_CSS = `:root {
+  --brand-color: red;
+  --space: 1px;
+}
+
+.card {
+  color: var(--brand-color);
+  inline-size: var(--space);
+}`;
+
 const INITIAL_OUTPUT = "Run validation to see diagnostics here.";
+const INITIAL_GENERATION_OUTPUT = "Generate registrations to preview properties.css here.";
+const FEEDBACK_URL = "https://github.com/schalkneethling/css-property-type-validator/issues/98";
+
+type AppMode = "validate" | "generate";
 
 interface CodeEditorElement extends HTMLElement {
   language: "css" | "json" | "text";
@@ -48,10 +64,13 @@ function tokenInputPath(file: File, index: number): string {
 }
 
 class ValidatorController extends HTMLElement {
-  #cssSource = DEFAULT_CSS;
+  #cssSource = VALIDATION_DEFAULT_CSS;
   #fileName = "pasted.css";
+  #fileInputs: ValidationInput[] = [];
   #checkUnknownCustomProperties = false;
+  #mode: AppMode = "validate";
   #outputFormat: OutputFormat = "human";
+  #generationResult: GeneratePropertyRegistrationsResult | null = null;
   #result: ValidationResult | null = null;
   #tokenInputs: ValidationInput[] = [];
 
@@ -59,13 +78,20 @@ class ValidatorController extends HTMLElement {
   #checkUnknownCustomPropertiesInput: HTMLInputElement | null = null;
   #fileInput: HTMLInputElement | null = null;
   #fileNameElement: HTMLElement | null = null;
+  #generateButton: HTMLButtonElement | null = null;
   #inputEditor: CodeEditorElement | null = null;
+  #modeInputs: HTMLInputElement[] = [];
   #outputEditor: CodeEditorElement | null = null;
   #outputFormatInputs: HTMLInputElement[] = [];
+  #outputTitle: HTMLElement | null = null;
   #statDiagnostics: HTMLElement | null = null;
+  #statDiagnosticsLabel: HTMLElement | null = null;
   #statRegistered: HTMLElement | null = null;
+  #statRegisteredLabel: HTMLElement | null = null;
   #statSkipped: HTMLElement | null = null;
+  #statSkippedLabel: HTMLElement | null = null;
   #statValidated: HTMLElement | null = null;
+  #statValidatedLabel: HTMLElement | null = null;
   #tokenFileInput: HTMLInputElement | null = null;
   #validationStatus: HTMLElement | null = null;
   #validateButton: HTMLButtonElement | null = null;
@@ -89,15 +115,22 @@ class ValidatorController extends HTMLElement {
     );
     this.#fileInput = queryElement<HTMLInputElement>(this, ".js-file-input");
     this.#fileNameElement = queryElement<HTMLElement>(this, ".js-file-name");
+    this.#generateButton = queryElement<HTMLButtonElement>(this, ".js-generate-button");
     this.#inputEditor = queryElement<CodeEditorElement>(this, ".js-input-editor");
+    this.#modeInputs = Array.from(this.querySelectorAll<HTMLInputElement>(".js-mode"));
     this.#outputEditor = queryElement<CodeEditorElement>(this, ".js-output-editor");
     this.#outputFormatInputs = Array.from(
       this.querySelectorAll<HTMLInputElement>(".js-output-format"),
     );
+    this.#outputTitle = queryElement<HTMLElement>(this, ".js-output-title");
     this.#statDiagnostics = queryElement<HTMLElement>(this, ".js-stat-diagnostics");
+    this.#statDiagnosticsLabel = queryElement<HTMLElement>(this, ".js-stat-diagnostics-label");
     this.#statRegistered = queryElement<HTMLElement>(this, ".js-stat-registered");
+    this.#statRegisteredLabel = queryElement<HTMLElement>(this, ".js-stat-registered-label");
     this.#statSkipped = queryElement<HTMLElement>(this, ".js-stat-skipped");
+    this.#statSkippedLabel = queryElement<HTMLElement>(this, ".js-stat-skipped-label");
     this.#statValidated = queryElement<HTMLElement>(this, ".js-stat-validated");
+    this.#statValidatedLabel = queryElement<HTMLElement>(this, ".js-stat-validated-label");
     this.#tokenFileInput = queryElement<HTMLInputElement>(this, ".js-token-file-input");
     this.#validationStatus = queryElement<HTMLElement>(this, ".js-validation-status");
     this.#validateButton = queryElement<HTMLButtonElement>(this, ".js-validate-button");
@@ -112,6 +145,7 @@ class ValidatorController extends HTMLElement {
     outputEditor.value = INITIAL_OUTPUT;
     fileNameElement.textContent = this.#fileName;
     requireCachedValue(this.#tokenFileInput, "token file input").disabled = true;
+    this.#renderMode();
   }
 
   #addEventListeners(): void {
@@ -121,6 +155,7 @@ class ValidatorController extends HTMLElement {
       "unknown custom properties input",
     );
     const fileInput = requireCachedValue(this.#fileInput, "file input");
+    const generateButton = requireCachedValue(this.#generateButton, "generate button");
     const inputEditor = requireCachedValue(this.#inputEditor, "input editor");
     const tokenFileInput = requireCachedValue(this.#tokenFileInput, "token file input");
     const validateButton = requireCachedValue(this.#validateButton, "validate button");
@@ -132,6 +167,7 @@ class ValidatorController extends HTMLElement {
       { signal },
     );
     fileInput.addEventListener("change", this.#handleFileSelection, { signal });
+    generateButton.addEventListener("click", this.#generateCss, { signal });
     inputEditor.addEventListener("editor-change", this.#handleEditorChange, { signal });
     tokenFileInput.addEventListener("change", this.#handleTokenFileSelection, { signal });
     validateButton.addEventListener("click", this.#validateCss, { signal });
@@ -139,10 +175,16 @@ class ValidatorController extends HTMLElement {
     for (const input of this.#outputFormatInputs) {
       input.addEventListener("change", this.#handleFormatChange, { signal });
     }
+
+    for (const input of this.#modeInputs) {
+      input.addEventListener("change", this.#handleModeChange, { signal });
+    }
   }
 
   #handleEditorChange = (event: Event): void => {
     this.#cssSource = (event as CustomEvent<string>).detail;
+    this.#fileInputs = [];
+    this.#resetResults();
   };
 
   #handleUnknownCustomPropertiesChange = (event: Event): void => {
@@ -153,16 +195,25 @@ class ValidatorController extends HTMLElement {
 
   #handleFileSelection = async (event: Event): Promise<void> => {
     const input = event.currentTarget as HTMLInputElement;
-    const [file] = Array.from(input.files ?? []);
+    const files = Array.from(input.files ?? []);
+    const [file] = files;
 
     if (!file) {
       return;
     }
 
-    this.#cssSource = await file.text();
-    this.#fileName = file.name || "pasted.css";
+    this.#fileInputs = await Promise.all(
+      files.map(async (selectedFile, index) => ({
+        path: tokenInputPath(selectedFile, index),
+        css: await selectedFile.text(),
+      })),
+    );
+    this.#cssSource = this.#fileInputs[0]?.css ?? "";
+    this.#fileName =
+      files.length === 1 ? file.name || "pasted.css" : `${files.length} CSS files selected`;
     requireCachedValue(this.#inputEditor, "input editor").value = this.#cssSource;
     requireCachedValue(this.#fileNameElement, "file name").textContent = this.#fileName;
+    this.#resetResults();
     input.value = "";
   };
 
@@ -176,6 +227,7 @@ class ValidatorController extends HTMLElement {
         css: await file.text(),
       })),
     );
+    this.#resetResults();
     input.value = "";
   };
 
@@ -186,26 +238,114 @@ class ValidatorController extends HTMLElement {
     this.#renderOutput();
   };
 
+  #handleModeChange = (event: Event): void => {
+    const input = event.currentTarget as HTMLInputElement;
+    const nextMode: AppMode = input.value === "generate" ? "generate" : "validate";
+
+    this.#updateDefaultExample(nextMode);
+    this.#mode = nextMode;
+    this.#renderMode();
+    this.#renderOutput();
+    this.#renderStatus();
+    this.#renderStats();
+  };
+
   #validateCss = (): void => {
-    this.#result = validateFiles(
-      [
-        {
-          path: this.#fileName || "pasted.css",
-          css: this.#cssSource,
-        },
-      ],
-      {
-        checkUnresolvedCustomProperties: this.#checkUnknownCustomProperties,
-        knownCustomPropertyInputs: this.#checkUnknownCustomProperties ? this.#tokenInputs : [],
-      },
+    this.#result = validateFiles(this.#activeInputs(), {
+      checkUnresolvedCustomProperties: this.#checkUnknownCustomProperties,
+      knownCustomPropertyInputs: this.#checkUnknownCustomProperties ? this.#tokenInputs : [],
+    });
+    this.#renderOutput();
+    this.#renderStatus();
+    this.#renderStats();
+  };
+
+  #generateCss = (): void => {
+    this.#generationResult = generatePropertyRegistrations(
+      [...this.#activeInputs(), ...this.#tokenInputs],
+      { outFile: "properties.css" },
     );
     this.#renderOutput();
     this.#renderStatus();
     this.#renderStats();
   };
 
+  #activeInputs(): ValidationInput[] {
+    return this.#fileInputs.length > 0
+      ? this.#fileInputs
+      : [
+          {
+            path: this.#fileName || "pasted.css",
+            css: this.#cssSource,
+          },
+        ];
+  }
+
+  #resetResults(): void {
+    this.#result = null;
+    this.#generationResult = null;
+    this.#renderOutput();
+    this.#renderStatus();
+    this.#renderStats();
+  }
+
+  #updateDefaultExample(nextMode: AppMode): void {
+    const nextDefault = nextMode === "validate" ? VALIDATION_DEFAULT_CSS : GENERATION_DEFAULT_CSS;
+    const currentIsDefault =
+      this.#cssSource === VALIDATION_DEFAULT_CSS || this.#cssSource === GENERATION_DEFAULT_CSS;
+
+    if (!currentIsDefault) {
+      return;
+    }
+
+    this.#cssSource = nextDefault;
+    this.#fileInputs = [];
+    this.#fileName = "pasted.css";
+    this.#result = null;
+    this.#generationResult = null;
+    requireCachedValue(this.#inputEditor, "input editor").value = this.#cssSource;
+    requireCachedValue(this.#fileNameElement, "file name").textContent = this.#fileName;
+  }
+
+  #renderMode(): void {
+    const checkUnknownCustomPropertiesInput = requireCachedValue(
+      this.#checkUnknownCustomPropertiesInput,
+      "unknown custom properties input",
+    );
+    const generateButton = requireCachedValue(this.#generateButton, "generate button");
+    const outputTitle = requireCachedValue(this.#outputTitle, "output title");
+    const tokenFileInput = requireCachedValue(this.#tokenFileInput, "token file input");
+    const validateButton = requireCachedValue(this.#validateButton, "validate button");
+
+    validateButton.hidden = this.#mode !== "validate";
+    generateButton.hidden = this.#mode !== "generate";
+    checkUnknownCustomPropertiesInput.disabled = this.#mode !== "validate";
+    tokenFileInput.disabled =
+      this.#mode === "validate" ? !this.#checkUnknownCustomProperties : false;
+    outputTitle.textContent = this.#outputTitleText();
+  }
+
+  #outputTitleText(): string {
+    if (this.#mode === "validate") {
+      return "Validation result";
+    }
+
+    return this.#outputFormat === "json" ? "Generation result" : "properties.css";
+  }
+
   #renderOutput(): void {
     const outputEditor = requireCachedValue(this.#outputEditor, "output editor");
+    requireCachedValue(this.#outputTitle, "output title").textContent = this.#outputTitleText();
+
+    if (this.#mode === "generate") {
+      outputEditor.language = this.#outputFormat === "json" ? "json" : "css";
+      outputEditor.value = this.#generationResult
+        ? this.#outputFormat === "json"
+          ? JSON.stringify(this.#generationResult, null, 2)
+          : this.#generationResult.css || "No ready registrations generated. Review JSON output."
+        : INITIAL_GENERATION_OUTPUT;
+      return;
+    }
 
     outputEditor.language = this.#outputFormat === "json" ? "json" : "text";
     outputEditor.value = this.#result
@@ -219,6 +359,30 @@ class ValidatorController extends HTMLElement {
     const statSkipped = requireCachedValue(this.#statSkipped, "skipped stat");
     const statValidated = requireCachedValue(this.#statValidated, "validated stat");
 
+    const statDiagnosticsLabel = requireCachedValue(
+      this.#statDiagnosticsLabel,
+      "diagnostics label",
+    );
+    const statRegisteredLabel = requireCachedValue(this.#statRegisteredLabel, "registered label");
+    const statSkippedLabel = requireCachedValue(this.#statSkippedLabel, "skipped label");
+    const statValidatedLabel = requireCachedValue(this.#statValidatedLabel, "validated label");
+
+    if (this.#mode === "generate") {
+      statDiagnosticsLabel.textContent = "Diagnostics";
+      statRegisteredLabel.textContent = "Generated";
+      statValidatedLabel.textContent = "Review";
+      statSkippedLabel.textContent = "Total";
+      statDiagnostics.textContent = String(this.#generationResult?.diagnostics.length ?? "—");
+      statRegistered.textContent = String(this.#generationResult?.generatedCount ?? "—");
+      statValidated.textContent = String(this.#generationResult?.reviewCount ?? "—");
+      statSkipped.textContent = String(this.#generationResult?.candidates.length ?? "—");
+      return;
+    }
+
+    statDiagnosticsLabel.textContent = "Diagnostics";
+    statRegisteredLabel.textContent = "Registered";
+    statValidatedLabel.textContent = "Validated";
+    statSkippedLabel.textContent = "Skipped";
     statDiagnostics.textContent = String(this.#result?.diagnostics.length ?? "—");
     statRegistered.textContent = String(this.#result?.registry.length ?? "—");
     statSkipped.textContent = String(this.#result?.skippedDeclarations ?? "—");
@@ -227,6 +391,35 @@ class ValidatorController extends HTMLElement {
 
   #renderStatus(): void {
     const validationStatus = requireCachedValue(this.#validationStatus, "validation status");
+    const generationResult = this.#generationResult;
+
+    if (this.#mode === "generate") {
+      validationStatus.replaceChildren();
+      validationStatus.hidden = !generationResult;
+
+      if (!generationResult) {
+        return;
+      }
+
+      const message = document.createElement("div");
+      const heading = document.createElement("strong");
+      const detail = document.createElement("span");
+      const feedback = document.createElement("a");
+
+      message.className = generationResult.reviewCount > 0 ? "warning-message" : "success-message";
+      message.role = "status";
+      heading.textContent =
+        generationResult.reviewCount > 0
+          ? "Review generated registrations."
+          : "Generated registrations are valid.";
+      detail.textContent = `${generationResult.generatedCount} ready, ${generationResult.reviewCount} need review. `;
+      feedback.href = FEEDBACK_URL;
+      feedback.textContent = "Share feedback on issue #98.";
+      message.append(heading, detail, feedback);
+      validationStatus.append(message);
+      return;
+    }
+
     const hasPassed = Boolean(this.#result && this.#result.diagnostics.length === 0);
     const configurationWarning = this.#configurationWarning();
 

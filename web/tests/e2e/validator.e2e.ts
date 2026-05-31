@@ -52,6 +52,12 @@ test("renders the validator workspace", async ({ page }) => {
           - /url: https://github.com/schalkneethling/css-property-type-validator
       - region "Validation actions":
         - heading "Validation actions" [level=2]
+        - group "Mode":
+          - text: Mode
+          - radio "Validate" [checked]
+          - text: Validate
+          - radio "Generate"
+          - text: Generate
         - checkbox "Unknown custom properties"
         - text: Unknown custom properties Open Tokens
         - button "Open Tokens" [disabled]
@@ -88,6 +94,92 @@ test("renders the validator workspace", async ({ page }) => {
             - definition: —
   `);
   await expect(page.getByLabel("Open CSS")).toBeAttached();
+  await expect(page.getByRole("button", { name: "Validate" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Generate" })).toBeHidden();
+});
+
+test("generates property registrations from pasted CSS", async ({ page }) => {
+  await page.goto("/");
+  await page.getByLabel("Generate").check();
+  await replaceEditorContents(page, ":root { --brand-color: red; --space: 1px; }");
+  await page.getByRole("button", { name: "Generate" }).click();
+
+  await expect(page.getByRole("region", { name: "properties.css" })).toContainText(
+    "@property --brand-color",
+  );
+  await expect(page.getByRole("region", { name: "properties.css" })).toContainText(
+    "@property --space",
+  );
+  await expect(page.getByRole("status")).toContainText("Generated registrations are valid.");
+  await expect(page.getByRole("status")).toContainText("ready, 0 need review.");
+});
+
+test("switches the default example when changing modes", async ({ page }) => {
+  await page.goto("/");
+
+  await expect(page.getByRole("textbox", { name: "CSS input" })).toContainText(
+    "@property --brand-color",
+  );
+
+  await page.getByLabel("Generate").check();
+
+  await expect(page.getByRole("textbox", { name: "CSS input" })).not.toContainText(
+    "@property --brand-color",
+  );
+  await expect(page.getByRole("textbox", { name: "CSS input" })).toContainText("--space: 1px");
+
+  await page.getByLabel("Validate").check();
+
+  await expect(page.getByRole("textbox", { name: "CSS input" })).toContainText(
+    "@property --brand-color",
+  );
+});
+
+test("does not replace authored CSS when changing modes", async ({ page }) => {
+  await page.goto("/");
+  await replaceEditorContents(page, ".card { --brand-color: red; }");
+  await page.getByLabel("Generate").check();
+
+  await expect(page.getByRole("textbox", { name: "CSS input" })).toContainText(
+    "--brand-color: red",
+  );
+  await expect(page.getByRole("textbox", { name: "CSS input" })).not.toContainText("--space: 1px");
+});
+
+test("reports existing registrations in generation JSON output", async ({ page }) => {
+  await page.goto("/");
+  await page.getByLabel("Generate").check();
+  await replaceEditorContents(
+    page,
+    '@property --brand-color { syntax: "<color>"; inherits: true; initial-value: red; }\n:root { --brand-color: blue; }',
+  );
+  await page.getByRole("button", { name: "Generate" }).click();
+  await page.getByLabel("JSON").check();
+
+  await expect(page.getByText('"status": "existing"')).toBeVisible();
+});
+
+test("dedupes multiple uploaded CSS files during generation", async ({ page }) => {
+  await page.goto("/");
+  await page.getByLabel("Generate").check();
+  await page.getByLabel("Open CSS").setInputFiles([
+    {
+      name: "tokens.css",
+      mimeType: "text/css",
+      buffer: Buffer.from(":root { --space: 1px; }\n"),
+    },
+    {
+      name: "component.css",
+      mimeType: "text/css",
+      buffer: Buffer.from(".card { --space: 1px; }\n"),
+    },
+  ]);
+  await page.getByRole("button", { name: "Generate" }).click();
+  await page.getByLabel("JSON").check();
+
+  await expect(page.getByText('"generatedCount": 1')).toBeVisible();
+  await expect(page.getByText('"tokens.css"').first()).toBeVisible();
+  await expect(page.getByText('"component.css"').first()).toBeVisible();
 });
 
 test("shows a human diagnostic for pasted invalid CSS", async ({ page }) => {
