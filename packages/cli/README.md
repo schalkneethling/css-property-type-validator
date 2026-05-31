@@ -25,6 +25,7 @@ css-property-type-validator "src/**/*.css" --registry "src/tokens/**/*.css"
 css-property-type-validator "src/tokens/**/*.css" --registry-only
 css-property-type-validator "src/**/*.css" --check-unknown-custom-properties --tokens "src/tokens/**/*.css"
 css-property-type-validator "src/**/*.css" --failfast
+css-property-type-validator generate "src/**/*.css" --out properties.css
 ```
 
 Use `--registry` multiple times to include shared registration sources:
@@ -42,6 +43,27 @@ Unresolved `var()` diagnostics are static known-inputs checks enabled with `--ch
 The CLI prints a warning when unresolved checks are enabled without `--tokens`, and when `--tokens` is provided without enabling unresolved checks.
 
 By default, the CLI collects and reports all validation failures. Use `--failfast` to stop after the first validation failure, whether it comes from registry assembly, `@property` validation, or declaration usage validation. Exit codes and human/JSON output formats are unchanged.
+
+## Generate Registrations
+
+The experimental `generate` command writes inferred `@property` rules to `properties.css` by default:
+
+```bash
+css-property-type-validator generate "src/**/*.css"
+```
+
+Use `--out <path>` to specify another file, `--force` to overwrite an existing output file, and `--format json` to inspect generated and review-needed candidates.
+
+Generation needs concrete authored custom property declarations:
+
+```css
+:root {
+  --brand-color: red;
+  --space: 1px;
+}
+```
+
+`var()` usage sites are optional. Alias tokens such as `--border-color: var(--brand-color)` can generate only when the referenced token declarations are also passed to the command. If the generator only sees aliases and not the concrete primitive values they point to, those aliases are returned as review items.
 
 ## Exit Codes
 

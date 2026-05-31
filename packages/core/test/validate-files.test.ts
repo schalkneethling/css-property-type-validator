@@ -1268,6 +1268,79 @@ describe("validateFiles", () => {
     expect(cliResult.stdout).toContain("--failfast");
   });
 
+  it(
+    "writes generated @property registrations with the experimental CLI command",
+    {
+      timeout: 120000,
+    },
+    () => {
+      const repoRoot = path.resolve(import.meta.dirname, "../../..");
+      const fixtureDir = mkdtempSync(path.join(tmpdir(), "css-property-validator-"));
+      const inputPath = path.join(fixtureDir, "tokens.css");
+      const outputPath = path.join(fixtureDir, "properties.css");
+
+      writeFileSync(inputPath, ":root { --brand-color: red; --space: 1px; }\n");
+
+      const cliResult = spawnSync(
+        "node",
+        ["packages/cli/dist/cli.js", "generate", inputPath, "--out", outputPath],
+        {
+          cwd: repoRoot,
+          encoding: "utf8",
+        },
+      );
+
+      expect(cliResult.status).toBe(0);
+      expect(cliResult.stdout).toContain("Generated 2 @property registrations");
+      expect(readFileSync(outputPath, "utf8")).toContain("@property --brand-color");
+      expect(readFileSync(outputPath, "utf8")).toContain("@property --space");
+    },
+  );
+
+  it("protects existing generated output unless --force is passed", { timeout: 120000 }, () => {
+    const repoRoot = path.resolve(import.meta.dirname, "../../..");
+    const fixtureDir = mkdtempSync(path.join(tmpdir(), "css-property-validator-"));
+    const inputPath = path.join(fixtureDir, "tokens.css");
+    const outputPath = path.join(fixtureDir, "properties.css");
+
+    writeFileSync(inputPath, ":root { --brand-color: red; }\n");
+    writeFileSync(outputPath, "keep me\n");
+
+    const cliResult = spawnSync(
+      "node",
+      ["packages/cli/dist/cli.js", "generate", inputPath, "--out", outputPath],
+      {
+        cwd: repoRoot,
+        encoding: "utf8",
+      },
+    );
+
+    expect(cliResult.status).toBe(2);
+    expect(cliResult.stderr).toContain("already exists");
+    expect(readFileSync(outputPath, "utf8")).toBe("keep me\n");
+  });
+
+  it("prints structured generation output as JSON", { timeout: 120000 }, () => {
+    const repoRoot = path.resolve(import.meta.dirname, "../../..");
+    const fixtureDir = mkdtempSync(path.join(tmpdir(), "css-property-validator-"));
+    const inputPath = path.join(fixtureDir, "tokens.css");
+
+    writeFileSync(inputPath, ":root { --brand-color: red; }\n");
+
+    const cliResult = spawnSync(
+      "node",
+      ["packages/cli/dist/cli.js", "generate", inputPath, "--format", "json"],
+      {
+        cwd: repoRoot,
+        encoding: "utf8",
+      },
+    );
+    const report = JSON.parse(cliResult.stdout) as { generatedCount: number };
+
+    expect(cliResult.status).toBe(0);
+    expect(report.generatedCount).toBe(1);
+  });
+
   it("keeps human CLI output stable for a clean validation run", { timeout: 120000 }, () => {
     const repoRoot = path.resolve(import.meta.dirname, "../../..");
     const fixtureDir = mkdtempSync(path.join(tmpdir(), "css-property-validator-"));

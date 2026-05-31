@@ -48,6 +48,30 @@ const result = validateFiles(
 console.log(result.diagnostics);
 ```
 
+## Generate Registrations
+
+Use `generatePropertyRegistrations` to infer conservative `@property` rules from existing custom property declarations:
+
+```ts
+import { generatePropertyRegistrations } from "@schalkneethling/css-property-type-validator-core";
+
+const result = generatePropertyRegistrations([
+  {
+    path: "tokens.css",
+    css: `
+      :root {
+        --brand-color: red;
+        --space: 1px;
+      }
+    `,
+  },
+]);
+
+console.log(result.css);
+```
+
+Generation needs concrete declarations such as `--brand-color: red`. `var()` usage sites are optional. Alias values such as `--border-color: var(--brand-color)` can generate only when the referenced token declarations are included in the same inputs.
+
 Diagnostics include stable machine-readable fields for tooling integrations:
 
 ```ts

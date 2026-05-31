@@ -56,6 +56,24 @@
         </div>
         <section class="header-actions" aria-labelledby="header-actions-title">
           <h2 class="visually-hidden" id="header-actions-title">Validation actions</h2>
+          <fieldset class="mode-toggle">
+            <legend>Mode</legend>
+            <label for="mode-validate">
+              <input
+                id="mode-validate"
+                class="js-mode"
+                type="radio"
+                name="mode"
+                value="validate"
+                checked
+              />
+              <span>Validate</span>
+            </label>
+            <label for="mode-generate">
+              <input id="mode-generate" class="js-mode" type="radio" name="mode" value="generate" />
+              <span>Generate</span>
+            </label>
+          </fieldset>
           <label class="check-toggle" for="unknown-custom-properties-input">
             <input
               id="unknown-custom-properties-input"
@@ -78,9 +96,16 @@
           </label>
           <label class="file-button" for="css-file-input">
             <span>Open CSS</span>
-            <input id="css-file-input" class="js-file-input" type="file" accept=".css,text/css" />
+            <input
+              id="css-file-input"
+              class="js-file-input"
+              type="file"
+              accept=".css,text/css"
+              multiple
+            />
           </label>
           <button class="primary-action js-validate-button" type="button">Validate</button>
+          <button class="primary-action js-generate-button" type="button" hidden>Generate</button>
         </section>
       </header>
 
@@ -107,7 +132,7 @@
             <div class="panel-header output-header">
               <div>
                 <p class="panel-kicker">Output</p>
-                <h2 id="output-title">Validation result</h2>
+                <h2 id="output-title" class="js-output-title">Validation result</h2>
               </div>
               <fieldset class="format-toggle">
                 <legend>Output format</legend>
@@ -146,19 +171,19 @@
               <h3 class="visually-hidden" id="validation-summary-title">Validation summary</h3>
               <dl class="result-stats" aria-live="polite">
                 <div>
-                  <dt>Diagnostics</dt>
+                  <dt class="js-stat-diagnostics-label">Diagnostics</dt>
                   <dd class="js-stat-diagnostics">—</dd>
                 </div>
                 <div>
-                  <dt>Registered</dt>
+                  <dt class="js-stat-registered-label">Registered</dt>
                   <dd class="js-stat-registered">—</dd>
                 </div>
                 <div>
-                  <dt>Validated</dt>
+                  <dt class="js-stat-validated-label">Validated</dt>
                   <dd class="js-stat-validated">—</dd>
                 </div>
                 <div>
-                  <dt>Skipped</dt>
+                  <dt class="js-stat-skipped-label">Skipped</dt>
                   <dd class="js-stat-skipped">—</dd>
                 </div>
               </dl>

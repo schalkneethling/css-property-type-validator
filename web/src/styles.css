@@ -631,6 +631,10 @@ h2 {
   border-color: var(--color-accent);
 }
 
+.primary-action[hidden] {
+  display: none;
+}
+
 .file-button:hover,
 .check-toggle:hover,
 .primary-action:hover {
@@ -640,7 +644,8 @@ h2 {
 .file-button:focus-within,
 .check-toggle:focus-within,
 .primary-action:focus-visible,
-.format-toggle input:focus-visible + span {
+.format-toggle input:focus-visible + span,
+.mode-toggle input:focus-visible + span {
   outline: 0.1875rem solid var(--color-focus);
   outline-offset: 0.1875rem;
 }
@@ -695,7 +700,8 @@ h2 {
   white-space: nowrap;
 }
 
-.format-toggle {
+.format-toggle,
+.mode-toggle {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
@@ -707,7 +713,8 @@ h2 {
   border-radius: 0.375rem;
 }
 
-.format-toggle legend {
+.format-toggle legend,
+.mode-toggle legend {
   position: absolute;
   inline-size: 0.0625rem;
   block-size: 0.0625rem;
@@ -717,17 +724,20 @@ h2 {
   clip-path: inset(50%);
 }
 
-.format-toggle label {
+.format-toggle label,
+.mode-toggle label {
   display: block;
   cursor: pointer;
 }
 
-.format-toggle input {
+.format-toggle input,
+.mode-toggle input {
   position: absolute;
   opacity: 0;
 }
 
-.format-toggle span {
+.format-toggle span,
+.mode-toggle span {
   display: block;
   border-radius: 0.25rem;
   padding-block: 0.35rem;
@@ -738,7 +748,8 @@ h2 {
   letter-spacing: 0.01em;
 }
 
-.format-toggle input:checked + span {
+.format-toggle input:checked + span,
+.mode-toggle input:checked + span {
   color: var(--color-panel);
   background: var(--color-heading);
 }
@@ -882,15 +893,18 @@ h2 {
     flex-direction: column;
   }
 
-  .format-toggle {
+  .format-toggle,
+  .mode-toggle {
     inline-size: 100%;
   }
 
-  .format-toggle label {
+  .format-toggle label,
+  .mode-toggle label {
     flex: 1;
   }
 
-  .format-toggle span {
+  .format-toggle span,
+  .mode-toggle span {
     text-align: center;
   }
 

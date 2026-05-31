@@ -190,7 +190,7 @@ function getComputationalIndependenceFailureReason(value: unknown): string | nul
   return failure;
 }
 
-function validateInitialValueAgainstSyntax(
+export function validateInitialValueAgainstSyntax(
   propertyName: string,
   syntax: string,
   initialValue: string,

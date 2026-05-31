@@ -50,6 +50,7 @@ css-property-type-validator "src/**/*.css" --registry "src/tokens/**/*.css"
 css-property-type-validator "src/tokens/**/*.css" --registry-only
 css-property-type-validator "src/**/*.css" --check-unknown-custom-properties --tokens "src/tokens/**/*.css"
 css-property-type-validator "src/**/*.css" --failfast
+css-property-type-validator generate "src/**/*.css" --out properties.css
 ```
 
 Use `--registry` for shared `@property` definitions that should contribute registrations without validating ordinary declarations from those files:
@@ -80,6 +81,27 @@ By default, the CLI collects every validation failure it can find and reports th
 Use `--failfast` when you want it to stop after the first validation failure, including
 registration/import failures and declaration usage failures. Human and JSON output keep the same
 format; the diagnostics array simply contains the first issue found.
+
+## Generate `@property` Rules
+
+Use the experimental `generate` command to create a reviewable `properties.css` file from existing custom property declarations:
+
+```bash
+css-property-type-validator generate "src/**/*.css" --out properties.css
+```
+
+Generation needs to see concrete authored custom property declarations such as:
+
+```css
+:root {
+  --brand-color: red;
+  --space: 1px;
+}
+```
+
+`var()` usage sites are optional. They can help you test the generated registrations with validation later, but the generator can infer registrations from token-only files.
+
+Alias tokens such as `--border-color: var(--brand-color)` can generate only when the referenced token declarations are also included in the inputs. If the generator only sees aliases and not the concrete primitive values they point to, those aliases are returned as review items.
 
 ## Stylelint Usage
 
