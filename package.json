@@ -25,6 +25,12 @@
     "test": "vp test run",
     "test:e2e": "pnpm --filter @schalkneethling/css-property-type-validator-web test:e2e",
     "typecheck": "tsc -b tsconfig.json",
+    "release:add": "bumpy add",
+    "release:status": "bumpy status",
+    "release:version": "bumpy version && pnpm run release:check-changelogs",
+    "release:check": "bumpy check --strict && pnpm run release:check-changelogs && pnpm run format:check",
+    "release:check-changelogs": "node scripts/check-changelog-format.mjs",
+    "release:verify": "pnpm run release:check-changelogs && pnpm run check && pnpm run check:supported-syntax-names",
     "update:vscode-data": "pnpm --filter ./packages/vscode run sync:data && pnpm run format",
     "check:supported-syntax-names": "node scripts/check-supported-syntax-names.mjs",
     "clean": "node scripts/clean.mjs",
@@ -32,6 +38,7 @@
   },
   "devDependencies": {
     "@types/node": "^25.9.1",
+    "@varlock/bumpy": "1.10.2",
     "cheerio": "^1.2.0",
     "typescript": "^6.0.3",
     "vite-plus": "^0.1.22"

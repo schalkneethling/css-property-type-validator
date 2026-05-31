@@ -1,0 +1,53 @@
+{
+  "$schema": "../node_modules/@varlock/bumpy/config-schema.json",
+  "baseBranch": "main",
+  "access": "public",
+  "changelog": "./.bumpy/changelog-formatter.mjs",
+  "include": [
+    "@schalkneethling/css-property-type-validator-core",
+    "@schalkneethling/css-property-type-validator-cli"
+  ],
+  "ignore": [
+    "css-property-type-validator",
+    "@schalkneethling/css-property-type-validator-web",
+    "@schalkneethling/stylelint-plugin-css-property-type-validator"
+  ],
+  "updateInternalDependencies": "patch",
+  "dependencyBumpRules": {
+    "dependencies": {
+      "trigger": "patch",
+      "bumpAs": "patch"
+    },
+    "peerDependencies": false,
+    "devDependencies": false,
+    "optionalDependencies": false
+  },
+  "packages": {
+    "@schalkneethling/css-property-type-validator-core": {
+      "managed": true
+    },
+    "@schalkneethling/css-property-type-validator-cli": {
+      "managed": true
+    },
+    "@schalkneethling/stylelint-plugin-css-property-type-validator": {
+      "managed": false
+    },
+    "css-property-type-validator": {
+      "managed": false
+    }
+  },
+  "publish": {
+    "packManager": "pnpm",
+    "publishManager": "pnpm",
+    "protocolResolution": "pack"
+  },
+  "gitUser": {
+    "name": "bumpy-bot",
+    "email": "276066384+bumpy-bot@users.noreply.github.com"
+  },
+  "versionPr": {
+    "title": "Version packages",
+    "branch": "bumpy/version-packages",
+    "preamble": "This PR was created by Bumpy from committed bump files in `.bumpy/`. Review the generated versions and changelogs, then merge when ready to prepare the manual trusted-publishing GitHub Release."
+  }
+}
