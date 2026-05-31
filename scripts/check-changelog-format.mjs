@@ -18,8 +18,12 @@ for (const path of changelogPaths) {
 
   try {
     content = await readFile(path, "utf8");
-  } catch {
-    continue;
+  } catch (error) {
+    if (error.code === "ENOENT") {
+      continue;
+    }
+
+    throw error;
   }
 
   if (!content.startsWith("# Changelog\n\n")) {
@@ -46,7 +50,7 @@ for (const path of changelogPaths) {
       report(path, `line ${lineNumber} uses '*' bullet; use '-' bullets.`);
     }
 
-    if (line === "" && lines[index + 1] === "" && lines[index + 2] === "") {
+    if (index + 1 < lines.length && line === "" && lines[index + 1] === "") {
       report(path, `line ${lineNumber} has more than one blank line.`);
     }
   }

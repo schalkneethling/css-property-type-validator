@@ -19,7 +19,7 @@ The CI workflow runs on pull requests and pushes to `main` and verifies:
 - `@schalkneethling/css-property-type-validator-cli`
 - `@schalkneethling/stylelint-plugin-css-property-type-validator`
 
-Bumpy currently manages core and CLI only. The Stylelint plugin remains manual while it is on prerelease versions because Bumpy supports `major`, `minor`, and `patch` bumps, and a patch bump from `0.1.0-beta.x` would graduate it to `0.1.0`. Add it to Bumpy once it is ready for stable releases. The VS Code extension is not managed by Bumpy yet. Keep versioning and packaging both manual packages by hand.
+Bumpy currently manages core and CLI only. The Stylelint plugin remains manual while it is on prerelease versions because Bumpy supports `major`, `minor`, and `patch` bumps, and a patch bump from `0.1.0-beta.x` would graduate it to `0.1.0`. Add it to Bumpy once it is ready for stable releases. The VS Code extension is not managed by Bumpy yet. Keep versioning and packaging the Stylelint plugin and VS Code extension manually.
 
 ## Trusted Publishing Setup
 
