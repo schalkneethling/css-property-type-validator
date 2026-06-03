@@ -41,7 +41,7 @@
     "@varlock/bumpy": "1.10.2",
     "cheerio": "^1.2.0",
     "typescript": "^6.0.3",
-    "vite-plus": "^0.1.22"
+    "vite-plus": "^0.1.23"
   },
   "engines": {
     "node": ">=22.0.0"
