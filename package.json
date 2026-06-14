@@ -38,7 +38,7 @@
   },
   "devDependencies": {
     "@types/node": "^25.9.2",
-    "@varlock/bumpy": "1.10.2",
+    "@varlock/bumpy": "1.13.2",
     "cheerio": "^1.2.0",
     "typescript": "^6.0.3",
     "vite-plus": "^0.1.24"
