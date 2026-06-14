@@ -37,8 +37,8 @@
     "example": "pnpm run build && node packages/cli/dist/cli.js fixtures/imports/main.css"
   },
   "devDependencies": {
-    "@types/node": "^25.9.1",
-    "@varlock/bumpy": "1.10.2",
+    "@types/node": "^25.9.2",
+    "@varlock/bumpy": "1.13.2",
     "cheerio": "^1.2.0",
     "typescript": "^6.0.3",
     "vite-plus": "^0.1.24"
