@@ -1022,7 +1022,7 @@
     "groups": ["WebKit Extensions"],
     "initial": "medium",
     "appliesto": "allElements",
-    "computed": "absoluteLength",
+    "computed": "absoluteLengthSnappedAsLineWidth",
     "order": "uniqueOrder",
     "status": "nonstandard"
   },
@@ -1083,7 +1083,7 @@
     "groups": ["WebKit Extensions"],
     "initial": "medium",
     "appliesto": "allElements",
-    "computed": "absoluteLength",
+    "computed": "absoluteLengthSnappedAsLineWidth",
     "order": "uniqueOrder",
     "status": "nonstandard"
   },
@@ -1139,7 +1139,7 @@
     "groups": ["WebKit Extensions"],
     "initial": "medium",
     "appliesto": "allElements",
-    "computed": "absoluteLength",
+    "computed": "absoluteLengthSnappedAsLineWidth",
     "order": "uniqueOrder",
     "status": "nonstandard"
   },
@@ -1203,7 +1203,7 @@
     "groups": ["WebKit Extensions"],
     "initial": "medium",
     "appliesto": "allElements",
-    "computed": "absoluteLength",
+    "computed": "absoluteLengthSnappedAsLineWidth",
     "order": "uniqueOrder",
     "status": "nonstandard"
   },
@@ -2305,7 +2305,7 @@
     "groups": ["CSS Logical Properties and Values"],
     "initial": "medium",
     "appliesto": "allElements",
-    "computed": "absoluteLengthZeroIfBorderStyleNoneOrHidden",
+    "computed": "absoluteLengthSnappedAsLineWidth",
     "order": "uniqueOrder",
     "status": "standard",
     "mdn_url": "https://developer.mozilla.org/docs/Web/CSS/border-block-end-width"
@@ -2369,7 +2369,7 @@
     "groups": ["CSS Logical Properties and Values"],
     "initial": "medium",
     "appliesto": "allElements",
-    "computed": "absoluteLengthZeroIfBorderStyleNoneOrHidden",
+    "computed": "absoluteLengthSnappedAsLineWidth",
     "order": "uniqueOrder",
     "status": "standard",
     "mdn_url": "https://developer.mozilla.org/docs/Web/CSS/border-block-start-width"
@@ -2486,7 +2486,7 @@
     "groups": ["CSS Backgrounds and Borders"],
     "initial": "medium",
     "appliesto": "allElements",
-    "computed": "absoluteLengthOr0IfBorderBottomStyleNoneOrHidden",
+    "computed": "absoluteLengthSnappedAsLineWidth",
     "order": "uniqueOrder",
     "alsoAppliesTo": ["::first-letter"],
     "status": "standard",
@@ -2757,7 +2757,7 @@
     "groups": ["CSS Logical Properties and Values"],
     "initial": "medium",
     "appliesto": "allElements",
-    "computed": "absoluteLengthZeroIfBorderStyleNoneOrHidden",
+    "computed": "absoluteLengthSnappedAsLineWidth",
     "order": "uniqueOrder",
     "status": "standard",
     "mdn_url": "https://developer.mozilla.org/docs/Web/CSS/border-inline-end-width"
@@ -2825,7 +2825,7 @@
     "groups": ["CSS Logical Properties and Values"],
     "initial": "medium",
     "appliesto": "allElements",
-    "computed": "absoluteLengthZeroIfBorderStyleNoneOrHidden",
+    "computed": "absoluteLengthSnappedAsLineWidth",
     "order": "uniqueOrder",
     "status": "standard",
     "mdn_url": "https://developer.mozilla.org/docs/Web/CSS/border-inline-start-width"
@@ -2912,7 +2912,7 @@
     "groups": ["CSS Backgrounds and Borders"],
     "initial": "medium",
     "appliesto": "allElements",
-    "computed": "absoluteLengthOr0IfBorderLeftStyleNoneOrHidden",
+    "computed": "absoluteLengthSnappedAsLineWidth",
     "order": "uniqueOrder",
     "alsoAppliesTo": ["::first-letter"],
     "status": "standard",
@@ -3002,11 +3002,25 @@
     "groups": ["CSS Backgrounds and Borders"],
     "initial": "medium",
     "appliesto": "allElements",
-    "computed": "absoluteLengthOr0IfBorderRightStyleNoneOrHidden",
+    "computed": "absoluteLengthSnappedAsLineWidth",
     "order": "uniqueOrder",
     "alsoAppliesTo": ["::first-letter"],
     "status": "standard",
     "mdn_url": "https://developer.mozilla.org/docs/Web/CSS/border-right-width"
+  },
+  "border-shape": {
+    "syntax": "none | [ <basic-shape> <geometry-box>?]{1,2}",
+    "media": "visual",
+    "inherited": false,
+    "animationType": "byComputedValueType",
+    "percentages": "no",
+    "groups": ["CSS Backgrounds and Borders"],
+    "initial": "none",
+    "appliesto": "allElements",
+    "computed": "asSpecified",
+    "order": "perGrammar",
+    "status": "standard",
+    "mdn_url": "https://developer.mozilla.org/docs/Web/CSS/border-shape"
   },
   "border-spacing": {
     "syntax": "<length>{1,2}",
@@ -3161,7 +3175,7 @@
     "groups": ["CSS Backgrounds and Borders"],
     "initial": "medium",
     "appliesto": "allElements",
-    "computed": "absoluteLengthOr0IfBorderTopStyleNoneOrHidden",
+    "computed": "absoluteLengthSnappedAsLineWidth",
     "order": "uniqueOrder",
     "alsoAppliesTo": ["::first-letter"],
     "status": "standard",
@@ -3682,7 +3696,7 @@
     "groups": ["CSS Multi-column Layout"],
     "initial": "medium",
     "appliesto": "multicolElements",
-    "computed": "absoluteLength0IfColumnRuleStyleNoneOrHidden",
+    "computed": "absoluteLengthSnappedAsLineWidth",
     "order": "perGrammar",
     "status": "standard",
     "mdn_url": "https://developer.mozilla.org/docs/Web/CSS/column-rule-width"
@@ -4472,6 +4486,20 @@
     "status": "standard",
     "mdn_url": "https://developer.mozilla.org/docs/Web/CSS/flex-grow"
   },
+  "flex-line-count": {
+    "syntax": "<integer [1,∞]>",
+    "media": "visual",
+    "inherited": false,
+    "animationType": "number",
+    "percentages": "no",
+    "groups": ["CSS Flexible Box Layout"],
+    "initial": "1",
+    "appliesto": "multilineFlexContainers",
+    "computed": "asSpecified",
+    "order": "perGrammar",
+    "status": "standard",
+    "mdn_url": "https://developer.mozilla.org/docs/Web/CSS/flex-line-count"
+  },
   "flex-shrink": {
     "syntax": "<number>",
     "media": "visual",
@@ -4487,7 +4515,7 @@
     "mdn_url": "https://developer.mozilla.org/docs/Web/CSS/flex-shrink"
   },
   "flex-wrap": {
-    "syntax": "nowrap | wrap | wrap-reverse",
+    "syntax": "nowrap | [ wrap | wrap-reverse ] || balance",
     "media": "visual",
     "inherited": false,
     "animationType": "discrete",
@@ -4997,6 +5025,20 @@
     "order": "perGrammar",
     "status": "standard",
     "mdn_url": "https://developer.mozilla.org/docs/Web/CSS/forced-color-adjust"
+  },
+  "frame-sizing": {
+    "syntax": "auto | content-width | content-height | content-block-size | content-inline-size",
+    "media": "visual",
+    "inherited": false,
+    "animationType": "discrete",
+    "percentages": "no",
+    "groups": ["CSS Box Sizing"],
+    "initial": "auto",
+    "appliesto": "replacedElements",
+    "computed": "asSpecified",
+    "order": "perGrammar",
+    "status": "standard",
+    "mdn_url": "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/frame-sizing"
   },
   "gap": {
     "syntax": "<'row-gap'> <'column-gap'>?",
@@ -5805,6 +5847,20 @@
     "status": "experimental",
     "mdn_url": "https://developer.mozilla.org/docs/Web/CSS/line-height-step"
   },
+  "link-parameters": {
+    "syntax": "none | <param()>#",
+    "media": "visual",
+    "inherited": false,
+    "animationType": "discrete",
+    "percentages": "no",
+    "groups": ["CSS Values and Units"],
+    "initial": "none",
+    "appliesto": "allElementsAndPseudos",
+    "computed": "asSpecified",
+    "order": "perGrammar",
+    "status": "experimental",
+    "mdn_url": "https://developer.mozilla.org/docs/Web/CSS/link-parameters"
+  },
   "list-style": {
     "syntax": "<'list-style-type'> || <'list-style-position'> || <'list-style-image'>",
     "media": "visual",
@@ -6592,7 +6648,7 @@
   "object-position": {
     "syntax": "<position>",
     "media": "visual",
-    "inherited": true,
+    "inherited": false,
     "animationType": "repeatableList",
     "percentages": "referToWidthAndHeightOfElement",
     "groups": ["CSS Images"],
@@ -6800,7 +6856,7 @@
     "groups": ["CSS Basic User Interface"],
     "initial": "0",
     "appliesto": "allElements",
-    "computed": "asSpecifiedRelativeToAbsoluteLengths",
+    "computed": "absoluteLengthSnappedAsLineWidth",
     "order": "uniqueOrder",
     "status": "standard",
     "mdn_url": "https://developer.mozilla.org/docs/Web/CSS/outline-offset"
@@ -6828,7 +6884,7 @@
     "groups": ["CSS Basic User Interface"],
     "initial": "medium",
     "appliesto": "allElements",
-    "computed": "absoluteLength0ForNone",
+    "computed": "absoluteLengthSnappedAsLineWidth",
     "order": "uniqueOrder",
     "status": "standard",
     "mdn_url": "https://developer.mozilla.org/docs/Web/CSS/outline-width"
@@ -7270,6 +7326,20 @@
     "order": "uniqueOrder",
     "status": "standard",
     "mdn_url": "https://developer.mozilla.org/docs/Web/CSS/paint-order"
+  },
+  "path-length": {
+    "syntax": "none | <length> [0,∞]",
+    "media": "visual",
+    "inherited": false,
+    "animationType": "byComputedValue",
+    "percentages": "no",
+    "groups": ["Scalable Vector Graphics"],
+    "initial": "none",
+    "appliesto": "pathCircleEllipseLinePolygonPolylineRect",
+    "computed": "noneOrAbsoluteLength",
+    "order": "uniqueOrder",
+    "status": "standard",
+    "mdn_url": "https://developer.mozilla.org/docs/Web/CSS/path-length"
   },
   "perspective": {
     "syntax": "none | <length>",
@@ -9537,6 +9607,20 @@
     "order": "perGrammar",
     "status": "standard",
     "mdn_url": "https://developer.mozilla.org/docs/Web/CSS/view-transition-name"
+  },
+  "view-transition-scope": {
+    "syntax": "none | all",
+    "media": "visual",
+    "inherited": false,
+    "animationType": "discrete",
+    "percentages": "no",
+    "groups": ["CSS View Transitions"],
+    "initial": "none",
+    "appliesto": "allElements",
+    "computed": "asSpecified",
+    "order": "perGrammar",
+    "status": "standard",
+    "mdn_url": "https://developer.mozilla.org/docs/Web/CSS/view-transition-scope"
   },
   "visibility": {
     "syntax": "visible | hidden | collapse",
