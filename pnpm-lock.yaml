@@ -12,8 +12,8 @@ importers:
         specifier: ^26.1.2
         version: 26.1.2
       '@varlock/bumpy':
-        specifier: 1.14.0
-        version: 1.14.0
+        specifier: 1.18.1
+        version: 1.18.1
       cheerio:
         specifier: ^1.2.0
         version: 1.2.0
@@ -790,8 +790,8 @@ packages:
     resolution: {integrity: sha512-jIXhD0eWQ1JA6ln/5Dltyx22UxWNrw0hZmhy2rlv6m6KgF7kplHx3g0fzi09lNmTJQRR91OlemYp3xFnvDK9og==}
     engines: {node: '>=20.0.0'}
 
-  '@varlock/bumpy@1.14.0':
-    resolution: {integrity: sha512-nyKIfapUGURBKTmDPSvwZtuC8NRCRvN157TxDqxz+GBqTlTzV93txHGcrI/4aepTpIqoqZew3QPzIZaEOaMKJA==}
+  '@varlock/bumpy@1.18.1':
+    resolution: {integrity: sha512-u6PHUr+laAgWWm/c3wdExHBCcvYkkTb+KsiRNR9GCFIbCDrCN9CyOZO/crtRZ5u4KWMKtUTeA7U/s+AA0k7Dcg==}
     hasBin: true
 
   '@vitest/expect@4.1.10':
@@ -3436,7 +3436,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@varlock/bumpy@1.14.0': {}
+  '@varlock/bumpy@1.18.1': {}
 
   '@vitest/expect@4.1.10':
     dependencies:
