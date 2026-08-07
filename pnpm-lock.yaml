@@ -78,8 +78,8 @@ importers:
         specifier: ^2.30.0
         version: 2.31.0
       mocha:
-        specifier: ^11.7.6
-        version: 11.7.6
+        specifier: ^11.8.0
+        version: 11.8.0
 
   web:
     dependencies:
@@ -1717,10 +1717,6 @@ packages:
   js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
 
-  js-yaml@4.1.1:
-    resolution: {integrity: sha512-qQKT4zQxXl8lLwBtHMWwaTcGfFOZviOJet3Oy/xmGk2gZH677CJM9EvtfdSkgWcATZhj/55JZ0rmy3myCT5lsA==}
-    hasBin: true
-
   js-yaml@4.2.0:
     resolution: {integrity: sha512-ePWsvanv0DWuDRsW8dnt+R4jQ31SCRCQ7hhNcPXZPsoBZiemuZNYGf7adZdqX2D86j6rvKp3RpCxVTSb8WQlOw==}
     hasBin: true
@@ -1976,8 +1972,8 @@ packages:
   mkdirp-classic@0.5.3:
     resolution: {integrity: sha512-gKLcREMhtuZRwRAfqP3RFW+TK4JqApVBtOIftVgjuABpAtpxhPGaDcfvbhNvD0B8iD1oUr/txX35NjcaY6Ns/A==}
 
-  mocha@11.7.6:
-    resolution: {integrity: sha512-nS9xOGbw2I3cjCpxwZAEJ9xK9lmJ08vEkQvLtz4du9ZrF9UrjRpeJGiIgl2Z+Qs++pmB4ecDe48Fwsh+j+j7xA==}
+  mocha@11.8.0:
+    resolution: {integrity: sha512-VyCeUdGN3A9lmCTTgG4yuvY9ixxaDk+xt2R/7/+1AP6EqNG+G9OKkzBwhVtVYoNX8YsxNSgAl8mOv3IAeOpFbw==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
     hasBin: true
 
@@ -4257,10 +4253,6 @@ snapshots:
 
   js-tokens@4.0.0: {}
 
-  js-yaml@4.1.1:
-    dependencies:
-      argparse: 2.0.1
-
   js-yaml@4.2.0:
     dependencies:
       argparse: 2.0.1
@@ -4484,7 +4476,7 @@ snapshots:
   mkdirp-classic@0.5.3:
     optional: true
 
-  mocha@11.7.6:
+  mocha@11.8.0:
     dependencies:
       browser-stdout: 1.3.1
       chokidar: 4.0.3
@@ -4495,7 +4487,7 @@ snapshots:
       glob: 10.5.0
       he: 1.2.0
       is-path-inside: 3.0.3
-      js-yaml: 4.1.1
+      js-yaml: 4.2.0
       log-symbols: 4.1.0
       minimatch: 9.0.9
       ms: 2.1.3
