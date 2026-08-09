@@ -2,61 +2,75 @@
 
 ## North Star
 
-CSS Property Type Validator exists to make typed CSS custom properties practical to adopt and maintain by catching invalid `@property` registrations and incompatible `var()` usage before those mistakes ship.
+CSS Property Type Validator makes typed CSS custom properties practical to adopt and maintain by discovering registration opportunities, producing reviewable evidence, and catching invalid `@property` registrations and incompatible usage before mistakes ship.
 
 ## Who This Is For
 
-- CSS authors and design-system maintainers.
-- Teams adopting `@property` in existing CSS codebases and needing a low-risk migration path.
-- Tooling users who want the same validation available in CI, local command-line checks, Stylelint, VS Code-compatible editors, and a browser UI.
-- Integrators who need a stable TypeScript validation engine with machine-readable diagnostics.
+- CSS authors and design-system maintainers adopting `@property` in existing codebases.
+- Teams enforcing typed custom properties through local tooling, Stylelint, and CI.
+- Coding agents that require deterministic analysis, exact evidence, safe suggested edits, and stable machine-readable contracts.
+- Integrators consuming the browser-safe TypeScript core or CLI.
 
-## Core Goals
+## Product Lifecycle
 
-1. Provide a conservative standalone validation core that understands registered custom properties, validates required `@property` descriptors, and checks compatible usage through `var()`.
-2. Make typed custom property validation available wherever developers need it, while keeping behavior consistent through a shared core.
-3. Help existing projects adopt typed custom properties incrementally by generating reviewable `@property` registrations from concrete authored custom property declarations.
-4. Produce diagnostics that are clear for humans and stable for automation.
-5. Support real-world token architectures without assuming one global CSS shape.
+The project owns one connected workflow:
+
+**audit → review → generate → validate → gate**
+
+1. Audit repository CSS and explain registration coverage, conflicts, skips, and opportunities.
+2. Review evidence and decisions in JSON or a standalone HTML report.
+3. Generate conservative registrations only after required human or configured decisions.
+4. Validate registrations, assignments, fallbacks, aliases, and consuming-property compatibility.
+5. Gate incremental adoption with stable diagnostics, baselines, JSON, SARIF, and exit codes.
+
+## Owned Surfaces
+
+- **Core:** filesystem-free parsing, analysis, validation, evidence, coverage, inference, and edit plans.
+- **CLI:** project discovery, bounded I/O, configuration, reports, CI policy, baselines, and application of reviewed edits.
+- **Stylelint:** focused feedback for Stylelint-owned files using the shared core.
+- **Web:** a local review and learning sandbox that consumes only published-compatible core APIs.
+
+Other editor integrations may consume the core or CLI, but maintaining them is not a project responsibility.
 
 ## Success Looks Like
 
-- A project can add the CLI or Stylelint plugin to CI and catch real typed-token mistakes without being flooded by false positives.
-- The same CSS produces compatible results across the core and every implementation built on it.
-- Generated `@property` output is conservative enough to review, useful enough to lower adoption friction, and transparent about values that need human judgment.
-- Diagnostics point users toward the invalid registration, assignment, fallback, unresolved import, or incompatible consuming property with enough context to fix it.
-- Supported CSS syntax data stays current enough to preserve trust in the validator as CSS evolves.
+- Existing projects can measure adoption before enabling a gate.
+- Diagnostics and coverage are stable, deterministic, and useful to both engineers and agents.
+- Generated registrations expose evidence, confidence, policy provenance, and unresolved human decisions.
+- `inherits` and `initial-value` are never guessed.
+- CI can fail only on new or explicitly gated findings while retaining existing debt.
+- Human reports work offline and in the pinned Ephemeral Pages sandbox.
+- Web never exposes a capability that is unavailable from the exact published core package it declares.
 
 ## Non-Goals
 
-- Do not simulate the full browser cascade, DOM-specific computed values, or runtime custom property resolution.
-- Do not report diagnostics for ambiguous CSS patterns unless the validator can do so with high confidence.
-- Do not make unknown custom property checks mandatory or present them as full cascade analysis; they are opt-in static checks against configured token inputs.
-- Do not let package surfaces drift into separate behavior; new integrations should reuse the core rather than reimplementing validation.
+- Do not simulate the full browser cascade, DOM-specific computed values, or runtime resolution.
+- Do not infer behavior unsupported by the official CSS specifications.
+- Do not report ambiguous behavior as a definite error.
+- Do not own editor extensions, preprocessors, SFC extraction, or additional lint adapters.
+- Do not make unresolved-reference checks mandatory or present them as cascade analysis.
+- Do not automatically choose semantic values for `inherits` or `initial-value`.
+- Do not allow package surfaces to reimplement or drift from the core.
 
 ## Principles and Constraints
 
-- Prefer skipping uncertain cases over creating false positives.
-- Keep configuration explicit: registry inputs, token inputs, and unresolved-reference checks should be visible choices in each integration.
-- Keep generated registrations reviewable rather than magical.
-- Preserve stable machine-readable diagnostic fields for downstream tools.
-- Require spec-driven behavior and test coverage for both failing and compatible cases.
-- Keep manual release and package-publishing workflows auditable.
-- Target the maintained runtime baseline used by the repo, currently Node.js 22 or newer.
+- The official published CSS specifications are the authority for every semantic `@property` rule. Libraries, MDN, Webref, WPT, and browsers are supporting evidence only.
+- Define acceptance boundaries before RED tests; trace every test to an accepted outcome.
+- Prefer structured uncertainty and review over false positives.
+- Keep the core browser-safe and filesystem-free.
+- Enforce bounded reads before allocation and check bytes again after reading.
+- Treat workspace compatibility and published-package compatibility as separate claims.
+- Treat the pinned Ephemeral Pages delivery contract as the report compatibility authority.
+- Keep machine-readable schemas, diagnostic IDs, sorting, and fingerprints versioned and deterministic.
+- Keep publishing auditable, artifact-driven, and protected by OIDC and exact-version verification.
+- Target Node.js 22 or newer for maintained Node surfaces.
 
 ## Current Focus
 
-- Improve support for custom property patterns that rely on whitespace or fallback toggles.
-- Reduce heuristic gaps in syntax compatibility checks where doing so remains conservative.
-- Make diagnostics more actionable by adding clearer remediation context.
-- Harden the Stylelint beta through real-project feedback.
-- Add config-file based registry discovery to reduce repeated CLI, VS Code, and Stylelint setup.
-- Expand validation to more languages, file types, and editor workflows when the core can model them safely.
-- Explore automatic fixes where remediation is clear, tested, and consistent across core-backed implementations.
-- Evaluate integrating `@property` generation into implementations beyond the CLI and browser UI where it fits the developer workflow.
-- Track how future CSS `@function` and mixin-like features should shape typed custom property validation.
-
-## Open Questions
-
-- How far should the generator go in explaining why each syntax was inferred before the output becomes too noisy?
-- Which additional integrations best satisfy the goal of making typed custom property validation available wherever developers need it?
+1. Establish specification provenance, acceptance traceability, and stable analysis contracts.
+2. Retire the VS Code package and remove editor ownership from active tooling.
+3. Add shared bounded project context and repository-wide audit/coverage.
+4. Deliver standalone review HTML compatible with Ephemeral Pages.
+5. Replace implicit generation choices with explicit evidence and decisions.
+6. Add baselines, SARIF, and incremental CI gates.
+7. Harden Stylelint and the published-consumer web boundary.

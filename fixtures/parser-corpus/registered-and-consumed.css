@@ -1,0 +1,9 @@
+@property --space {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+.card {
+  padding: var(--space, 1rem);
+}

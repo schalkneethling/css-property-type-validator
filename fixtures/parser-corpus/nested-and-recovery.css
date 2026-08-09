@@ -1,0 +1,12 @@
+@layer tokens {
+  @property --accent {
+    syntax: "<color>";
+    inherits: true;
+    initial-value: rebeccapurple;
+  }
+}
+
+.example {
+  color: var(--missing, var(--accent, blue));
+  broken: calc(1px + ;
+}

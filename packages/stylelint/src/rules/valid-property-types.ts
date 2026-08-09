@@ -1,15 +1,16 @@
-import { readFileSync } from "node:fs";
-import { glob, readFile } from "node:fs/promises";
 import path from "node:path";
 
 import {
   validateFiles,
   isAbsoluteImportUrl,
-  type ResolveImport,
   type ValidationDiagnostic,
   type ValidationInput,
+  type ValidationResult,
 } from "@schalkneethling/css-property-type-validator-core";
+import { ProjectContextError } from "@schalkneethling/css-property-type-validator-project-context";
 import stylelint from "stylelint";
+
+import { loadCachedStylelintContextualInputs, prepareImportResolver } from "../project-context.js";
 
 const {
   createPlugin,
@@ -36,7 +37,6 @@ interface RuleOptions {
 type PostCssRoot = Parameters<NonNullable<ReturnType<stylelint.Rule>>>[0];
 type StylelintResult = Parameters<NonNullable<ReturnType<stylelint.Rule>>>[1];
 
-const CSS_FILE_EXTENSION = ".css";
 const VIRTUAL_STDIN_SOURCE = "<stylelint-input>";
 
 function isStringArray(value: unknown): value is string[] {
@@ -101,48 +101,6 @@ function validateRuleOptions(
   }
 
   return true;
-}
-
-async function loadInputs(patterns: string[], cwd: string): Promise<ValidationInput[]> {
-  const filePaths = new Set<string>();
-
-  for (const pattern of patterns) {
-    for await (const filePath of glob(pattern, { cwd })) {
-      filePaths.add(path.resolve(cwd, filePath));
-    }
-  }
-
-  const inputs = await Promise.all(
-    [...filePaths]
-      .filter((filePath) => filePath.endsWith(CSS_FILE_EXTENSION))
-      .map(async (filePath) => ({
-        css: await readFile(filePath, "utf8"),
-        path: filePath,
-      })),
-  );
-
-  return inputs.sort((left, right) => left.path.localeCompare(right.path));
-}
-
-function createImportResolver(cwd: string): ResolveImport {
-  return (specifier: string, fromPath: string) => {
-    const resolvedPath = specifier.startsWith("/")
-      ? path.join(cwd, specifier.slice(1))
-      : path.resolve(path.dirname(fromPath), specifier);
-
-    if (!resolvedPath.endsWith(CSS_FILE_EXTENSION)) {
-      return null;
-    }
-
-    try {
-      return {
-        css: readFileSync(resolvedPath, "utf8"),
-        path: resolvedPath,
-      };
-    } catch {
-      return null;
-    }
-  };
 }
 
 function getSourcePath(root: PostCssRoot): string | null {
@@ -259,21 +217,41 @@ const ruleFunction: stylelint.Rule = (primary, ruleOptions) => {
       );
     }
 
-    const [registryInputs, knownCustomPropertyInputs] = await Promise.all([
-      loadInputs(registryPatterns, cwd),
-      checkUnknownCustomProperties ? loadInputs(tokenPatterns, cwd) : Promise.resolve([]),
-    ]);
-
     const validationInput: ValidationInput = {
       css: root.toString(),
       path: sourcePath ?? root.source?.input.from ?? VIRTUAL_STDIN_SOURCE,
     };
-    const validationResult = validateFiles([validationInput], {
-      checkUnresolvedCustomProperties: checkUnknownCustomProperties,
-      knownCustomPropertyInputs,
-      registryInputs,
-      resolveImport: sourcePath ? createImportResolver(cwd) : undefined,
-    });
+
+    let validationResult: ValidationResult;
+    try {
+      const contextualInputs = await loadCachedStylelintContextualInputs({
+        checkUnknownCustomProperties,
+        projectRoot: cwd,
+        registryPatterns,
+        tokenPatterns,
+      });
+      const { context, knownCustomPropertyInputs, registryInputs } = contextualInputs;
+      const resolveImport = sourcePath
+        ? await prepareImportResolver(context, {
+            inputs: [validationInput],
+            knownCustomPropertyInputs,
+            registryInputs,
+          })
+        : undefined;
+
+      validationResult = validateFiles([validationInput], {
+        checkUnresolvedCustomProperties: checkUnknownCustomProperties,
+        knownCustomPropertyInputs,
+        registryInputs,
+        resolveImport,
+      });
+    } catch (error) {
+      if (error instanceof ProjectContextError) {
+        reportConfigurationWarning(result, root, `${error.code}: ${error.message}`);
+        return;
+      }
+      throw error;
+    }
 
     for (const diagnostic of validationResult.diagnostics) {
       reportDiagnostic(result, root, diagnostic);

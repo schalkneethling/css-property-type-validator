@@ -1,4 +1,4 @@
-import { spawnSync } from "node:child_process";
+import { spawnSync as spawnChildSync } from "node:child_process";
 import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -7,6 +7,31 @@ import { pathToFileURL } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { validateFiles, type ValidateFilesOptions } from "../src/index.js";
+
+const REPOSITORY_ROOT = path.resolve(import.meta.dirname, "../../..");
+const CLI_PATH = path.join(REPOSITORY_ROOT, "packages/cli/dist/cli.js");
+
+/**
+ * CLI filesystem tests run from the explicit temporary project containing
+ * their CSS input. This preserves the project-context containment contract
+ * instead of granting the repository process access to unrelated temp files.
+ */
+function spawnSync(
+  command: string,
+  args: readonly string[],
+  options: Parameters<typeof spawnChildSync>[2],
+) {
+  if (command === "node" && args[0] === "packages/cli/dist/cli.js") {
+    const inputPath = args.find(
+      (argument, index) => index > 0 && path.isAbsolute(argument) && argument.endsWith(".css"),
+    );
+    return spawnChildSync(command, [CLI_PATH, ...args.slice(1)], {
+      ...options,
+      cwd: inputPath ? path.dirname(inputPath) : options?.cwd,
+    });
+  }
+  return spawnChildSync(command, args, options);
+}
 
 const SHARED_REGISTRY = [
   '@property --space-sm { syntax: "<length>"; inherits: false; initial-value: 4px; }',
@@ -477,15 +502,21 @@ describe("validateFiles", () => {
     expect(result.skippedDeclarations).toBe(0);
   });
 
-  it("skips assignment-site fallback validation for now", () => {
+  it("reports a registered assignment-site fallback that violates the referenced syntax", () => {
     const result = runValidation({
       "/tmp/tokens.css": SHARED_REGISTRY,
       "/tmp/component.css": ":root { --space-md: var(--space-sm, red); }",
     });
 
-    expect(result.diagnostics).toHaveLength(0);
-    expect(result.validatedDeclarations).toBe(0);
-    expect(result.skippedDeclarations).toBe(1);
+    expect(result.diagnostics).toEqual([
+      expect.objectContaining({
+        id: "CPTV_USAGE_002",
+        propertyName: "--space-sm",
+        reason: "incompatible-var-fallback",
+      }),
+    ]);
+    expect(result.validatedDeclarations).toBe(1);
+    expect(result.skippedDeclarations).toBe(0);
   });
 
   it("skips nested fallback chains until fallback reachability is modeled", () => {

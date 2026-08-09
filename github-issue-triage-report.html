@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GitHub Issue Triage Report - css-property-type-validator</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --text: #172033;
+      --muted: #566174;
+      --border: #d8dee8;
+      --p0: #b60205;
+      --p1: #d93f0b;
+      --p2: #8a6500;
+      --p3: #0e7a22;
+      --link: #0b63ce;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #111827;
+        --surface: #182235;
+        --text: #eef2f7;
+        --muted: #b7c0ce;
+        --border: #334155;
+        --link: #8ab4ff;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 15px/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    main {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 32px 20px 48px;
+    }
+
+    h1,
+    h2,
+    h3 {
+      line-height: 1.2;
+      margin: 0 0 12px;
+    }
+
+    h1 {
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+    }
+
+    p {
+      margin: 0 0 14px;
+    }
+
+    a {
+      color: var(--link);
+    }
+
+    .meta,
+    .muted {
+      color: var(--muted);
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+      margin: 20px 0;
+    }
+
+    .stat,
+    details {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+
+    .stat {
+      padding: 14px;
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 1.6rem;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    details {
+      margin-top: 22px;
+      overflow: clip;
+    }
+
+    summary {
+      cursor: pointer;
+      font-weight: 700;
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .details-body {
+      padding: 18px;
+    }
+
+    .label {
+      display: inline-block;
+      min-width: 2.4em;
+      border-radius: 999px;
+      padding: 2px 9px;
+      color: #fff;
+      font-weight: 700;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .p0 { background: var(--p0); }
+    .p1 { background: var(--p1); }
+    .p2 { background: var(--p2); }
+    .p3 { background: var(--p3); }
+
+    .label-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .chip {
+      display: inline-block;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 2px 8px;
+      background: color-mix(in srgb, var(--surface), var(--bg) 50%);
+      white-space: nowrap;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+    }
+
+    th,
+    td {
+      border-top: 1px solid var(--border);
+      padding: 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      color: var(--muted);
+      font-size: 0.82rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    td:first-child {
+      width: 72px;
+    }
+
+    @media (max-width: 760px) {
+      table,
+      thead,
+      tbody,
+      tr,
+      th,
+      td {
+        display: block;
+      }
+
+      thead {
+        display: none;
+      }
+
+      tr {
+        border-top: 1px solid var(--border);
+        padding: 10px 0;
+      }
+
+      td {
+        border-top: 0;
+        padding: 6px 0;
+      }
+
+      td:first-child {
+        width: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>GitHub Issue Triage Report</h1>
+    <p class="meta">Generated: 2026-06-14 23:29 SAST</p>
+    <p>Input repository list: <a href="https://github.com/schalkneethling/css-property-type-validator">schalkneethling/css-property-type-validator</a></p>
+
+    <section aria-labelledby="summary-heading">
+      <h2 id="summary-heading">Summary</h2>
+      <div class="summary-grid">
+        <div class="stat"><strong>1</strong>Repository</div>
+        <div class="stat"><strong>0</strong>Skipped</div>
+        <div class="stat"><strong>24</strong>Open issues</div>
+        <div class="stat"><strong>0</strong>p0</div>
+        <div class="stat"><strong>2</strong>p1</div>
+        <div class="stat"><strong>11</strong>p2</div>
+        <div class="stat"><strong>11</strong>p3</div>
+      </div>
+      <p><strong>Next issue:</strong> <a href="https://github.com/schalkneethling/css-property-type-validator/issues/87">#87 Cross-consumer: add config-file based registry discovery</a></p>
+    </section>
+
+    <details open>
+      <summary>schalkneethling/css-property-type-validator - triaged - 24 open issues - p0: 0, p1: 2, p2: 11, p3: 11 - next: #87 Cross-consumer: add config-file based registry discovery</summary>
+      <div class="details-body">
+        <h2>Project Goal Summary</h2>
+        <p>CSS Property Type Validator aims to make typed CSS custom properties practical to adopt and maintain by conservatively catching invalid <code>@property</code> registrations and incompatible <code>var()</code> usage before mistakes ship. The goal emphasizes a shared validation core, consistent integrations across CLI, Stylelint, VS Code-compatible editors, and browser UI, reviewable generated registrations, stable machine-readable diagnostics, real-world token architectures, low false positives, explicit configuration, and an auditable Node.js 22+ package workflow.</p>
+
+        <h3>Label Update Status</h3>
+        <p>Created missing labels <span class="label p0">p0</span>, <span class="label p1">p1</span>, <span class="label p2">p2</span>, and <span class="label p3">p3</span>. Applied exactly one of those labels to each open issue. Existing non-priority labels were preserved; older spelled-out priority labels were removed from issues that had them.</p>
+
+        <h3>Next Issue Nomination</h3>
+        <p><a href="https://github.com/schalkneethling/css-property-type-validator/issues/87">#87 Cross-consumer: add config-file based registry discovery</a> is the best next issue because it is named in the current focus, reduces repeated setup across CLI, VS Code, Stylelint, and web workflows, and is scoped clearly enough to start without major research dependency.</p>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Priority</th>
+              <th>Issue</th>
+              <th>Rationale tied to GOAL.md</th>
+              <th>Impact</th>
+              <th>Current labels</th>
+              <th>Notes or uncertainty</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="label p1">p1</span></td>
+              <td><a href="https://github.com/schalkneethling/css-property-type-validator/issues/87">#87 Cross-consumer: add config-file based registry discovery</a></td>
+              <td>Directly matches the current focus to add config-file based registry discovery and reduce repeated setup across implementations while keeping configuration explicit.</td>
+              <td>High adoption and consistency impact across CLI, VS Code, Stylelint, and web workflows.</td>
+              <td><span class="label-list"><span class="chip">p1</span></span></td>
+              <td>Nominated next because it is goal-critical and more immediately actionable than broader core semantics work.</td>
+            </tr>
+            <tr>
+              <td><span class="label p1">p1</span></td>
+              <td><a href="https://github.com/schalkneethling/css-property-type-validator/issues/22">#22 Align computed-value-time validation for registered custom properties and var() substitution</a></td>
+              <td>Strengthens the shared core by moving validation closer to spec-driven behavior while preserving the project principle of skipping uncertain cases.</td>
+              <td>High correctness and trust impact for the core validator and every integration built on it.</td>
+              <td><span class="label-list"><span class="chip">p1</span></span></td>
+              <td>Potentially larger scope and requires careful spec-backed implementation.</td>
+            </tr>
+            <tr>
+              <td><span class="label p2">p2</span></td>
+              <td><a href="https://github.com/schalkneethling/css-property-type-validator/issues/123">#123 Integrate @property generation into core-backed implementations</a></td>
+              <td>Supports the goal of making reviewable generation available wherever it fits developer workflows while keeping behavior consistent through the core.</td>
+              <td>Medium adoption impact; helps plan generation surfaces beyond CLI and browser UI.</td>
+              <td><span class="label-list"><span class="chip">p2</span></span></td>
+              <td>Decision issue; implementation follow-ups may become higher priority once scoped.</td>
+            </tr>
+            <tr>
+              <td><span class="label p2">p2</span></td>
+              <td><a href="https://github.com/schalkneethling/css-property-type-validator/issues/106">#106 Report redundant custom property assignments that match @property initial values</a></td>
+              <td>Improves the generated registration adoption path by identifying duplicated token declarations conservatively and opt-in.</td>
+              <td>Medium usability impact for teams adopting generated <code>@property</code> rules.</td>
+              <td><span class="label-list"><span class="chip">p2</span></span></td>
+              <td>Needs careful severity/reporting design so CI behavior stays conservative.</td>
+            </tr>
+            <tr>
+              <td><span class="label p2">p2</span></td>
+              <td><a href="https://github.com/schalkneethling/css-property-type-validator/issues/105">#105 Track Bumpy release workflow follow-ups</a></td>
+              <td>Supports the goal constraint that manual release and package-publishing workflows remain auditable.</td>
+              <td>Medium maintenance and release-trust impact.</td>
+              <td><span class="label-list"><span class="chip">p2</span></span></td>
+              <td>Operational rather than end-user facing, but important for package trust.</td>
+            </tr>
+            <tr>
+              <td><span class="label p2">p2</span></td>
+              <td><a href="https://github.com/schalkneethling/css-property-type-validator/issues/98">#98 Track feedback for generated @property declarations</a></td>
+              <td>Helps validate whether reviewable generated registrations actually lower adoption friction, a core goal of the project.</td>
+              <td>Medium product-direction impact.</td>
+              <td><span class="label-list"><span class="chip">p2</span></span></td>
+              <td>Feedback tracking may stay open while the feature matures.</td>
+            </tr>
+            <tr>
+              <td><span class="label p2">p2</span></td>
+              <td><a href="https://github.com/schalkneethling/css-property-type-validator/issues/86">#86 Core: investigate adopting PostCSS for import resolution and source mapping</a></td>
+              <td>Could improve import resolution, source mapping, and cross-consumer cohesion, all relevant to real-world token architectures and diagnostics.</td>
+              <td>Medium to high potential, but exploratory and migration-heavy.</td>
+              <td><span class="label-list"><span class="chip">p2</span></span></td>
+              <td>Research outcome may recommend no migration.</td>
+            </tr>
+            <tr>
+              <td><span class="label p2">p2</span></td>
+              <td><a href="https://github.com/schalkneethling/css-property-type-validator/issues/84">#84 Stylelint: add performance caching for large runs</a></td>
+              <td>Supports the goal that teams can add Stylelint to CI without excessive cost on monorepos or large token registries.</td>
+              <td>Medium reliability and adoption impact for Stylelint beta hardening.</td>
+              <td><span class="label-list"><span class="chip">p2</span></span></td>
+              <td>Priority may rise if beta users report performance pain.</td>
+            </tr>
+            <tr>
+              <td><span class="label p2">p2</span></td>
+              <td><a href="https://github.com/schalkneethling/css-property-type-validator/issues/83">#83 Stylelint: investigate non-CSS syntax support</a></td>
+              <td>Aligns with expanding validation to more languages and file types when the core can model them safely.</td>
+              <td>Medium adoption impact for modern app stacks using SCSS, Vue, Astro, or CSS-in-JS.</td>
+              <td><span class="label-list"><span class="chip">p2</span></span></td>
+              <td>Investigation should preserve the low-false-positive constraint.</td>
+            </tr>
+            <tr>
+              <td><span class="label p2">p2</span></td>
+              <td><a href="https://github.com/schalkneethling/css-property-type-validator/issues/82">#82 Stylelint: explore safe autofix or code actions</a></td>
+              <td>Matches the current focus to explore automatic fixes where remediation is clear, tested, and consistent across core-backed implementations.</td>
+              <td>Medium workflow impact if safe fixes can be identified.</td>
+              <td><span class="label-list"><span class="chip">p2</span></span></td>
+              <td>Must stay exploratory until a clearly safe path exists.</td>
+            </tr>
+            <tr>
+              <td><span class="label p2">p2</span></td>
+              <td><a href="https://github.com/schalkneethling/css-property-type-validator/issues/80">#80 Stylelint: support diagnostic filtering or custom severity controls</a></td>
+              <td>Helps teams adopt diagnostics incrementally while preserving stable machine-readable diagnostic fields and a coherent model.</td>
+              <td>Medium adoption and CI ergonomics impact.</td>
+              <td><span class="label-list"><span class="chip">p2</span></span></td>
+              <td>Needs careful design to avoid divergent integration behavior.</td>
+            </tr>
+            <tr>
+              <td><span class="label p2">p2</span></td>
+              <td><a href="https://github.com/schalkneethling/css-property-type-validator/issues/33">#33 Add optional import-aware full validation for imported stylesheets</a></td>
+              <td>Supports real-world CSS architectures by validating imported stylesheets explicitly, while keeping defaults predictable.</td>
+              <td>Medium CLI usefulness and diagnostic completeness impact.</td>
+              <td><span class="label-list"><span class="chip">p2</span></span></td>
+              <td>Depends on clear de-duplication, cycle, and source-order policy.</td>
+            </tr>
+            <tr>
+              <td><span class="label p2">p2</span></td>
+              <td><a href="https://github.com/schalkneethling/css-property-type-validator/issues/28">#28 Review whether relative URLs are valid in @property initial-value</a></td>
+              <td>Protects trust in spec-driven validation by confirming whether the current computational-independence interpretation is correct.</td>
+              <td>Medium correctness impact for URL-typed registrations.</td>
+              <td><span class="label-list"><span class="chip">help wanted</span><span class="chip">p2</span></span></td>
+              <td>External spec or browser-implementation input would reduce uncertainty.</td>
+            </tr>
+            <tr>
+              <td><span class="label p3">p3</span></td>
+              <td><a href="https://github.com/schalkneethling/css-property-type-validator/issues/100">#100 Investigate WebUI bundle chunk size</a></td>
+              <td>Useful for browser UI quality, but does not directly block validation correctness or adoption.</td>
+              <td>Low to medium WebUI performance and maintenance impact.</td>
+              <td><span class="label-list"><span class="chip">p3</span></span></td>
+              <td>May remain acceptable if the warning is expected from CodeMirror and css-tree.</td>
+            </tr>
+            <tr>
+              <td><span class="label p3">p3</span></td>
+              <td><a href="https://github.com/schalkneethling/css-property-type-validator/issues/99">#99 Consider event delegation in the WebUI controller</a></td>
+              <td>Maintenance cleanup for the WebUI controller; weak immediate connection to the north star.</td>
+              <td>Low maintainability impact unless UI complexity grows substantially.</td>
+              <td><span class="label-list"><span class="chip">p3</span></span></td>
+              <td>Keep scoped to avoid churn.</td>
+            </tr>
+            <tr>
+              <td><span class="label p3">p3</span></td>
+              <td><a href="https://github.com/schalkneethling/css-property-type-validator/issues/88">#88 Explore ESLint CSS adapter</a></td>
+              <td>Could expand availability, but the issue itself is deferred until after Stylelint beta feedback.</td>
+              <td>Low immediate impact; possible future integration value.</td>
+              <td><span class="label-list"><span class="chip">p3</span></span></td>
+              <td>Revisit when Stylelint usage clarifies API and diagnostic expectations.</td>
+            </tr>
+            <tr>
+              <td><span class="label p3">p3</span></td>
+              <td><a href="https://github.com/schalkneethling/css-property-type-validator/issues/85">#85 Stylelint: consider a shareable config package</a></td>
+              <td>May improve setup convenience, but depends on user demand and config-file direction.</td>
+              <td>Low immediate adoption impact.</td>
+              <td><span class="label-list"><span class="chip">p3</span></span></td>
+              <td>Should follow clearer registry/token project configuration decisions.</td>
+            </tr>
+            <tr>
+              <td><span class="label p3">p3</span></td>
+              <td><a href="https://github.com/schalkneethling/css-property-type-validator/issues/81">#81 Stylelint: evaluate registry-only workflow after beta</a></td>
+              <td>Useful niche workflow, but intentionally deferred and less central than shared config discovery.</td>
+              <td>Low immediate impact.</td>
+              <td><span class="label-list"><span class="chip">p3</span></span></td>
+              <td>Beta feedback should decide whether this is needed.</td>
+            </tr>
+            <tr>
+              <td><span class="label p3">p3</span></td>
+              <td><a href="https://github.com/schalkneethling/css-property-type-validator/issues/79">#79 Stylelint: add failFast support</a></td>
+              <td>Convenience option that does not materially affect validation correctness or adoption path.</td>
+              <td>Low workflow impact.</td>
+              <td><span class="label-list"><span class="chip">p3</span></span></td>
+              <td>Needs Stylelint expectation check before implementation.</td>
+            </tr>
+            <tr>
+              <td><span class="label p3">p3</span></td>
+              <td><a href="https://github.com/schalkneethling/css-property-type-validator/issues/55">#55 Add a Zed extension for CSS property type validation</a></td>
+              <td>Supports broader editor availability, but it is a large new integration outside the current Stylelint and config-discovery focus.</td>
+              <td>Low immediate impact; higher if Zed demand appears.</td>
+              <td><span class="label-list"><span class="chip">p3</span></span></td>
+              <td>Could become more important after the shared core/config surface stabilizes.</td>
+            </tr>
+            <tr>
+              <td><span class="label p3">p3</span></td>
+              <td><a href="https://github.com/schalkneethling/css-property-type-validator/issues/32">#32 Research browser-aligned @import loading, CSSOM visibility, and registry assembly policy</a></td>
+              <td>Relevant to future import behavior, but it is research-only and not a near-term blocker.</td>
+              <td>Low immediate impact; useful background for future import policy.</td>
+              <td><span class="label-list"><span class="chip">p3</span></span></td>
+              <td>May become prerequisite context if conditioned or remote imports move up.</td>
+            </tr>
+            <tr>
+              <td><span class="label p3">p3</span></td>
+              <td><a href="https://github.com/schalkneethling/css-property-type-validator/issues/19">#19 Add config-file support for shared @property registry inputs</a></td>
+              <td>Goal-aligned but narrower and likely superseded by the broader cross-consumer config issue #87.</td>
+              <td>Low immediate impact while #87 is the better umbrella issue.</td>
+              <td><span class="label-list"><span class="chip">p3</span></span></td>
+              <td>Consider closing or linking as part of #87 planning if it is duplicative.</td>
+            </tr>
+            <tr>
+              <td><span class="label p3">p3</span></td>
+              <td><a href="https://github.com/schalkneethling/css-property-type-validator/issues/3">#3 Document and maintain a css-tree update strategy</a></td>
+              <td>Supports long-term trust in syntax data, but is maintenance documentation rather than current product progress.</td>
+              <td>Low immediate impact.</td>
+              <td><span class="label-list"><span class="chip">p3</span></span></td>
+              <td>Could be bundled with dependency maintenance work.</td>
+            </tr>
+            <tr>
+              <td><span class="label p3">p3</span></td>
+              <td><a href="https://github.com/schalkneethling/css-property-type-validator/issues/2">#2 Explore typed CSS mixins as a strategic future direction</a></td>
+              <td>Matches the open question about future CSS features, but remains strategic research with weak immediate implementation pressure.</td>
+              <td>Low immediate impact; useful for long-term positioning.</td>
+              <td><span class="label-list"><span class="chip">p3</span></span></td>
+              <td>Includes later <code>@function</code> context in comments.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </details>
+  </main>
+</body>
+</html>

@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/schalkneethling/css-property-type-validator/contracts/cli-registration-plan-v1.schema.json",
+  "title": "CSS Property Type Validator reviewed CLI registration plan v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "candidates",
+    "decisions",
+    "edit",
+    "kind",
+    "patch",
+    "registrationPlan",
+    "reviewedDigest",
+    "schemaVersion",
+    "sourceFingerprints"
+  ],
+  "properties": {
+    "candidates": {
+      "type": "array",
+      "items": { "$ref": "analysis-result-v1.schema.json#/$defs/candidate" }
+    },
+    "decisions": {
+      "type": "array",
+      "items": { "$ref": "decisions-v1.schema.json#/$defs/decision" }
+    },
+    "edit": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["content", "contentSha256", "kind", "path"],
+          "properties": {
+            "content": { "type": "string" },
+            "contentSha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+            "kind": { "const": "create-file" },
+            "path": { "type": "string", "minLength": 1 }
+          }
+        }
+      ]
+    },
+    "kind": { "const": "cptv-registration-plan" },
+    "patch": { "type": "string" },
+    "registrationPlan": { "$ref": "registration-plan-v1.schema.json" },
+    "reviewedDigest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "schemaVersion": { "const": "1.0.0" },
+    "sourceFingerprints": {
+      "type": "array",
+      "items": { "$ref": "cli-audit-v1.schema.json#/$defs/sourceFingerprint" }
+    }
+  }
+}

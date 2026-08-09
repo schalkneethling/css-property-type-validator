@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/schalkneethling/css-property-type-validator/contracts/cli-baseline-v1.schema.json",
+  "title": "CSS Property Type Validator CLI baseline v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["diagnosticFingerprints", "kind", "schemaVersion"],
+  "properties": {
+    "coverageCategories": { "$ref": "#/$defs/coverageCategories" },
+    "diagnosticFingerprints": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/sha256" },
+      "uniqueItems": true
+    },
+    "kind": { "const": "cptv-baseline" },
+    "schemaVersion": { "const": "1.0.0" }
+  },
+  "$defs": {
+    "coverageCategory": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["analyzed", "percentage", "skipped", "total"],
+      "properties": {
+        "analyzed": { "type": "integer", "minimum": 0 },
+        "percentage": {
+          "oneOf": [{ "type": "null" }, { "type": "number", "minimum": 0, "maximum": 1 }]
+        },
+        "skipped": { "type": "integer", "minimum": 0 },
+        "total": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "coverageCategories": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["assignments", "consumers", "fallbacks", "references", "registrationRules"],
+      "properties": {
+        "assignments": { "$ref": "#/$defs/coverageCategory" },
+        "consumers": { "$ref": "#/$defs/coverageCategory" },
+        "fallbacks": { "$ref": "#/$defs/coverageCategory" },
+        "references": { "$ref": "#/$defs/coverageCategory" },
+        "registrationRules": { "$ref": "#/$defs/coverageCategory" }
+      }
+    },
+    "sha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
+  }
+}

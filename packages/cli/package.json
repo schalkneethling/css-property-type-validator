@@ -32,10 +32,19 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json"
+    "build": "vp pack && node scripts/check-private-bundle.mjs",
+    "test:package-boundary": "node scripts/check-private-bundle.mjs",
+    "test": "vp test run --config vite.config.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "@schalkneethling/css-property-type-validator-core": "workspace:*",
     "commander": "^15.0.0"
+  },
+  "devDependencies": {
+    "@schalkneethling/css-property-type-validator-project-context": "workspace:*",
+    "@schalkneethling/css-property-type-validator-report": "workspace:*",
+    "vite-plus": "^0.1.24",
+    "vitest": "^4.1.10"
   }
 }

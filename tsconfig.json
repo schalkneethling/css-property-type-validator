@@ -5,13 +5,16 @@
       "path": "./packages/core"
     },
     {
+      "path": "./packages/project-context"
+    },
+    {
+      "path": "./packages/report"
+    },
+    {
       "path": "./packages/cli"
     },
     {
       "path": "./packages/stylelint"
-    },
-    {
-      "path": "./packages/vscode"
     },
     {
       "path": "./web"

@@ -6,12 +6,18 @@
     "ignoreDeprecations": "6.0",
     "baseUrl": ".",
     "paths": {
-      "@schalkneethling/css-property-type-validator-core": ["../core/src/index.ts"]
+      "@schalkneethling/css-property-type-validator-core": ["../core/src/index.ts"],
+      "@schalkneethling/css-property-type-validator-project-context": [
+        "../project-context/src/index.ts"
+      ]
     }
   },
   "references": [
     {
       "path": "../core"
+    },
+    {
+      "path": "../project-context"
     }
   ],
   "include": ["src"]

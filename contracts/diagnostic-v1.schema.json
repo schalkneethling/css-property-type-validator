@@ -1,0 +1,230 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/schalkneethling/css-property-type-validator/contracts/diagnostic-v1.schema.json",
+  "title": "CSS Property Type Validator diagnostic v1",
+  "description": "Canonical machine-readable diagnostic emitted by core analysis. Legacy code, reason, severity, filePath, loc, and message fields are retained for compatibility.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "baselineFingerprint",
+    "basis",
+    "code",
+    "confidence",
+    "evidence",
+    "filePath",
+    "gating",
+    "id",
+    "loc",
+    "location",
+    "message",
+    "phase",
+    "provenance",
+    "reason",
+    "relatedLocations",
+    "severity",
+    "specReferences",
+    "suggestedEdits"
+  ],
+  "properties": {
+    "baselineFingerprint": { "$ref": "#/$defs/sha256Fingerprint" },
+    "basis": { "enum": ["direct", "representative-var-substitution"] },
+    "code": {
+      "enum": [
+        "invalid-property-registration",
+        "incompatible-custom-property-assignment",
+        "incompatible-var-usage",
+        "unresolved-import",
+        "unparseable-stylesheet"
+      ]
+    },
+    "confidence": { "$ref": "#/$defs/confidence" },
+    "evidence": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/evidence" }
+    },
+    "filePath": { "type": "string" },
+    "gating": { "enum": ["gating", "review-required", "advisory"] },
+    "id": { "$ref": "#/$defs/diagnosticId" },
+    "loc": {
+      "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/sourceLocation" }]
+    },
+    "location": {
+      "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/diagnosticLocation" }]
+    },
+    "message": { "type": "string" },
+    "phase": { "enum": ["parse", "registry", "assignment", "usage", "import"] },
+    "provenance": { "$ref": "#/$defs/provenance" },
+    "reason": { "$ref": "#/$defs/reason" },
+    "relatedLocations": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/relatedLocation" }
+    },
+    "severity": { "const": "error" },
+    "specReferences": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/specificationReference" }
+    },
+    "suggestedEdits": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/suggestedEdit" }
+    }
+  },
+  "$defs": {
+    "confidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["level", "reasons"],
+      "properties": {
+        "level": { "enum": ["high", "medium", "low"] },
+        "reasons": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "diagnosticId": {
+      "enum": [
+        "CPTV_REG_001",
+        "CPTV_REG_002",
+        "CPTV_REG_003",
+        "CPTV_REG_004",
+        "CPTV_REG_005",
+        "CPTV_REG_006",
+        "CPTV_REG_007",
+        "CPTV_REG_008",
+        "CPTV_ASSIGN_001",
+        "CPTV_ASSIGN_002",
+        "CPTV_USAGE_001",
+        "CPTV_USAGE_002",
+        "CPTV_USAGE_003",
+        "CPTV_IMPORT_001",
+        "CPTV_PARSE_001"
+      ]
+    },
+    "diagnosticLocation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["columnBase", "end", "lineBase", "offsetEncoding", "start"],
+      "properties": {
+        "columnBase": { "const": 1 },
+        "end": { "$ref": "#/$defs/sourcePosition" },
+        "lineBase": { "const": 1 },
+        "offsetEncoding": { "const": "utf-16-code-units" },
+        "source": { "type": "string" },
+        "start": { "$ref": "#/$defs/sourcePosition" }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "value"],
+      "properties": {
+        "kind": {
+          "enum": [
+            "actual-value",
+            "expected-property",
+            "import-specifier",
+            "property-name",
+            "registered-syntax",
+            "snippet"
+          ]
+        },
+        "value": { "type": "string" }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["classification", "ruleId"],
+      "properties": {
+        "classification": { "enum": ["normative", "tool-policy", "advisory"] },
+        "ruleId": { "$ref": "#/$defs/diagnosticId" }
+      }
+    },
+    "reason": {
+      "enum": [
+        "missing-property-name",
+        "missing-syntax-descriptor",
+        "invalid-syntax-descriptor",
+        "unsupported-syntax-component",
+        "missing-inherits-descriptor",
+        "invalid-inherits-descriptor",
+        "missing-initial-value-descriptor",
+        "invalid-initial-value",
+        "incompatible-assignment-value",
+        "incompatible-var-substitution",
+        "incompatible-var-fallback",
+        "unresolved-var-reference",
+        "unresolved-import",
+        "unparseable-css"
+      ]
+    },
+    "relatedLocation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["location", "message"],
+      "properties": {
+        "location": { "$ref": "#/$defs/diagnosticLocation" },
+        "message": { "type": "string", "minLength": 1 }
+      }
+    },
+    "sha256Fingerprint": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "sourceLocation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["end", "start"],
+      "properties": {
+        "end": { "$ref": "#/$defs/sourcePosition" },
+        "source": { "type": "string" },
+        "start": { "$ref": "#/$defs/sourcePosition" }
+      }
+    },
+    "sourcePosition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["column", "line", "offset"],
+      "properties": {
+        "column": { "type": "integer", "minimum": 1 },
+        "line": { "type": "integer", "minimum": 1 },
+        "offset": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "specificationReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["normative", "publicationDate", "section", "specification", "url"],
+      "properties": {
+        "normative": { "type": "boolean" },
+        "publicationDate": { "type": "string", "format": "date" },
+        "section": { "type": "string", "minLength": 1 },
+        "specification": { "type": "string", "minLength": 1 },
+        "url": { "type": "string", "format": "uri", "pattern": "^https://www\\.w3\\.org/.+#.+" }
+      }
+    },
+    "suggestedEdit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "applicability",
+        "endOffset",
+        "filePath",
+        "replacement",
+        "sourceFingerprint",
+        "startOffset"
+      ],
+      "properties": {
+        "applicability": { "enum": ["safe", "review-required"] },
+        "endOffset": { "type": "integer", "minimum": 0 },
+        "filePath": { "type": "string" },
+        "replacement": { "type": "string" },
+        "sourceFingerprint": { "$ref": "#/$defs/sha256Fingerprint" },
+        "startOffset": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

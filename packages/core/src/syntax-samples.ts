@@ -37,10 +37,6 @@ interface DefinitionSyntaxNode {
   value?: string;
 }
 
-interface DefinitionSyntaxParser {
-  parse: (syntax: string) => unknown;
-}
-
 function dedupe(values: string[]): string[] {
   return [...new Set(values)];
 }
@@ -115,11 +111,14 @@ function fromNode(node: DefinitionSyntaxNode | null | undefined): string[] {
   }
 }
 
-export function buildRepresentativeSamples(syntax: string, definitionSyntax: unknown): string[] {
+export function buildRepresentativeSamples(
+  syntax: string,
+  parseDefinitionSyntax: (syntax: string) => unknown,
+): string[] {
   if (syntax === "*") {
     return ["0"];
   }
 
-  const syntaxAst = (definitionSyntax as DefinitionSyntaxParser).parse(syntax);
+  const syntaxAst = parseDefinitionSyntax(syntax);
   return dedupe(fromNode(syntaxAst as DefinitionSyntaxNode)).slice(0, 8);
 }

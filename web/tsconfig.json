@@ -7,15 +7,7 @@
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "noEmit": true,
-    "paths": {
-      "@schalkneethling/css-property-type-validator-core": ["../packages/core/src/index.ts"]
-    },
     "types": ["vite/client"]
   },
-  "references": [
-    {
-      "path": "../packages/core"
-    }
-  ],
   "include": ["src", "vite.config.ts", "playwright.config.ts", "tests"]
 }

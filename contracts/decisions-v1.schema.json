@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/schalkneethling/css-property-type-validator/contracts/decisions-v1.schema.json",
+  "title": "CSS Property Type Validator registration decisions v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["decisions", "kind", "schemaVersion"],
+  "properties": {
+    "decisions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/decision" }
+    },
+    "kind": { "const": "cptv-registration-decisions" },
+    "schemaVersion": { "const": "1.0.0" }
+  },
+  "$defs": {
+    "decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["action", "candidateId"],
+      "properties": {
+        "action": { "enum": ["accept", "reject"] },
+        "candidateId": { "type": "string", "minLength": 1 },
+        "inherits": { "type": "boolean" },
+        "initialValue": { "type": "string" },
+        "syntax": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

@@ -1,5 +1,4 @@
-import * as cssTree from "css-tree";
-
+import { generateCss, parseValue as parseCssValue } from "./parser.js";
 import type { SourceLocation } from "./types.js";
 
 // Helpers for compatibility checks that replace registered var() calls with
@@ -25,6 +24,7 @@ export interface VarFunctionNode {
   children?: CssNodeList<CssNodeWithLoc> | CssNodeWithLoc[];
   loc?: SourceLocation | null;
   name?: string;
+  type?: string;
 }
 
 export interface VarOccurrence {
@@ -53,7 +53,7 @@ export interface ReplacementCheckContext {
 
 function parseValue(value: string): CssValueAst | null {
   try {
-    return cssTree.parse(value, { context: "value" }) as CssValueAst;
+    return parseCssValue<CssValueAst>(value);
   } catch {
     return null;
   }
@@ -69,7 +69,7 @@ export function collectVarOccurrences(
   for (const varNode of varNodes) {
     // Generated source gives us deterministic replacement ranges for the
     // normalized declaration value, including repeated var() calls.
-    const replacementTarget = cssTree.generate(varNode);
+    const replacementTarget = generateCss(varNode);
     const start = valueSource.indexOf(replacementTarget, searchStart);
 
     if (start === -1) {
