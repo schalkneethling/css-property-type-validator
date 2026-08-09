@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/schalkneethling/css-property-type-validator/contracts/registration-plan-v1.schema.json",
+  "title": "CSS Property Type Validator core RegistrationPlanV1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "analysisSchemaVersion",
+    "css",
+    "diagnostics",
+    "registrations",
+    "schemaVersion",
+    "skips",
+    "specification",
+    "tool"
+  ],
+  "properties": {
+    "analysisSchemaVersion": { "const": "1.0.0" },
+    "css": { "type": "string" },
+    "diagnostics": { "type": "array", "items": { "$ref": "diagnostic-v1.schema.json" } },
+    "registrations": { "type": "array", "items": { "$ref": "#/$defs/registration" } },
+    "schemaVersion": { "const": "1.0.0" },
+    "skips": { "type": "array", "items": { "$ref": "#/$defs/skip" } },
+    "specification": { "$ref": "analysis-result-v1.schema.json#/$defs/specification" },
+    "tool": { "$ref": "analysis-result-v1.schema.json#/$defs/tool" }
+  },
+  "$defs": {
+    "registration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["candidateId", "css", "inherits", "name", "specReferences", "syntax"],
+      "properties": {
+        "candidateId": { "type": "string", "minLength": 1 },
+        "css": { "type": "string" },
+        "inherits": { "type": "boolean" },
+        "initialValue": { "type": "string" },
+        "name": { "type": "string", "pattern": "^--" },
+        "specReferences": { "$ref": "analysis-result-v1.schema.json#/$defs/specReferences" },
+        "syntax": { "type": "string", "minLength": 1 }
+      }
+    },
+    "skip": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["candidateId", "code", "reason", "status"],
+      "properties": {
+        "candidateId": { "type": "string", "minLength": 1 },
+        "code": {
+          "enum": [
+            "CPTV_SKIP_AMBIGUOUS_DECISION",
+            "CPTV_SKIP_DECISION_REJECTED",
+            "CPTV_SKIP_DECISION_REQUIRED",
+            "CPTV_SKIP_EXISTING_REGISTRATION",
+            "CPTV_SKIP_INVALID_DECISION",
+            "CPTV_SKIP_UNKNOWN_CANDIDATE"
+          ]
+        },
+        "evidence": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["loc", "observedValues", "sources"],
+          "properties": {
+            "loc": { "$ref": "analysis-result-v1.schema.json#/$defs/nullableLocation" },
+            "observedValues": { "type": "array", "items": { "type": "string" } },
+            "sources": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "reason": { "type": "string", "minLength": 1 },
+        "status": { "const": "review-required" }
+      }
+    }
+  }
+}

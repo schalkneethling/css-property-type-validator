@@ -1,0 +1,567 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/schalkneethling/css-property-type-validator/contracts/analysis-result-v1.schema.json",
+  "title": "CSS Property Type Validator AnalysisResultV1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "aliasCycles",
+    "candidates",
+    "configuration",
+    "conflicts",
+    "coverage",
+    "diagnostics",
+    "entryPoints",
+    "inputs",
+    "inventory",
+    "opportunities",
+    "schemaVersion",
+    "skips",
+    "specification",
+    "tool"
+  ],
+  "properties": {
+    "aliasCycles": { "type": "array", "items": { "$ref": "#/$defs/aliasCycle" } },
+    "candidates": { "type": "array", "items": { "$ref": "#/$defs/candidate" } },
+    "configuration": { "$ref": "#/$defs/configuration" },
+    "conflicts": { "type": "array", "items": { "$ref": "#/$defs/conflict" } },
+    "coverage": { "$ref": "#/$defs/coverage" },
+    "diagnostics": { "type": "array", "items": { "$ref": "diagnostic-v1.schema.json" } },
+    "entryPoints": { "type": "array", "items": { "$ref": "#/$defs/entryPoint" } },
+    "inputs": { "type": "array", "items": { "$ref": "#/$defs/input" } },
+    "inventory": { "$ref": "#/$defs/inventory" },
+    "opportunities": { "$ref": "#/$defs/opportunities" },
+    "schemaVersion": { "const": "1.0.0" },
+    "skips": { "type": "array", "items": { "$ref": "#/$defs/skip" } },
+    "specification": { "$ref": "#/$defs/specification" },
+    "tool": { "$ref": "#/$defs/tool" }
+  },
+  "$defs": {
+    "position": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["column", "line", "offset"],
+      "properties": {
+        "column": { "type": "integer", "minimum": 1 },
+        "line": { "type": "integer", "minimum": 1 },
+        "offset": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "location": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["end", "start"],
+      "properties": {
+        "end": { "$ref": "#/$defs/position" },
+        "source": { "type": "string" },
+        "start": { "$ref": "#/$defs/position" }
+      }
+    },
+    "nullableLocation": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/location" }] },
+    "specReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["normative", "publicationDate", "section", "specification", "url"],
+      "properties": {
+        "normative": { "type": "boolean" },
+        "publicationDate": { "type": "string", "format": "date" },
+        "section": { "type": "string", "minLength": 1 },
+        "specification": { "type": "string", "minLength": 1 },
+        "url": { "type": "string", "format": "uri" }
+      }
+    },
+    "specReferences": { "type": "array", "items": { "$ref": "#/$defs/specReference" } },
+    "specification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "editorsDraftUrl",
+        "latestPublishedUrl",
+        "publicationDate",
+        "snapshotUrl",
+        "title"
+      ],
+      "properties": {
+        "editorsDraftUrl": { "type": "string", "format": "uri" },
+        "latestPublishedUrl": { "type": "string", "format": "uri" },
+        "publicationDate": { "type": "string", "format": "date" },
+        "snapshotUrl": { "type": "string", "format": "uri" },
+        "title": { "type": "string", "minLength": 1 }
+      }
+    },
+    "tool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": { "const": "@schalkneethling/css-property-type-validator-core" },
+        "version": { "const": "0.12.0" }
+      }
+    },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sourceBytes"],
+      "properties": {
+        "path": { "type": "string" },
+        "sourceBytes": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "configuration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "checkUnresolvedCustomProperties",
+        "knownCustomPropertyInputCount",
+        "registryInputCount",
+        "resolveImportEnabled"
+      ],
+      "properties": {
+        "checkUnresolvedCustomProperties": { "type": "boolean" },
+        "knownCustomPropertyInputCount": { "type": "integer", "minimum": 0 },
+        "registryInputCount": { "type": "integer", "minimum": 0 },
+        "resolveImportEnabled": { "type": "boolean" }
+      }
+    },
+    "categoryCoverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["analyzed", "skipped", "total"],
+      "properties": {
+        "analyzed": { "type": "integer", "minimum": 0 },
+        "skipped": { "type": "integer", "minimum": 0 },
+        "total": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["categories", "skippedDeclarations", "validatedDeclarations"],
+      "properties": {
+        "categories": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["assignments", "consumers", "fallbacks", "references", "registrationRules"],
+          "properties": {
+            "assignments": { "$ref": "#/$defs/categoryCoverage" },
+            "consumers": { "$ref": "#/$defs/categoryCoverage" },
+            "fallbacks": { "$ref": "#/$defs/categoryCoverage" },
+            "references": { "$ref": "#/$defs/categoryCoverage" },
+            "registrationRules": { "$ref": "#/$defs/categoryCoverage" }
+          }
+        },
+        "skippedDeclarations": { "type": "integer", "minimum": 0 },
+        "validatedDeclarations": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "occurrenceBase": {
+      "type": "object",
+      "required": ["entryPoints", "filePath", "id", "loc", "specReferences"],
+      "properties": {
+        "entryPoints": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "filePath": { "type": "string" },
+        "id": { "type": "string", "minLength": 1 },
+        "loc": { "$ref": "#/$defs/nullableLocation" },
+        "specReferences": { "$ref": "#/$defs/specReferences" }
+      }
+    },
+    "registrationOccurrence": {
+      "allOf": [
+        { "$ref": "#/$defs/occurrenceBase" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["entryPoints", "filePath", "id", "loc", "name", "specReferences", "status"],
+          "properties": {
+            "entryPoints": true,
+            "filePath": true,
+            "id": true,
+            "loc": true,
+            "specReferences": true,
+            "inherits": { "type": "boolean" },
+            "initialValue": { "type": "string" },
+            "name": { "type": "string" },
+            "status": { "enum": ["invalid", "valid"] },
+            "syntax": { "type": "string" }
+          }
+        }
+      ]
+    },
+    "assignment": {
+      "allOf": [
+        { "$ref": "#/$defs/occurrenceBase" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["entryPoints", "filePath", "id", "loc", "name", "specReferences", "value"],
+          "properties": {
+            "entryPoints": true,
+            "filePath": true,
+            "id": true,
+            "loc": true,
+            "specReferences": true,
+            "name": { "type": "string" },
+            "value": { "type": "string" }
+          }
+        }
+      ]
+    },
+    "alias": {
+      "allOf": [
+        { "$ref": "#/$defs/occurrenceBase" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["entryPoints", "filePath", "id", "loc", "name", "specReferences", "target"],
+          "properties": {
+            "entryPoints": true,
+            "filePath": true,
+            "id": true,
+            "loc": true,
+            "specReferences": true,
+            "name": { "type": "string" },
+            "target": { "type": "string" }
+          }
+        }
+      ]
+    },
+    "reference": {
+      "allOf": [
+        { "$ref": "#/$defs/occurrenceBase" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "consumerProperty",
+            "entryPoints",
+            "filePath",
+            "id",
+            "loc",
+            "name",
+            "specReferences"
+          ],
+          "properties": {
+            "entryPoints": true,
+            "filePath": true,
+            "id": true,
+            "loc": true,
+            "specReferences": true,
+            "assignmentName": { "type": "string" },
+            "consumerProperty": { "type": "string" },
+            "fallbackId": { "type": "string" },
+            "name": { "type": "string" }
+          }
+        }
+      ]
+    },
+    "fallback": {
+      "allOf": [
+        { "$ref": "#/$defs/occurrenceBase" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "entryPoints",
+            "filePath",
+            "id",
+            "loc",
+            "referenceId",
+            "specReferences",
+            "value"
+          ],
+          "properties": {
+            "entryPoints": true,
+            "filePath": true,
+            "id": true,
+            "loc": true,
+            "specReferences": true,
+            "referenceId": { "type": "string" },
+            "value": { "type": "string" }
+          }
+        }
+      ]
+    },
+    "consumer": {
+      "allOf": [
+        { "$ref": "#/$defs/occurrenceBase" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "entryPoints",
+            "filePath",
+            "id",
+            "loc",
+            "property",
+            "referenceIds",
+            "specReferences"
+          ],
+          "properties": {
+            "entryPoints": true,
+            "filePath": true,
+            "id": true,
+            "loc": true,
+            "specReferences": true,
+            "property": { "type": "string" },
+            "referenceIds": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+      ]
+    },
+    "import": {
+      "allOf": [
+        { "$ref": "#/$defs/occurrenceBase" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "conditional",
+            "entryPoints",
+            "filePath",
+            "fromPath",
+            "id",
+            "loc",
+            "order",
+            "resolution",
+            "specifier",
+            "specReferences"
+          ],
+          "properties": {
+            "entryPoints": true,
+            "filePath": true,
+            "id": true,
+            "loc": true,
+            "specReferences": true,
+            "conditional": { "type": "boolean" },
+            "fromPath": { "type": "string" },
+            "order": { "type": "integer", "minimum": 0 },
+            "resolution": { "enum": ["external", "resolved", "unresolved"] },
+            "specifier": { "type": "string" },
+            "toPath": { "type": "string" }
+          }
+        }
+      ]
+    },
+    "registeredProperty": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["filePath", "loc", "name", "syntax"],
+      "properties": {
+        "filePath": { "type": "string" },
+        "inherits": { "type": "boolean" },
+        "initialValue": { "type": "string" },
+        "loc": { "$ref": "#/$defs/nullableLocation" },
+        "name": { "type": "string" },
+        "syntax": { "type": "string" }
+      }
+    },
+    "inventory": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "aliases",
+        "assignments",
+        "consumers",
+        "fallbacks",
+        "imports",
+        "references",
+        "registrationOccurrences",
+        "registrations"
+      ],
+      "properties": {
+        "aliases": { "type": "array", "items": { "$ref": "#/$defs/alias" } },
+        "assignments": { "type": "array", "items": { "$ref": "#/$defs/assignment" } },
+        "consumers": { "type": "array", "items": { "$ref": "#/$defs/consumer" } },
+        "fallbacks": { "type": "array", "items": { "$ref": "#/$defs/fallback" } },
+        "imports": { "type": "array", "items": { "$ref": "#/$defs/import" } },
+        "references": { "type": "array", "items": { "$ref": "#/$defs/reference" } },
+        "registrationOccurrences": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/registrationOccurrence" }
+        },
+        "registrations": { "type": "array", "items": { "$ref": "#/$defs/registeredProperty" } }
+      }
+    },
+    "opportunities": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["animations"],
+      "properties": {
+        "animations": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/animationOpportunity" }
+        }
+      }
+    },
+    "animationOpportunity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "confidence",
+        "entryPoints",
+        "evidence",
+        "id",
+        "name",
+        "registrationStatus",
+        "specReferences",
+        "status"
+      ],
+      "properties": {
+        "confidence": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["level", "reasons"],
+          "properties": {
+            "level": { "enum": ["low", "medium"] },
+            "reasons": { "type": "array", "minItems": 1, "items": { "type": "string" } }
+          }
+        },
+        "entryPoints": { "type": "array", "items": { "type": "string" } },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "allOf": [
+              { "$ref": "#/$defs/occurrenceBase" },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["entryPoints", "filePath", "id", "kind", "loc", "specReferences"],
+                "properties": {
+                  "entryPoints": true,
+                  "filePath": true,
+                  "id": true,
+                  "kind": { "enum": ["keyframes-assignment", "transition-property-reference"] },
+                  "loc": true,
+                  "specReferences": true
+                }
+              }
+            ]
+          }
+        },
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "registrationStatus": {
+          "enum": ["not-observed", "registered-in-supplied-graph", "uncertain"]
+        },
+        "specReferences": { "$ref": "#/$defs/specReferences" },
+        "status": { "const": "advisory" }
+      }
+    },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "confidence",
+        "evidence",
+        "id",
+        "legacyGeneratorStatus",
+        "name",
+        "policyIds",
+        "reason",
+        "specReferences",
+        "status"
+      ],
+      "properties": {
+        "confidence": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["level", "reasons"],
+          "properties": {
+            "level": { "enum": ["low", "medium"] },
+            "reasons": { "type": "array", "items": { "type": "string" }, "minItems": 1 }
+          }
+        },
+        "evidence": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["loc", "observedValues", "sources"],
+          "properties": {
+            "loc": { "$ref": "#/$defs/nullableLocation" },
+            "observedValues": { "type": "array", "items": { "type": "string" } },
+            "sources": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "id": { "type": "string" },
+        "legacyGeneratorStatus": {
+          "enum": ["conflict", "existing", "generated", "invalid-generated", "unsupported"]
+        },
+        "name": { "type": "string" },
+        "policyIds": { "type": "array", "items": { "type": "string", "pattern": "^CPTV-GEN-" } },
+        "reason": { "type": "string" },
+        "specReferences": { "$ref": "#/$defs/specReferences" },
+        "status": { "enum": ["blocked", "existing", "review-required"] },
+        "suggestedInitialValue": { "type": "string" },
+        "suggestedSyntax": { "type": "string" }
+      }
+    },
+    "entryPoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "reachableInputs", "status"],
+      "properties": {
+        "path": { "type": "string" },
+        "reachableInputs": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "status": { "enum": ["complete", "uncertain"] }
+      }
+    },
+    "conflict": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "entryPoints",
+        "kind",
+        "name",
+        "occurrenceIds",
+        "ordering",
+        "specReferences",
+        "status"
+      ],
+      "properties": {
+        "effectiveEntryPoint": { "type": "string" },
+        "effectiveRegistrationId": { "type": "string" },
+        "entryPoints": { "type": "array", "items": { "type": "string" } },
+        "kind": { "enum": ["conflicting", "identical"] },
+        "name": { "type": "string" },
+        "occurrenceIds": { "type": "array", "items": { "type": "string" } },
+        "ordering": { "enum": ["repository-order-uncertain", "source-order-certain"] },
+        "specReferences": { "$ref": "#/$defs/specReferences" },
+        "status": { "const": "review-required" }
+      }
+    },
+    "aliasCycle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["aliasIds", "entryPoints", "names", "specReferences", "status"],
+      "properties": {
+        "aliasIds": { "type": "array", "items": { "type": "string" } },
+        "entryPoints": { "type": "array", "items": { "type": "string" } },
+        "names": { "type": "array", "items": { "type": "string" } },
+        "specReferences": { "$ref": "#/$defs/specReferences" },
+        "status": { "const": "review-required" }
+      }
+    },
+    "skip": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "reason", "status", "subject"],
+      "properties": {
+        "code": { "type": "string", "pattern": "^CPTV_SKIP_" },
+        "reason": { "type": "string" },
+        "status": { "const": "uncertain" },
+        "subject": {
+          "enum": [
+            "aliases",
+            "assignments",
+            "consumers",
+            "fallbacks",
+            "imports",
+            "inventory",
+            "ordering",
+            "references",
+            "repository-context"
+          ]
+        }
+      }
+    }
+  }
+}

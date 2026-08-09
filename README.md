@@ -1,109 +1,109 @@
 # CSS Property Type Validator
 
-Validate CSS custom property registrations declared with `@property`, then check whether registered custom properties are used compatibly through `var()`.
+Make typed CSS custom properties practical to adopt and maintain:
 
-Use it when your design tokens or component styles rely on typed custom properties and you want CI to catch mistakes such as a color token being used for `inline-size`, or a length token being assigned an invalid value.
+**audit → review → generate → validate → gate**
 
-## What It Does
+CSS Property Type Validator inventories an existing CSS codebase, explains where registrations are
+missing or conflicting, produces conservative review plans, validates registered values and
+`var()` usage, and supports incremental CI adoption. Its machine-readable JSON is the canonical
+contract for engineers, coding agents, and integrations.
 
-- Parses CSS with `css-tree`
-- Builds a registry from `@property` rules across input files, registry-only files, and local unconditioned imports
-- Validates `syntax`, `inherits`, and `initial-value` descriptors
-- Checks registered `var()` usages against the consuming CSS property
-- Checks simple `var()` fallback branches against the consuming CSS property
-- Validates authored values assigned directly to registered custom properties
-- Optionally reports unknown no-fallback `var()` references from configured known custom property inputs
-- Ignores unknown custom properties when that `var()` call provides a fallback
-- Skips ambiguous cases conservatively to avoid false positives
+Every semantic rule about `@property` is traced to the official
+[CSS Properties and Values API Level 1](https://www.w3.org/TR/css-properties-values-api-1/).
+Ambiguous static evidence is reported as uncertainty or review-required work, never guessed into a
+diagnostic or edit.
 
-## Packages
+## Maintained surfaces
 
-- [`@schalkneethling/css-property-type-validator-core`](https://www.npmjs.com/package/@schalkneethling/css-property-type-validator-core): validation engine for programmatic use
-- [`@schalkneethling/css-property-type-validator-cli`](https://www.npmjs.com/package/@schalkneethling/css-property-type-validator-cli): command-line wrapper for local development and CI
-- [`@schalkneethling/stylelint-plugin-css-property-type-validator`](https://www.npmjs.com/package/@schalkneethling/stylelint-plugin-css-property-type-validator): Stylelint plugin for existing lint workflows
+- [`@schalkneethling/css-property-type-validator-core`](https://www.npmjs.com/package/@schalkneethling/css-property-type-validator-core): browser-safe, filesystem-free analysis and validation.
+- [`@schalkneethling/css-property-type-validator-cli`](https://www.npmjs.com/package/@schalkneethling/css-property-type-validator-cli): bounded repository discovery, audits, reports, plans, baselines, SARIF, and CI gates.
+- [`@schalkneethling/stylelint-plugin-css-property-type-validator`](https://www.npmjs.com/package/@schalkneethling/stylelint-plugin-css-property-type-validator): focused validation of Stylelint-owned CSS.
+- The web interface: local validation and learning features supported by its exact published core dependency.
 
-## Try The CLI
+The former VS Code package is retired. See [the migration notice](./docs/vscode-retirement.md).
+External editor integrations may consume the core or CLI, but are not maintained by this project.
 
-```bash
-npx @schalkneethling/css-property-type-validator-cli "src/**/*.css"
-```
-
-Install it globally if you prefer:
+## Audit a project
 
 ```bash
-npm install --global @schalkneethling/css-property-type-validator-cli
-css-property-type-validator "src/**/*.css"
+npx @schalkneethling/css-property-type-validator-cli audit "src/**/*.css"
+npx @schalkneethling/css-property-type-validator-cli audit "src/**/*.css" --format json
+npx @schalkneethling/css-property-type-validator-cli audit "src/**/*.css" --format html > audit.html
+npx @schalkneethling/css-property-type-validator-cli audit "src/**/*.css" --format sarif > audit.sarif
 ```
 
-The CLI exits with:
+SARIF stands for Static Analysis Results Interchange Format; it is the standard interchange view
+for code-scanning systems. JSON remains the richer canonical CPTV contract.
 
-- `0` when no diagnostics are found
-- `1` when validation diagnostics are found
-- `2` for usage or file-loading failures
+Audit JSON is deterministic and versioned. It includes registrations, assignments, aliases,
+references, fallbacks, consumers, import evidence, conflicts, coverage, registration candidates,
+animation opportunities, diagnostics, explicit skips, exact available locations, confidence,
+stable fingerprints, and specification references.
 
-## CLI Usage
+HTML reports are standalone and offline. They are tested against a pinned
+[Ephemeral Pages](https://github.com/schalkneethling/ephemeral-pages) delivery contract and always
+provide selectable decision JSON and patch text when clipboard or download features are blocked.
+Use `--redact-source` before making a report public.
+
+## Review and apply registrations
+
+Registration suggestions are evidence, not decisions. Planning requires explicit review choices;
+the validator never guesses `inherits` or a non-universal `initial-value`.
 
 ```bash
-css-property-type-validator "src/**/*.css"
-css-property-type-validator "src/**/*.css" --format json
-css-property-type-validator "src/**/*.css" --registry "src/tokens/**/*.css"
-css-property-type-validator "src/tokens/**/*.css" --registry-only
-css-property-type-validator "src/**/*.css" --check-unknown-custom-properties --tokens "src/tokens/**/*.css"
-css-property-type-validator "src/**/*.css" --failfast
-css-property-type-validator generate "src/**/*.css" --out properties.css
+css-property-type-validator plan "src/**/*.css" \
+  --decisions decisions.json \
+  --target properties.css \
+  --format json > registration-plan.json
+
+css-property-type-validator apply --plan registration-plan.json
 ```
 
-Use `--registry` for shared `@property` definitions that should contribute registrations without validating ordinary declarations from those files:
+The safe apply contract creates one reviewed, absent, project-contained file. It rejects changed
+sources, altered plan content, incompatible schemas, existing targets, and partial or fuzzy edits.
+The older `generate` command remains temporarily as deprecated compatibility behavior.
+
+## Adopt gates incrementally
 
 ```bash
-css-property-type-validator "src/components/**/*.css" --registry "src/tokens/**/*.css"
+css-property-type-validator audit "src/**/*.css" \
+  --write-baseline .cptv-baseline.json
+
+css-property-type-validator audit "src/**/*.css" \
+  --baseline .cptv-baseline.json \
+  --new-only \
+  --coverage-regression \
+  --min-coverage 80 \
+  --format json
 ```
 
-Use `--registry-only` when you only want to validate `@property` registrations:
+Exit codes are stable:
 
-```bash
-css-property-type-validator "src/tokens/**/*.css" --registry-only
-```
+- `0`: accepted gates passed.
+- `1`: a high-confidence normative diagnostic or requested coverage gate failed.
+- `2`: usage, configuration, bounded I/O, incompatible contract, or stale-plan failure.
 
-Registry-only files still report parse errors and invalid `@property` registrations.
+Only high-confidence, normatively supported errors gate by default. Advisory findings and
+uncertainty remain review items.
 
-Use `--check-unknown-custom-properties` to opt in to static no-fallback `var()` reference checks. Use `--tokens` with that flag to seed known custom property names from one or more token files without validating ordinary declarations from those files:
+## Configuration and repository context
 
-```bash
-css-property-type-validator "src/components/**/*.css" \
-  --check-unknown-custom-properties \
-  --tokens "src/tokens/**/*.css"
-```
+The CLI discovers the nearest bounded `css-property-type-validator.config.json` within the project
+root. Command-line values override configuration, which overrides defaults. Project context owns
+globs, entry points, resolved local imports, paths, caches, and fingerprints; the core receives only
+content and explicit graph edges.
 
-The CLI prints a warning when unresolved checks are enabled without `--tokens`, and when `--tokens` is provided without enabling unresolved checks.
+Default safety budgets are 5 MiB per file, 10,000 files, and 100 MiB aggregate. Every file is
+checked with `lstat`/`stat` before allocation, must be a contained regular file, and is checked again
+after reading. Multiple independent entry points and incomplete, conditional, cyclic, or external
+imports produce structured ordering uncertainty rather than claims about a browser-effective
+cascade.
 
-By default, the CLI collects every validation failure it can find and reports the full result set.
-Use `--failfast` when you want it to stop after the first validation failure, including
-registration/import failures and declaration usage failures. Human and JSON output keep the same
-format; the diagnostics array simply contains the first issue found.
+See the [architecture](./docs/architecture.md), [glossary](./docs/glossary.md), and
+[CLI documentation](./packages/cli/README.md) for the full contracts and options.
 
-## Generate `@property` Rules
-
-Use the experimental `generate` command to create a reviewable `properties.css` file from existing custom property declarations:
-
-```bash
-css-property-type-validator generate "src/**/*.css" --out properties.css
-```
-
-Generation needs to see concrete authored custom property declarations such as:
-
-```css
-:root {
-  --brand-color: red;
-  --space: 1px;
-}
-```
-
-`var()` usage sites are optional. They can help you test the generated registrations with validation later, but the generator can infer registrations from token-only files.
-
-Alias tokens such as `--border-color: var(--brand-color)` can generate only when the referenced token declarations are also included in the inputs. If the generator only sees aliases and not the concrete primitive values they point to, those aliases are returned as review items.
-
-## Stylelint Usage
+## Stylelint
 
 ```js
 export default {
@@ -121,14 +121,19 @@ export default {
 };
 ```
 
-Use the Stylelint plugin when Stylelint already owns the set of CSS files being linted. `registryFiles` and `tokenFiles` provide project context without changing Stylelint's lint targets.
+Stylelint validates only the source Stylelint owns. Configured registry and token files provide
+context; the plugin does not scan the repository, generate registrations, apply edits, manage
+baselines, or calculate repository-wide coverage.
 
-## Library Usage
+## Core library
 
 ```ts
-import { validateFiles } from "@schalkneethling/css-property-type-validator-core";
+import {
+  analyzeInputs,
+  planPropertyRegistrations,
+} from "@schalkneethling/css-property-type-validator-core";
 
-const result = validateFiles([
+const analysis = analyzeInputs([
   {
     path: "tokens.css",
     css: `
@@ -137,86 +142,35 @@ const result = validateFiles([
         inherits: true;
         initial-value: transparent;
       }
+
+      :root { --brand-color: rebeccapurple; }
     `,
-  },
-  {
-    path: "component.css",
-    css: ".card { inline-size: var(--brand-color); }",
   },
 ]);
 
-console.log(result.diagnostics);
+const plan = planPropertyRegistrations(analysis, []);
 ```
 
-## JSON Output Shape
+`validateFiles` remains as a compatibility wrapper. The core has no filesystem, glob, Node, CI,
+registry, or editor responsibilities.
 
-With `--format json`, the CLI prints the same shape returned by the core package:
+## Web publication boundary
 
-```json
-{
-  "diagnostics": [
-    {
-      "code": "incompatible-var-usage",
-      "filePath": "/project/component.css",
-      "message": "Registered property --brand-color uses syntax \"<color>\" which is incompatible with inline-size at this var() usage.",
-      "propertyName": "--brand-color",
-      "registeredSyntax": "<color>",
-      "expectedProperty": "inline-size",
-      "snippet": "inline-size:var(--brand-color)"
-    }
-  ],
-  "registry": [
-    {
-      "filePath": "/project/tokens.css",
-      "inherits": true,
-      "initialValue": "transparent",
-      "name": "--brand-color",
-      "syntax": "<color>"
-    }
-  ],
-  "skippedDeclarations": 0,
-  "validatedDeclarations": 1
-}
-```
-
-Locations are included when available.
-
-## Current Validation Model
-
-The validator assembles one registry from the full set of validation inputs, registry-only inputs, and resolved local imports. It then checks each validation input against that combined registry.
-
-When a resolver is available, the core follows local unconditioned `@import` rules while assembling the registry and known custom property inputs. The CLI provides a resolver for relative and root-relative local CSS imports. Remote imports and conditioned imports are intentionally out of scope for now.
-
-Unresolved `var()` diagnostics are opt-in static known-inputs checks. They report `var(--token)` when `--token` is absent from known files/imports/registry/token inputs and no fallback is provided, but they do not attempt a full browser cascade evaluation for a specific DOM element.
-
-Consumers should follow the same pattern as the CLI, web app, VS Code extension, and Stylelint plugin: expose the unresolved-reference check as off by default, and expose token-file configuration beside it so projects can provide their real custom property source of truth.
-
-The browser UI accepts one or more selected CSS token files. Recursive folder selection is not exposed because directory upload is not consistently standardized across browsers.
-
-Compatibility checks are conservative:
-
-- whitespace-toggle and similarly ambiguous custom property assignment patterns are skipped
-- nested fallback chains are skipped until fallback reachability can be modeled safely
-- universal-syntax registrations are skipped for compatibility checks because their computed value can still be valid
-- config-file based registry discovery is not implemented yet
+A workspace web build is future-integration evidence only. A deployable web artifact must pin an
+exact core version available from npm, install outside the workspace, reject aliases, links,
+overrides and deep imports, and build/test only declared published exports. Core is published and
+verified before a web consumer change is allowed to deploy.
 
 ## Develop
 
 ```bash
-pnpm install
-pnpm run format:check
-pnpm run lint
-pnpm run typecheck
-pnpm test
-pnpm run build
-pnpm run check:supported-syntax-names
-```
-
-For the full local gate:
-
-```bash
+pnpm install --ignore-scripts
+pnpm run agent:preflight
 pnpm run check
 pnpm run check:supported-syntax-names
 ```
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for contributor guidance and [RELEASING.md](./RELEASING.md) for release details.
+Define acceptance boundaries before a RED test. Every test must trace to an accepted product,
+specification, safety, release, or compatibility outcome. See [AGENTS.md](./AGENTS.md), the
+repo-local `cptv-development` skill, [CONTRIBUTING.md](./CONTRIBUTING.md), and
+[RELEASING.md](./RELEASING.md).

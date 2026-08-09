@@ -1,11 +1,25 @@
-import * as cssTree from "css-tree";
-
+import { withDiagnosticContract } from "./diagnostics.js";
+import {
+  generateCss,
+  matchesSyntax,
+  parseStylesheet,
+  parseValue as parseCssValue,
+  walkCss,
+} from "./parser.js";
 import { validateInitialValueAgainstSyntax } from "./registry.js";
+import { getGeneratorPolicySpecificationReferences } from "./specification.js";
 import { SUPPORTED_SYNTAX_COMPONENT_NAMES } from "./supported-syntax.js";
 import { validateFiles } from "./validate.js";
 
 import type { CssAtruleNode } from "./imports.js";
-import type { SourceLocation, ValidationDiagnostic, ValidationInput } from "./types.js";
+import type { GeneratorPolicyId } from "./specification.js";
+import type {
+  SourceLocation,
+  SpecificationReference,
+  ValidationDiagnostic,
+  ValidationDiagnosticInput,
+  ValidationInput,
+} from "./types.js";
 
 export type GeneratedPropertyStatus =
   | "generated"
@@ -19,10 +33,12 @@ export interface GeneratedPropertyCandidate {
   loc: SourceLocation | null;
   name: string;
   observedValues: string[];
+  policyIds?: readonly GeneratorPolicyId[];
   reason?: string;
   sources: string[];
   status: GeneratedPropertyStatus;
   syntax?: string;
+  specReferences?: readonly SpecificationReference[];
 }
 
 export interface GeneratePropertyRegistrationsResult {
@@ -76,6 +92,16 @@ interface ResolvedValues {
   values: string[];
 }
 
+function generatorProvenance(policyIds: readonly GeneratorPolicyId[]): {
+  policyIds: readonly GeneratorPolicyId[];
+  specReferences: readonly SpecificationReference[];
+} {
+  return {
+    policyIds,
+    specReferences: getGeneratorPolicySpecificationReferences(policyIds),
+  };
+}
+
 function toLocation(loc: unknown): SourceLocation | null {
   if (!loc) {
     return null;
@@ -92,15 +118,14 @@ function toLocation(loc: unknown): SourceLocation | null {
 
 function parseValue(value: string): unknown | null {
   try {
-    return cssTree.parse(value, { context: "value" });
+    return parseCssValue(value);
   } catch {
     return null;
   }
 }
 
 function matchSyntax(syntax: string, value: unknown): boolean {
-  const match = cssTree.lexer.match(syntax, value);
-  return Boolean(match?.matched);
+  return matchesSyntax(syntax, value);
 }
 
 function valueChildren(value: unknown): CssValueNode[] {
@@ -229,12 +254,15 @@ function collectInput(
   input: ValidationInput,
   observed: Map<string, ObservedProperty>,
   existing: Set<string>,
-  diagnostics: ValidationDiagnostic[],
+  diagnostics: ValidationDiagnosticInput[],
 ): void {
   let ast: ParsedStylesheet;
 
   try {
-    ast = cssTree.parse(input.css, { filename: input.path, positions: true }) as ParsedStylesheet;
+    ast = parseStylesheet(input.css, {
+      filename: input.path,
+      positions: true,
+    }) as ParsedStylesheet;
   } catch (error) {
     diagnostics.push({
       code: "unparseable-stylesheet",
@@ -258,14 +286,14 @@ function collectInput(
     }
   }
 
-  cssTree.walk(ast, {
+  walkCss(ast, {
     visit: "Declaration",
     enter(node: CssDeclarationNode) {
       if (!node.property.startsWith("--") || !node.value) {
         return;
       }
 
-      const value = cssTree.generate(node.value).trim();
+      const value = generateCss(node.value).trim();
       const entry =
         observed.get(node.property) ??
         ({
@@ -302,7 +330,7 @@ export function generatePropertyRegistrations(
   inputs: ValidationInput[],
   options: { outFile?: string } = {},
 ): GeneratePropertyRegistrationsResult {
-  const diagnostics: ValidationDiagnostic[] = [];
+  const diagnostics: ValidationDiagnosticInput[] = [];
   const existing = new Set<string>();
   const observed = new Map<string, ObservedProperty>();
   const candidates: GeneratedPropertyCandidate[] = [];
@@ -328,6 +356,7 @@ export function generatePropertyRegistrations(
     if (existing.has(name)) {
       candidates.push({
         ...baseCandidate,
+        ...generatorProvenance(["CPTV-GEN-001-existing-registration-review"]),
         reason: "Existing @property rule found in the input.",
         status: "existing",
       });
@@ -338,6 +367,7 @@ export function generatePropertyRegistrations(
       const unresolvedAliases = resolvedValues.unresolvedAliases.join(", ");
       candidates.push({
         ...baseCandidate,
+        ...generatorProvenance(["CPTV-GEN-002-exact-var-alias-resolution"]),
         reason: `Observed values include aliases through var(). Include declarations for ${unresolvedAliases} so the generator can infer a complete concrete syntax.`,
         status: "conflict",
       });
@@ -350,6 +380,7 @@ export function generatePropertyRegistrations(
       const unresolvedAliases = resolvedValues.unresolvedAliases.join(", ");
       candidates.push({
         ...baseCandidate,
+        ...generatorProvenance(["CPTV-GEN-003-common-supported-syntax"]),
         reason:
           unresolvedAliases.length > 0
             ? `Observed values are aliases through var(). Include declarations for ${unresolvedAliases} so the generator can infer a concrete syntax.`
@@ -364,6 +395,10 @@ export function generatePropertyRegistrations(
     if (!initialValue) {
       candidates.push({
         ...baseCandidate,
+        ...generatorProvenance([
+          "CPTV-GEN-003-common-supported-syntax",
+          "CPTV-GEN-004-independent-initial-value",
+        ]),
         reason: "No observed value is valid as a computationally independent initial-value.",
         status: "unsupported",
         syntax,
@@ -373,6 +408,13 @@ export function generatePropertyRegistrations(
 
     candidates.push({
       ...baseCandidate,
+      ...generatorProvenance([
+        "CPTV-GEN-003-common-supported-syntax",
+        "CPTV-GEN-004-independent-initial-value",
+        "CPTV-GEN-005-first-valid-initial-value",
+        "CPTV-GEN-006-legacy-inherits-true",
+        "CPTV-GEN-007-self-validation",
+      ]),
       initialValue,
       status: "generated",
       syntax,
@@ -420,7 +462,7 @@ export function generatePropertyRegistrations(
   return {
     candidates,
     css: readyCss.length > 0 ? `${readyCss}\n` : "",
-    diagnostics,
+    diagnostics: diagnostics.map(withDiagnosticContract),
     generatedCount: candidates.filter((candidate) => candidate.status === "generated").length,
     reviewCount: candidates.filter((candidate) => candidate.status !== "generated").length,
   };

@@ -1,0 +1,171 @@
+{
+  "schemaVersion": "1.0.0",
+  "codes": [
+    {
+      "basis": "direct",
+      "category": "diagnostic",
+      "code": "CPTV_REG_001",
+      "confidence": "high",
+      "gating": "gating",
+      "legacyCode": "invalid-property-registration",
+      "provenance": "normative",
+      "reason": "missing-property-name"
+    },
+    {
+      "basis": "direct",
+      "category": "diagnostic",
+      "code": "CPTV_REG_002",
+      "confidence": "high",
+      "gating": "gating",
+      "legacyCode": "invalid-property-registration",
+      "provenance": "normative",
+      "reason": "missing-syntax-descriptor"
+    },
+    {
+      "basis": "direct",
+      "category": "diagnostic",
+      "code": "CPTV_REG_003",
+      "confidence": "high",
+      "gating": "gating",
+      "legacyCode": "invalid-property-registration",
+      "provenance": "normative",
+      "reason": "invalid-syntax-descriptor"
+    },
+    {
+      "basis": "direct",
+      "category": "diagnostic",
+      "code": "CPTV_REG_004",
+      "confidence": "high",
+      "gating": "gating",
+      "legacyCode": "invalid-property-registration",
+      "provenance": "normative",
+      "reason": "unsupported-syntax-component"
+    },
+    {
+      "basis": "direct",
+      "category": "diagnostic",
+      "code": "CPTV_REG_005",
+      "confidence": "high",
+      "gating": "gating",
+      "legacyCode": "invalid-property-registration",
+      "provenance": "normative",
+      "reason": "missing-inherits-descriptor"
+    },
+    {
+      "basis": "direct",
+      "category": "diagnostic",
+      "code": "CPTV_REG_006",
+      "confidence": "high",
+      "gating": "gating",
+      "legacyCode": "invalid-property-registration",
+      "provenance": "normative",
+      "reason": "invalid-inherits-descriptor"
+    },
+    {
+      "basis": "direct",
+      "category": "diagnostic",
+      "code": "CPTV_REG_007",
+      "confidence": "high",
+      "gating": "gating",
+      "legacyCode": "invalid-property-registration",
+      "provenance": "normative",
+      "reason": "missing-initial-value-descriptor"
+    },
+    {
+      "basis": "direct",
+      "category": "diagnostic",
+      "code": "CPTV_REG_008",
+      "confidence": "high",
+      "gating": "gating",
+      "legacyCode": "invalid-property-registration",
+      "provenance": "normative",
+      "reason": "invalid-initial-value"
+    },
+    {
+      "basis": "direct",
+      "category": "diagnostic",
+      "code": "CPTV_ASSIGN_001",
+      "confidence": "high",
+      "gating": "gating",
+      "legacyCode": "incompatible-custom-property-assignment",
+      "provenance": "normative",
+      "reason": "incompatible-assignment-value"
+    },
+    {
+      "basis": "representative-var-substitution",
+      "category": "diagnostic",
+      "code": "CPTV_ASSIGN_002",
+      "confidence": "medium",
+      "gating": "review-required",
+      "legacyCode": "incompatible-custom-property-assignment",
+      "provenance": "tool-policy",
+      "reason": "incompatible-assignment-value"
+    },
+    {
+      "basis": "representative-var-substitution",
+      "category": "diagnostic",
+      "code": "CPTV_USAGE_001",
+      "confidence": "medium",
+      "gating": "review-required",
+      "legacyCode": "incompatible-var-usage",
+      "provenance": "tool-policy",
+      "reason": "incompatible-var-substitution"
+    },
+    {
+      "basis": "direct",
+      "category": "diagnostic",
+      "code": "CPTV_USAGE_002",
+      "confidence": "high",
+      "gating": "gating",
+      "legacyCode": "incompatible-var-usage",
+      "provenance": "normative",
+      "reason": "incompatible-var-fallback"
+    },
+    {
+      "basis": "direct",
+      "category": "diagnostic",
+      "code": "CPTV_USAGE_003",
+      "confidence": "low",
+      "gating": "review-required",
+      "legacyCode": "incompatible-var-usage",
+      "provenance": "tool-policy",
+      "reason": "unresolved-var-reference"
+    },
+    {
+      "basis": "direct",
+      "category": "diagnostic",
+      "code": "CPTV_IMPORT_001",
+      "confidence": "high",
+      "gating": "review-required",
+      "legacyCode": "unresolved-import",
+      "provenance": "tool-policy",
+      "reason": "unresolved-import"
+    },
+    {
+      "basis": "direct",
+      "category": "diagnostic",
+      "code": "CPTV_PARSE_001",
+      "confidence": "high",
+      "gating": "review-required",
+      "legacyCode": "unparseable-stylesheet",
+      "provenance": "tool-policy",
+      "reason": "unparseable-css"
+    },
+    { "category": "skip", "code": "CPTV_SKIP_ALIASES_UNAVAILABLE" },
+    { "category": "skip", "code": "CPTV_SKIP_AMBIGUOUS_DECISION" },
+    { "category": "skip", "code": "CPTV_SKIP_ASSIGNMENTS_UNAVAILABLE" },
+    { "category": "skip", "code": "CPTV_SKIP_CONSUMERS_UNAVAILABLE" },
+    { "category": "skip", "code": "CPTV_SKIP_DECISION_REJECTED" },
+    { "category": "skip", "code": "CPTV_SKIP_DECISION_REQUIRED" },
+    { "category": "skip", "code": "CPTV_SKIP_EXISTING_REGISTRATION" },
+    { "category": "skip", "code": "CPTV_SKIP_FALLBACKS_UNAVAILABLE" },
+    { "category": "skip", "code": "CPTV_SKIP_IMPORTS_UNAVAILABLE" },
+    { "category": "skip", "code": "CPTV_SKIP_INPUT_INVENTORY_UNAVAILABLE" },
+    { "category": "skip", "code": "CPTV_SKIP_INVALID_DECISION" },
+    { "category": "skip", "code": "CPTV_SKIP_NESTED_FALLBACK_UNPROVEN" },
+    { "category": "skip", "code": "CPTV_SKIP_REFERENCES_UNAVAILABLE" },
+    { "category": "skip", "code": "CPTV_SKIP_REPOSITORY_CONTEXT_UNAVAILABLE" },
+    { "category": "skip", "code": "CPTV_SKIP_REPOSITORY_ORDER_UNCERTAIN" },
+    { "category": "skip", "code": "CPTV_SKIP_UNKNOWN_CANDIDATE" }
+  ]
+}

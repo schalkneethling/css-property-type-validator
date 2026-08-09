@@ -1,0 +1,46 @@
+name: Optional Ephemeral adoption audit
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  id-token: write
+  pull-requests: write
+
+jobs:
+  publish-report:
+    if: github.event.pull_request.head.repo.full_name == github.repository && vars.CPTV_EPHEMERAL_REPORTS == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
+
+      - name: Set up Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Build packages
+        run: pnpm run build
+
+      - name: Generate sanitized standalone report
+        run: pnpm run report:ci
+
+      - name: Publish temporary public report
+        uses: schalkneethling/ephemeral-pages-action@d0122367e736cc026950baeda8029f828db318d3 # v1
+        with:
+          report-path: .artifacts/cptv-audit.html
+          ttl-hours: "24"
+          report-name: CSS @property adoption audit
+          github-token: ${{ github.token }}

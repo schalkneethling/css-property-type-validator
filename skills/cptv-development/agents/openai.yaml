@@ -1,0 +1,4 @@
+interface:
+  display_name: "CPTV Development"
+  short_description: "Build CSS Property Type Validator safely"
+  default_prompt: "Implement a CSS Property Type Validator issue using acceptance-driven TDD, official specification provenance, and repository boundary checks."

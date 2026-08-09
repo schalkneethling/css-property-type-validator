@@ -1,8 +1,12 @@
 # @schalkneethling/css-property-type-validator-core
 
-Core validation engine for CSS Property Type Validator.
+Browser-safe, filesystem-free analysis and validation for typed CSS custom properties.
 
-It reads CSS `@property` registrations, builds a registry of typed custom properties, validates registration descriptors, checks compatible `var()` usage against consuming CSS properties, optionally reports unresolved no-fallback `var()` references from known custom property inputs, validates simple fallback branches, and checks authored assignments to registered custom properties.
+The core parses caller-provided CSS, validates `@property` registrations, builds deterministic
+inventories and entry-point graphs, reports exact static evidence and uncertainty, proposes
+review-required registration candidates, and converts explicit descriptor decisions into a
+conservative plan. Every semantic rule carries provenance from the official
+[CSS Properties and Values API Level 1](https://www.w3.org/TR/css-properties-values-api-1/).
 
 ## Install
 
@@ -10,131 +14,100 @@ It reads CSS `@property` registrations, builds a registry of typed custom proper
 pnpm add @schalkneethling/css-property-type-validator-core
 ```
 
-## Usage
+## Analyze
 
 ```ts
-import { validateFiles } from "@schalkneethling/css-property-type-validator-core";
+import { analyzeInputs } from "@schalkneethling/css-property-type-validator-core";
 
-const result = validateFiles(
+const analysis = analyzeInputs(
   [
     {
+      path: "tokens.css",
+      css: `
+        @property --brand-color {
+          syntax: "<color>";
+          inherits: true;
+          initial-value: transparent;
+        }
+
+        :root { --brand-color: rebeccapurple; }
+      `,
+    },
+    {
       path: "component.css",
-      css: ".card { color: var(--brand-color); }",
+      css: ".card { color: var(--brand-color, black); }",
     },
   ],
   {
-    checkUnresolvedCustomProperties: true,
-    knownCustomPropertyInputs: [
+    entryPoints: ["component.css"],
+    importEdges: [
       {
-        path: "project-tokens.css",
-        css: ":root { --brand-color: rebeccapurple; }",
-      },
-    ],
-    registryInputs: [
-      {
-        path: "tokens.css",
-        css: `
-          @property --brand-color {
-            syntax: "<color>";
-            inherits: true;
-            initial-value: transparent;
-          }
-        `,
+        fromPath: "component.css",
+        order: 0,
+        specifier: "./tokens.css",
+        toPath: "tokens.css",
       },
     ],
   },
 );
 
-console.log(result.diagnostics);
+console.log(analysis.diagnostics, analysis.coverage, analysis.candidates);
 ```
 
-## Generate Registrations
+`AnalysisResultV1` includes schema, tool, and specification versions; inputs and configuration;
+registrations, assignments, aliases, references, fallbacks, consumers, and imports; diagnostics,
+skips, coverage, conflicts, candidates, animation opportunities, and deterministic ordering.
+Locations use line/column data and UTF-16 offsets when available. Diagnostics include permanent
+`CPTV_*` IDs, evidence, confidence, provenance, related locations, stable SHA-256 fingerprints, and
+only exact safe suggested edits.
 
-Use `generatePropertyRegistrations` to infer conservative `@property` rules from existing custom property declarations:
+The caller owns repository discovery. Pass file contents, entry-point identities, and resolved
+import occurrences explicitly. Missing or ambiguous graph evidence produces structured uncertainty;
+the core does not infer a browser-effective cascade or DOM state.
+
+## Plan reviewed registrations
 
 ```ts
-import { generatePropertyRegistrations } from "@schalkneethling/css-property-type-validator-core";
+import {
+  analyzeInputs,
+  planPropertyRegistrations,
+} from "@schalkneethling/css-property-type-validator-core";
 
-const result = generatePropertyRegistrations([
+const analysis = analyzeInputs([{ path: "tokens.css", css: ":root { --space: 1rem; }" }]);
+
+const plan = planPropertyRegistrations(analysis, [
   {
-    path: "tokens.css",
-    css: `
-      :root {
-        --brand-color: red;
-        --space: 1px;
-      }
-    `,
+    action: "accept",
+    candidateId: "registration:--space",
+    syntax: "<length>",
+    inherits: false,
+    initialValue: "0px",
   },
 ]);
-
-console.log(result.css);
 ```
 
-Generation needs concrete declarations such as `--brand-color: red`. `var()` usage sites are optional. Alias values such as `--border-color: var(--brand-color)` can generate only when the referenced token declarations are included in the same inputs.
+Candidate syntax and value observations are evidence only. An accepted decision must explicitly
+supply `syntax` and `inherits`, and `initialValue` unless the selected syntax is universal (`*`).
+The planner self-validates the resulting registration. It never guesses missing descriptors or
+applies files.
 
-Diagnostics include stable machine-readable fields for tooling integrations:
+## Compatibility API
 
-```ts
-type ValidationDiagnostic = {
-  code:
-    | "invalid-property-registration"
-    | "incompatible-custom-property-assignment"
-    | "incompatible-var-usage"
-    | "unresolved-import"
-    | "unparseable-stylesheet";
-  phase: "parse" | "registry" | "assignment" | "usage" | "import";
-  reason:
-    | "missing-property-name"
-    | "missing-syntax-descriptor"
-    | "invalid-syntax-descriptor"
-    | "unsupported-syntax-component"
-    | "missing-inherits-descriptor"
-    | "invalid-inherits-descriptor"
-    | "missing-initial-value-descriptor"
-    | "invalid-initial-value"
-    | "incompatible-assignment-value"
-    | "incompatible-var-substitution"
-    | "incompatible-var-fallback"
-    | "unresolved-var-reference"
-    | "unresolved-import"
-    | "unparseable-css";
-  severity: "error";
-  filePath: string;
-  loc: SourceLocation | null;
-  message: string;
-  descriptorName?: "syntax" | "inherits" | "initial-value";
-  propertyName?: string;
-  registeredSyntax?: string;
-  expectedProperty?: string;
-  actualValue?: string;
-  importSpecifier?: string;
-  snippet?: string;
-};
-```
+`validateFiles(inputs, options)` remains available as a compatibility wrapper for integrations that
+need the earlier validation result. `generatePropertyRegistrations` remains deprecated
+compatibility behavior until the next major release; new adoption flows should use analysis,
+explicit review decisions, and planning.
 
-`code` is the broad diagnostic category, while `phase` and `reason` are intended for rule mapping, editor diagnostics, filtering, and stable automation. Existing fields such as `propertyName`, `registeredSyntax`, and `expectedProperty` remain available for integrations that already consume them.
+`registryInputs` contribute registrations without validating their ordinary declarations.
+`knownCustomPropertyInputs` support the opt-in static unresolved-reference check.
+`resolveImport` may supply caller-owned local import resolution to the compatibility validator.
 
-Provide `resolveImport` when registry assembly and opt-in known custom property checks should follow local unconditioned imports:
+## Boundaries
 
-```ts
-const result = validateFiles(inputs, {
-  resolveImport: (specifier, fromPath) => {
-    // Return { path, css } for local CSS imports, or null when unresolved.
-    return null;
-  },
-});
-```
-
-## Notes
-
-- `registryInputs` contribute registrations and registration diagnostics without validating ordinary declarations from those files.
-- `checkUnresolvedCustomProperties` defaults to `false`; integrations should expose it as opt-in.
-- `knownCustomPropertyInputs` seed the known custom property set for `unresolved-var-reference` without becoming validation targets.
-- If the same file is also present in the validation inputs, its ordinary declarations are still validated as part of the normal validation path.
-- `unresolved-var-reference` is a static known-inputs diagnostic. When enabled, it reports `var(--token)` when `--token` is absent from known files/imports/registry/token inputs and no fallback is provided; it does not attempt a full browser cascade evaluation for a specific DOM element.
-- Unknown custom properties with fallbacks, such as `var(--token, red)`, do not report `unresolved-var-reference`.
-- Other consumers should follow the CLI, web, and VS Code pattern: keep unresolved checks off by default and pair the opt-in with token-file configuration.
-- Ambiguous cases are skipped conservatively to avoid false positives.
-- Remote and conditioned imports are out of scope unless a future validation model can handle them safely.
+- No filesystem, glob, configuration, cache, process, CI, registry, or editor APIs.
+- No assumptions beyond official specification text and explicit product policy.
+- No whole-browser cascade or DOM/computed-value simulation.
+- Advisory, medium/low-confidence, and uncertain findings do not gate by default.
+- Ambiguous aliases, nested substitutions, ordering, and unsupported syntax remain explicit skips.
 
 Repository: [schalkneethling/css-property-type-validator](https://github.com/schalkneethling/css-property-type-validator)

@@ -1,0 +1,29 @@
+{
+  "name": "@schalkneethling/css-property-type-validator-project-context",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Private Node.js project loading and configuration primitives for CSS Property Type Validator.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "browser": false,
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vp test run --config vite.config.ts",
+    "test:performance": "pnpm run build && node ./scripts/performance.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "vite-plus": "^0.1.24",
+    "vitest": "^4.1.8"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}

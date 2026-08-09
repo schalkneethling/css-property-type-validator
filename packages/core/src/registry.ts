@@ -1,12 +1,18 @@
-import * as cssTree from "css-tree";
-
 import { getImportSpecifier, isAbsoluteImportUrl } from "./imports.js";
+import {
+  generateCss,
+  matchesSyntax,
+  parseDefinitionSyntax,
+  parseStylesheet,
+  parseValue as parseCssValue,
+  walkCss,
+} from "./parser.js";
 import { getFirstUnsupportedSyntaxComponentName } from "./supported-syntax.js";
 
 import type {
   RegisteredProperty,
   ResolveImport,
-  ValidationDiagnostic,
+  ValidationDiagnosticInput,
   ValidationInput,
 } from "./types.js";
 
@@ -127,7 +133,7 @@ function descriptorMap(block: CssBlockNode | null | undefined): Map<string, CssD
 
 function parseValue(value: string): unknown | null {
   try {
-    return cssTree.parse(value, { context: "value" });
+    return parseCssValue(value);
   } catch {
     return null;
   }
@@ -145,7 +151,7 @@ function isAbsoluteUrl(url: string): boolean {
 function getComputationalIndependenceFailureReason(value: unknown): string | null {
   let failure: string | null = null;
 
-  cssTree.walk(value, {
+  walkCss(value, {
     enter(node: { name?: string; type?: string; unit?: string; value?: string }) {
       if (failure) {
         return;
@@ -207,12 +213,10 @@ export function validateInitialValueAgainstSyntax(
     return `@property ${propertyName} has an initial-value "${initialValue}" that ${independenceFailureReason}.`;
   }
 
-  const match = cssTree.lexer.match(syntax, parsedValue);
-
   // CSS Properties and Values API Level 1 §3.3 requires non-universal initial-value
   // values to parse according to the declared syntax:
   // https://www.w3.org/TR/css-properties-values-api-1/#initial-value-descriptor
-  if (!match?.matched) {
+  if (!matchesSyntax(syntax, parsedValue)) {
     return `@property ${propertyName} has an initial-value "${initialValue}" that does not match its syntax descriptor "${syntax}".`;
   }
 
@@ -237,13 +241,13 @@ function getRawDescriptor(declaration: CssDeclarationNode | undefined): string |
     return undefined;
   }
 
-  return cssTree.generate(declaration.value).trim();
+  return generateCss(declaration.value).trim();
 }
 
 function processPropertyRule(
   input: ValidationInput,
   node: CssAtruleNode,
-  diagnostics: ValidationDiagnostic[],
+  diagnostics: ValidationDiagnosticInput[],
   registry: Map<string, RegisteredProperty>,
 ): void {
   const propertyName = (Array.from(node.prelude?.children ?? []) as CssPropertyNameNode[])[0]?.name;
@@ -288,7 +292,7 @@ function processPropertyRule(
 
   try {
     if (syntax !== "*") {
-      syntaxAst = cssTree.definitionSyntax.parse(syntax);
+      syntaxAst = parseDefinitionSyntax(syntax);
     }
   } catch (error) {
     diagnostics.push({
@@ -430,10 +434,10 @@ export function collectRegistry(
   inputs: ValidationInput[],
   options: { failFast?: boolean; resolveImport?: ResolveImport } = {},
 ): {
-  diagnostics: ValidationDiagnostic[];
+  diagnostics: ValidationDiagnosticInput[];
   registry: RegisteredProperty[];
 } {
-  const diagnostics: ValidationDiagnostic[] = [];
+  const diagnostics: ValidationDiagnosticInput[] = [];
   const registry = new Map<string, RegisteredProperty>();
   const expandedPaths = new Set<string>();
   const activePaths = new Set<string>();
@@ -451,7 +455,7 @@ export function collectRegistry(
     let ast: CssStylesheet;
 
     try {
-      ast = cssTree.parse(input.css, {
+      ast = parseStylesheet(input.css, {
         filename: input.path,
         positions: true,
       }) as CssStylesheet;
@@ -494,7 +498,7 @@ export function collectRegistry(
             loc: toLocation(node.loc),
             message: `Could not resolve imported stylesheet "${importSpecifier}" from ${input.path}.`,
             importSpecifier,
-            snippet: cssTree.generate(node),
+            snippet: generateCss(node),
           });
           if (options.failFast) {
             break;

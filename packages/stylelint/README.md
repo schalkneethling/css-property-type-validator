@@ -44,8 +44,8 @@ interface Options {
 }
 ```
 
-- `registryFiles`: CSS file or glob patterns to use as shared `@property` registry inputs.
+- `registryFiles`: CSS file or glob patterns, resolved from the Stylelint invocation working directory, to use as shared `@property` registry inputs.
 - `checkUnknownCustomProperties`: report no-fallback `var()` references missing from known custom property inputs.
-- `tokenFiles`: CSS file or glob patterns to use as known custom property token sources when unknown checks are enabled.
+- `tokenFiles`: CSS file or glob patterns, resolved from the Stylelint invocation working directory, to use as known custom property token sources when unknown checks are enabled.
 
 Repository: [schalkneethling/css-property-type-validator](https://github.com/schalkneethling/css-property-type-validator)

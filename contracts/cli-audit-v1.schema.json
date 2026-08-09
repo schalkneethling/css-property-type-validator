@@ -1,0 +1,180 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/schalkneethling/css-property-type-validator/contracts/cli-audit-v1.schema.json",
+  "title": "CSS Property Type Validator CLI audit v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "analysis",
+    "coverage",
+    "diagnostics",
+    "gateEvaluation",
+    "kind",
+    "schemaVersion",
+    "sourceFingerprints",
+    "sourceRedacted"
+  ],
+  "properties": {
+    "analysis": { "$ref": "analysis-result-v1.schema.json" },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["percentage", "skipped", "validated"],
+      "properties": {
+        "percentage": {
+          "oneOf": [{ "type": "null" }, { "type": "number", "minimum": 0, "maximum": 1 }]
+        },
+        "skipped": { "type": "integer", "minimum": 0 },
+        "validated": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "diagnostics": { "type": "array", "items": { "$ref": "#/$defs/cliDiagnostic" } },
+    "gateEvaluation": {
+      "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/gateEvaluation" }]
+    },
+    "kind": { "const": "cptv-audit" },
+    "schemaVersion": { "const": "1.0.0" },
+    "sourceFingerprints": { "type": "array", "items": { "$ref": "#/$defs/sourceFingerprint" } },
+    "sourceRedacted": { "type": "boolean" }
+  },
+  "$defs": {
+    "baselineRecovery": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["matchedFingerprints", "newFingerprints", "staleFingerprints"],
+      "properties": {
+        "matchedFingerprints": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+          "uniqueItems": true
+        },
+        "newFingerprints": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+          "uniqueItems": true
+        },
+        "staleFingerprints": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+          "uniqueItems": true
+        }
+      }
+    },
+    "coverageRegression": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["baselinePercentage", "category", "currentPercentage"],
+      "properties": {
+        "baselinePercentage": { "type": "number", "minimum": 0, "maximum": 1 },
+        "category": {
+          "enum": ["assignments", "consumers", "fallbacks", "references", "registrationRules"]
+        },
+        "currentPercentage": {
+          "oneOf": [{ "type": "null" }, { "type": "number", "minimum": 0, "maximum": 1 }]
+        }
+      }
+    },
+    "gateEvaluation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "baseline",
+        "coverageFailed",
+        "coverageRegressions",
+        "diagnosticFailures",
+        "passed"
+      ],
+      "properties": {
+        "baseline": {
+          "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/baselineRecovery" }]
+        },
+        "coverageFailed": { "type": "boolean" },
+        "coverageRegressions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/coverageRegression" }
+        },
+        "diagnosticFailures": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/cliDiagnostic" }
+        },
+        "passed": { "type": "boolean" }
+      }
+    },
+    "sourceFingerprint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": { "type": "string" },
+        "sha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
+      }
+    },
+    "cliDiagnostic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "baselineFingerprint",
+        "basis",
+        "code",
+        "confidence",
+        "evidence",
+        "filePath",
+        "fingerprint",
+        "gating",
+        "id",
+        "legacyCode",
+        "location",
+        "message",
+        "phase",
+        "provenance",
+        "reason",
+        "relatedLocations",
+        "severity",
+        "specReferences",
+        "suggestedEdits"
+      ],
+      "properties": {
+        "actualValue": { "type": "string" },
+        "baselineFingerprint": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+        "basis": { "enum": ["direct", "representative-var-substitution"] },
+        "code": { "type": "string", "pattern": "^CPTV_" },
+        "confidence": { "$ref": "diagnostic-v1.schema.json#/$defs/confidence" },
+        "evidence": {
+          "type": "array",
+          "items": { "$ref": "diagnostic-v1.schema.json#/$defs/evidence" }
+        },
+        "filePath": { "type": "string" },
+        "fingerprint": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+        "gating": { "enum": ["gating", "review-required", "advisory"] },
+        "id": { "$ref": "diagnostic-v1.schema.json#/$defs/diagnosticId" },
+        "legacyCode": { "type": "string" },
+        "location": {
+          "oneOf": [
+            { "type": "null" },
+            { "$ref": "diagnostic-v1.schema.json#/$defs/diagnosticLocation" }
+          ]
+        },
+        "message": { "type": "string" },
+        "phase": { "type": "string" },
+        "propertyName": { "type": "string" },
+        "provenance": { "$ref": "diagnostic-v1.schema.json#/$defs/provenance" },
+        "reason": { "$ref": "diagnostic-v1.schema.json#/$defs/reason" },
+        "relatedLocations": {
+          "type": "array",
+          "items": { "$ref": "diagnostic-v1.schema.json#/$defs/relatedLocation" }
+        },
+        "severity": { "const": "error" },
+        "snippet": { "type": "string" },
+        "specReferences": {
+          "type": "array",
+          "items": { "$ref": "diagnostic-v1.schema.json#/$defs/specificationReference" },
+          "minItems": 1
+        },
+        "suggestedEdits": {
+          "type": "array",
+          "items": { "$ref": "diagnostic-v1.schema.json#/$defs/suggestedEdit" }
+        }
+      }
+    }
+  }
+}

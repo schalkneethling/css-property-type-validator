@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/schalkneethling/css-property-type-validator/contracts/project-config-v1.schema.json",
+  "title": "CSS Property Type Validator project configuration v1",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "checkUnknownCustomProperties": { "type": "boolean" },
+    "entryPoints": { "$ref": "#/$defs/patterns" },
+    "inputs": { "$ref": "#/$defs/patterns" },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "maxFileBytes": { "type": "integer", "minimum": 1 },
+        "maxFiles": { "type": "integer", "minimum": 1 },
+        "maxTotalBytes": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "registry": { "$ref": "#/$defs/patterns" },
+    "rootRelativeImports": { "type": "boolean" },
+    "schemaVersion": { "const": 1 },
+    "tokens": { "$ref": "#/$defs/patterns" }
+  },
+  "$defs": {
+    "patterns": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    }
+  }
+}

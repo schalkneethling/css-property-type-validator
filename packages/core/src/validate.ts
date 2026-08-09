@@ -1,11 +1,18 @@
-import * as cssTree from "css-tree";
-
+import { toDiagnosticLocation, withDiagnosticContract } from "./diagnostics.js";
 import { getImportSpecifier, isAbsoluteImportUrl, type CssAtruleNode } from "./imports.js";
+import {
+  generateCss,
+  matchesProperty,
+  matchesSyntax,
+  parseDefinitionSyntax,
+  parseStylesheet as parseCssStylesheet,
+  parseValue as parseCssValue,
+  walkCss,
+} from "./parser.js";
 import { buildRepresentativeSamples } from "./syntax-samples.js";
 import { collectRegistry } from "./registry.js";
 import {
   canDeclarationMatchWithoutOccurrence,
-  canDeclarationMatchWithOccurrenceReplacement,
   collectVarOccurrences,
   isCompatibleWithSubstitutions,
 } from "./var-substitution.js";
@@ -13,7 +20,9 @@ import {
 import type {
   RegisteredProperty,
   ResolveImport,
+  SourceLocation,
   ValidationDiagnostic,
+  ValidationDiagnosticInput,
   ValidationInput,
   ValidationResult,
 } from "./types.js";
@@ -21,7 +30,6 @@ import type {
   CssNodeWithLoc,
   CssValueAst,
   Matcher,
-  ReplacementCheckContext,
   SubstitutionOption,
   VarFunctionNode,
   VarOccurrence,
@@ -35,13 +43,6 @@ export interface ValidateFilesOptions {
   resolveImport?: ResolveImport;
 }
 
-type FallbackEntry = {
-  fallbackSource: string;
-  index: number;
-  registration: RegisteredProperty;
-  varNode: VarFunctionNode;
-};
-
 interface CssDeclarationNode {
   loc?: unknown;
   property: string;
@@ -53,6 +54,20 @@ interface CssWalkNode {
 }
 
 type CssLocation = NonNullable<ValidationDiagnostic["loc"]>;
+
+function validationResult(
+  diagnostics: ValidationDiagnosticInput[],
+  registry: RegisteredProperty[],
+  skippedDeclarations: number,
+  validatedDeclarations: number,
+): ValidationResult {
+  return {
+    diagnostics: diagnostics.map(withDiagnosticContract),
+    registry,
+    skippedDeclarations,
+    validatedDeclarations,
+  };
+}
 
 const PROPERTY_RULE_DESCRIPTOR_NAMES = Object.freeze(["syntax", "inherits", "initial-value"]);
 
@@ -118,7 +133,7 @@ function parseStylesheet(
 
   try {
     result = {
-      ast: cssTree.parse(input.css, {
+      ast: parseCssStylesheet(input.css, {
         filename: input.path,
         positions: true,
       }) as ParsedStylesheet,
@@ -140,7 +155,7 @@ function collectKnownCustomProperties(
   knownCustomPropertyInputs: ValidationInput[],
   registryInputs: ValidationInput[],
   registry: Map<string, RegisteredProperty>,
-  diagnostics: ValidationDiagnostic[],
+  diagnostics: ValidationDiagnosticInput[],
   parsedAstByPath: Map<string, ParsedStylesheetResult>,
   resolveImport?: ResolveImport,
 ): Map<string, Set<string>> {
@@ -195,7 +210,7 @@ function collectKnownCustomProperties(
       return known;
     }
 
-    cssTree.walk(parsed.ast, {
+    walkCss(parsed.ast, {
       visit: "Declaration",
       enter(node: CssWalkNode) {
         const declaration = node as CssDeclarationNode;
@@ -249,24 +264,48 @@ function collectKnownCustomProperties(
   return byPath;
 }
 
-function collectVarFunctions(value: CssValueAst): VarFunctionNode[] {
+function collectVarFunctions(value: CssValueAst, outermostOnly = false): VarFunctionNode[] {
   const functions: VarFunctionNode[] = [];
+  let varDepth = 0;
 
-  cssTree.walk(value, {
+  walkCss(value, {
     visit: "Function",
     enter(node: VarFunctionNode) {
-      if (node.name === "var") {
-        functions.push(node);
+      if (node.name?.toLowerCase() === "var") {
+        if (!outermostOnly || varDepth === 0) {
+          functions.push(node);
+        }
+        varDepth += 1;
+      }
+    },
+    leave(node: VarFunctionNode) {
+      if (node.name?.toLowerCase() === "var") {
+        varDepth -= 1;
       }
     },
   });
+
+  // css-tree deliberately preserves var() fallback tokens as Raw nodes. Parse
+  // those token streams recursively so the specification's nested-fallback
+  // requirements are not hidden by the parser representation.
+  if (!outermostOnly) {
+    const parsedFunctions = functions.slice();
+    for (const varNode of parsedFunctions) {
+      const fallbackSource = getVarFallbackSource(varNode);
+      const fallbackValue =
+        fallbackSource === null
+          ? null
+          : parseValue(fallbackSource, getVarFallbackLocation(varNode));
+      if (fallbackValue) functions.push(...collectVarFunctions(fallbackValue));
+    }
+  }
 
   return functions;
 }
 
 function getDeclarationValueForValidation(declaration: CssDeclarationNode): CssValueAst | null {
   if (isCustomPropertyName(declaration.property)) {
-    return parseValue(cssTree.generate(declaration.value));
+    return parseValue(generateCss(declaration.value), toLocation(declaration.value.loc));
   }
 
   return declaration.value;
@@ -297,16 +336,66 @@ function getVarFallbackSource(node: VarFunctionNode): string | null {
 
   const fallbackSource = children
     .slice(fallbackStartIndex + 1)
-    .map((child) => cssTree.generate(child))
+    .map((child) => generateCss(child))
     .join("")
     .trim();
 
   return fallbackSource.length > 0 ? fallbackSource : null;
 }
 
-function parseValue(value: string): CssValueAst | null {
+function getVarFallbackLocation(node: VarFunctionNode): SourceLocation | null {
+  const children = getVarChildren(node);
+  const fallbackStartIndex = children.findIndex(
+    (child) => child.type === "Operator" && child.value === ",",
+  );
+  const fallbackChildren = fallbackStartIndex === -1 ? [] : children.slice(fallbackStartIndex + 1);
+  const first = fallbackChildren[0]?.loc;
+  const last = fallbackChildren.at(-1)?.loc;
+
+  if (!first || !last) return null;
+  const rawSource = fallbackChildren.map((child) => generateCss(child)).join("");
+  const leadingWhitespace = rawSource.slice(0, rawSource.length - rawSource.trimStart().length);
+  const start = { ...first.start };
+  for (const character of leadingWhitespace) {
+    start.offset += character.length;
+    if (character === "\n") {
+      start.line += 1;
+      start.column = 1;
+    } else {
+      start.column += character.length;
+    }
+  }
+  return {
+    ...(first.source === undefined ? {} : { source: first.source }),
+    start,
+    end: { ...last.end },
+  };
+}
+
+function translateParsedLocations(value: CssValueAst, baseLocation: SourceLocation): void {
+  walkCss(value, {
+    enter(rawNode: unknown) {
+      const node = rawNode as { loc?: SourceLocation | null };
+      if (!node.loc) return;
+
+      for (const position of [node.loc.start, node.loc.end]) {
+        position.offset += baseLocation.start.offset;
+        if (position.line === 1) position.column += baseLocation.start.column - 1;
+        position.line += baseLocation.start.line - 1;
+      }
+      node.loc.source = baseLocation.source;
+    },
+  });
+}
+
+function parseValue(value: string, baseLocation: SourceLocation | null = null): CssValueAst | null {
   try {
-    return cssTree.parse(value, { context: "value" }) as CssValueAst;
+    const parsed = parseCssValue<CssValueAst>(value, {
+      ...(baseLocation?.source === undefined ? {} : { filename: baseLocation.source }),
+      positions: true,
+    });
+    if (baseLocation) translateParsedLocations(parsed, baseLocation);
+    return parsed;
   } catch {
     return null;
   }
@@ -317,8 +406,132 @@ function matchRegisteredSyntax(registration: RegisteredProperty, value: CssValue
     return true;
   }
 
-  const match = cssTree.lexer.match(registration.syntax, value);
-  return Boolean(match?.matched);
+  return matchesSyntax(registration.syntax, value);
+}
+
+function exactVarFunction(value: CssValueAst): VarFunctionNode | null {
+  const children = getVarChildren(value as VarFunctionNode);
+  const first = children[0] as VarFunctionNode | undefined;
+
+  return children.length === 1 && first?.type === "Function" && first.name?.toLowerCase() === "var"
+    ? first
+    : null;
+}
+
+/**
+ * Proves only the narrow nested case whose substitution type is invariant:
+ * an acyclic exact var() alias between identical non-universal registrations.
+ */
+function isProvenNestedFallback(
+  outerRegistration: RegisteredProperty,
+  fallbackValue: CssValueAst,
+  registry: ReadonlyMap<string, RegisteredProperty>,
+  activeNames = new Set<string>([outerRegistration.name]),
+): boolean {
+  const exactVar = exactVarFunction(fallbackValue);
+  const targetName = exactVar ? getVarPropertyName(exactVar) : undefined;
+  const targetRegistration = targetName ? registry.get(targetName) : undefined;
+
+  if (
+    !exactVar ||
+    !targetName ||
+    !targetRegistration ||
+    targetRegistration.syntax === "*" ||
+    outerRegistration.syntax === "*" ||
+    targetRegistration.syntax !== outerRegistration.syntax ||
+    activeNames.has(targetName)
+  ) {
+    return false;
+  }
+
+  const targetFallbackSource = getVarFallbackSource(exactVar);
+  if (targetFallbackSource === null) {
+    return true;
+  }
+
+  const targetFallback = parseValue(targetFallbackSource, getVarFallbackLocation(exactVar));
+  if (!targetFallback) {
+    return false;
+  }
+
+  if (collectVarFunctions(targetFallback).length === 0) {
+    return matchRegisteredSyntax(targetRegistration, targetFallback);
+  }
+
+  return isProvenNestedFallback(
+    targetRegistration,
+    targetFallback,
+    registry,
+    new Set([...activeNames, targetName]),
+  );
+}
+
+interface RegisteredVarEntry {
+  propertyName: string;
+  registration: RegisteredProperty;
+  varNode: VarFunctionNode;
+}
+
+function validateRegisteredFallbacks(
+  filePath: string,
+  declaration: CssDeclarationNode,
+  entries: readonly RegisteredVarEntry[],
+  registry: ReadonlyMap<string, RegisteredProperty>,
+): { diagnostics: ValidationDiagnosticInput[]; nestedUnproven: boolean } {
+  const diagnostics: ValidationDiagnosticInput[] = [];
+  let nestedUnproven = false;
+
+  for (const entry of entries) {
+    const fallbackSource = getVarFallbackSource(entry.varNode);
+    if (fallbackSource === null || entry.registration.syntax === "*") {
+      continue;
+    }
+
+    const fallbackValue = parseValue(fallbackSource, getVarFallbackLocation(entry.varNode));
+    if (!fallbackValue) {
+      nestedUnproven = true;
+      continue;
+    }
+
+    if (collectVarFunctions(fallbackValue).length > 0) {
+      if (!isProvenNestedFallback(entry.registration, fallbackValue, registry)) {
+        nestedUnproven = true;
+      }
+      continue;
+    }
+
+    if (!matchRegisteredSyntax(entry.registration, fallbackValue)) {
+      diagnostics.push(
+        toFallbackDiagnostic(filePath, declaration, entry.registration, entry.varNode),
+      );
+    }
+  }
+
+  return { diagnostics, nestedUnproven };
+}
+
+function registrationRelatedLocations(
+  registrations: readonly RegisteredProperty[],
+): NonNullable<ValidationDiagnosticInput["relatedLocations"]> {
+  const seen = new Set<string>();
+  const relatedLocations: NonNullable<ValidationDiagnosticInput["relatedLocations"]> = [];
+
+  for (const registration of registrations) {
+    const location = toDiagnosticLocation(registration.loc);
+    const key = `${registration.name}\u0000${registration.filePath}\u0000${location?.start.offset ?? -1}`;
+
+    if (!location || seen.has(key)) {
+      continue;
+    }
+
+    seen.add(key);
+    relatedLocations.push({
+      location,
+      message: `Registration for ${registration.name}.`,
+    });
+  }
+
+  return relatedLocations;
 }
 
 function toVarDiagnostic(
@@ -326,12 +539,13 @@ function toVarDiagnostic(
   declaration: CssDeclarationNode,
   registrations: RegisteredProperty[],
   varNodes: VarFunctionNode[],
-): ValidationDiagnostic {
+): ValidationDiagnosticInput {
   if (registrations.length === 1) {
     const [registration] = registrations;
     const [varNode] = varNodes;
 
     return {
+      basis: "representative-var-substitution",
       code: "incompatible-var-usage",
       phase: "usage",
       reason: "incompatible-var-substitution",
@@ -341,8 +555,9 @@ function toVarDiagnostic(
       message: `Registered property ${registration.name} uses syntax "${registration.syntax}" which is incompatible with ${declaration.property} at this var() usage.`,
       propertyName: registration.name,
       registeredSyntax: registration.syntax,
+      relatedLocations: registrationRelatedLocations([registration]),
       expectedProperty: declaration.property,
-      snippet: cssTree.generate(declaration),
+      snippet: generateCss(declaration),
     };
   }
 
@@ -351,6 +566,7 @@ function toVarDiagnostic(
   );
 
   return {
+    basis: "representative-var-substitution",
     code: "incompatible-var-usage",
     phase: "usage",
     reason: "incompatible-var-substitution",
@@ -359,7 +575,8 @@ function toVarDiagnostic(
     loc: toLocation(declaration.value.loc),
     message: `Registered properties ${registeredNames} are jointly incompatible with ${declaration.property} at this declaration value.`,
     expectedProperty: declaration.property,
-    snippet: cssTree.generate(declaration),
+    relatedLocations: registrationRelatedLocations(registrations),
+    snippet: generateCss(declaration),
   };
 }
 
@@ -367,7 +584,7 @@ function toPossibleVarDiagnostic(
   filePath: string,
   declaration: CssDeclarationNode,
   registrations: RegisteredProperty[],
-): ValidationDiagnostic {
+): ValidationDiagnosticInput {
   const uniqueNames = [...new Set(registrations.map((registration) => registration.name))];
   const message =
     uniqueNames.length === 1
@@ -375,6 +592,7 @@ function toPossibleVarDiagnostic(
       : `Registered properties ${uniqueNames.join(", ")} may be incompatible with ${declaration.property} at this declaration value.`;
 
   return {
+    basis: "representative-var-substitution",
     code: "incompatible-var-usage",
     phase: "usage",
     reason: "incompatible-var-substitution",
@@ -383,7 +601,8 @@ function toPossibleVarDiagnostic(
     loc: toLocation(declaration.value.loc),
     message,
     expectedProperty: declaration.property,
-    snippet: cssTree.generate(declaration),
+    relatedLocations: registrationRelatedLocations(registrations),
+    snippet: generateCss(declaration),
   };
 }
 
@@ -391,8 +610,10 @@ function toAssignmentDiagnostic(
   filePath: string,
   declaration: CssDeclarationNode,
   registration: RegisteredProperty,
-): ValidationDiagnostic {
+  basis: ValidationDiagnosticInput["basis"] = "direct",
+): ValidationDiagnosticInput {
   return {
+    basis,
     code: "incompatible-custom-property-assignment",
     phase: "assignment",
     reason: "incompatible-assignment-value",
@@ -400,10 +621,11 @@ function toAssignmentDiagnostic(
     filePath,
     loc: toLocation(declaration.value.loc ?? declaration.loc),
     message: `Assigned value for registered property ${registration.name} does not match its syntax "${registration.syntax}".`,
-    actualValue: cssTree.generate(declaration.value).trim(),
+    actualValue: generateCss(declaration.value).trim(),
     propertyName: registration.name,
     registeredSyntax: registration.syntax,
-    snippet: cssTree.generate(declaration),
+    relatedLocations: registrationRelatedLocations([registration]),
+    snippet: generateCss(declaration),
   };
 }
 
@@ -412,19 +634,22 @@ function toFallbackDiagnostic(
   declaration: CssDeclarationNode,
   registration: RegisteredProperty,
   varNode: VarFunctionNode,
-): ValidationDiagnostic {
+): ValidationDiagnosticInput {
   return {
+    basis: "direct",
     code: "incompatible-var-usage",
     phase: "usage",
     reason: "incompatible-var-fallback",
     severity: "error",
     filePath,
     loc: toLocation(varNode.loc),
-    message: `Fallback value in var() for registered property ${registration.name} is incompatible with ${declaration.property} at this var() usage.`,
+    message: `Fallback value in var() for registered property ${registration.name} does not match its syntax "${registration.syntax}".`,
+    actualValue: getVarFallbackSource(varNode) ?? undefined,
     propertyName: registration.name,
     registeredSyntax: registration.syntax,
     expectedProperty: declaration.property,
-    snippet: cssTree.generate(declaration),
+    relatedLocations: registrationRelatedLocations([registration]),
+    snippet: generateCss(declaration),
   };
 }
 
@@ -434,7 +659,7 @@ function toUnresolvedVarDiagnostic(
   propertyName: string,
   varNode: VarFunctionNode,
   knownSourceDescription: string,
-): ValidationDiagnostic {
+): ValidationDiagnosticInput {
   return {
     code: "incompatible-var-usage",
     phase: "usage",
@@ -445,7 +670,7 @@ function toUnresolvedVarDiagnostic(
     message: `Custom property ${propertyName} is not defined in the ${knownSourceDescription} for this file, and no fallback was provided. This is a static check of the CSS files and imports available to the validator, not a full browser cascade evaluation.`,
     propertyName,
     expectedProperty: declaration.property,
-    snippet: cssTree.generate(declaration),
+    snippet: generateCss(declaration),
   };
 }
 
@@ -461,7 +686,7 @@ function toPreciseMultiVarDiagnostic(
   occurrences: VarOccurrence[],
   substitutionOptions: SubstitutionOption[],
   matcher: Matcher,
-): ValidationDiagnostic {
+): ValidationDiagnosticInput {
   // For repeated or multi-var() values, we first ask a narrower question than
   // "does the whole declaration fail?": if we drop exactly one occurrence and
   // keep substituting representative samples for the rest, can the declaration
@@ -512,8 +737,8 @@ function validateDeclaration(
     checkUnresolvedCustomProperties: boolean;
     knownSourceDescription: string;
   },
-): { diagnostics: ValidationDiagnostic[]; skipped: number; validated: number } {
-  const diagnostics: ValidationDiagnostic[] = [];
+): { diagnostics: ValidationDiagnosticInput[]; skipped: number; validated: number } {
+  const diagnostics: ValidationDiagnosticInput[] = [];
 
   if (isPropertyRuleDescriptorName(declaration.property)) {
     return { diagnostics, skipped: 0, validated: 0 };
@@ -527,35 +752,40 @@ function validateDeclaration(
       : { diagnostics, skipped: 0, validated: 0 };
   }
 
-  const varFunctions = collectVarFunctions(valueToValidate);
+  const allVarFunctions = collectVarFunctions(valueToValidate);
+  const outermostVarFunctions = collectVarFunctions(valueToValidate, true);
+  const assignmentRegistration = isCustomPropertyName(declaration.property)
+    ? registry.get(declaration.property)
+    : undefined;
 
   if (isCustomPropertyName(declaration.property)) {
-    const registration = registry.get(declaration.property);
-
-    if (!registration) {
-      return { diagnostics, skipped: 0, validated: 0 };
-    }
-
-    const authoredValue = cssTree.generate(declaration.value).trim();
+    const authoredValue = generateCss(declaration.value).trim();
 
     if (authoredValue.length === 0) {
       return { diagnostics, skipped: 1, validated: 0 };
     }
 
-    if (varFunctions.length === 0) {
-      if (!matchRegisteredSyntax(registration, valueToValidate)) {
-        diagnostics.push(toAssignmentDiagnostic(filePath, declaration, registration));
+    if (allVarFunctions.length === 0) {
+      if (
+        assignmentRegistration &&
+        !matchRegisteredSyntax(assignmentRegistration, valueToValidate)
+      ) {
+        diagnostics.push(toAssignmentDiagnostic(filePath, declaration, assignmentRegistration));
       }
 
-      return { diagnostics, skipped: 0, validated: 1 };
+      return {
+        diagnostics,
+        skipped: 0,
+        validated: assignmentRegistration ? 1 : 0,
+      };
     }
   }
 
-  if (varFunctions.length === 0) {
+  if (allVarFunctions.length === 0) {
     return { diagnostics, skipped: 0, validated: 0 };
   }
 
-  const varMetadata = varFunctions.map((varNode) => {
+  const allVarMetadata = allVarFunctions.map((varNode) => {
     const propertyName = getVarPropertyName(varNode);
 
     return {
@@ -566,11 +796,11 @@ function validateDeclaration(
   });
 
   // If any var() reference cannot be resolved to a custom property name, we cannot validate safely.
-  if (varMetadata.some((entry) => !entry.propertyName)) {
+  if (allVarMetadata.some((entry) => !entry.propertyName)) {
     return { diagnostics, skipped: 1, validated: 0 };
   }
 
-  for (const entry of varMetadata) {
+  for (const entry of allVarMetadata) {
     if (
       options.checkUnresolvedCustomProperties &&
       entry.propertyName &&
@@ -589,21 +819,35 @@ function validateDeclaration(
     }
   }
 
-  const registeredEntries = varMetadata.filter(
-    (
-      entry,
-    ): entry is {
-      propertyName: string;
-      registration: RegisteredProperty;
-      varNode: VarFunctionNode;
-    } => Boolean(entry.registration),
+  const allRegisteredEntries = allVarMetadata.filter((entry): entry is RegisteredVarEntry =>
+    Boolean(entry.registration),
+  );
+  const fallbackValidation = validateRegisteredFallbacks(
+    filePath,
+    declaration,
+    allRegisteredEntries,
+    registry,
+  );
+  diagnostics.push(...fallbackValidation.diagnostics);
+
+  const outermostMetadata = outermostVarFunctions.map((varNode) => {
+    const propertyName = getVarPropertyName(varNode);
+
+    return {
+      propertyName,
+      registration: propertyName ? (registry.get(propertyName) ?? null) : null,
+      varNode,
+    };
+  });
+  const registeredEntries = outermostMetadata.filter((entry): entry is RegisteredVarEntry =>
+    Boolean(entry.registration),
   );
 
   if (isCustomPropertyName(declaration.property)) {
-    if (registeredEntries.length !== varMetadata.length) {
+    if (!assignmentRegistration || registeredEntries.length !== outermostMetadata.length) {
       return {
         diagnostics,
-        skipped: diagnostics.length > 0 ? 0 : 1,
+        skipped: fallbackValidation.nestedUnproven || diagnostics.length === 0 ? 1 : 0,
         validated: 0,
       };
     }
@@ -615,10 +859,10 @@ function validateDeclaration(
   }
 
   // Mixed registered and unregistered var() usages still leave unresolved values in the declaration.
-  if (registeredEntries.length !== varMetadata.length) {
+  if (registeredEntries.length !== outermostMetadata.length) {
     return {
       diagnostics,
-      skipped: diagnostics.length > 0 ? 0 : 1,
+      skipped: fallbackValidation.nestedUnproven || diagnostics.length === 0 ? 1 : 0,
       validated: 0,
     };
   }
@@ -631,16 +875,7 @@ function validateDeclaration(
     return { diagnostics, skipped: 1, validated: 0 };
   }
 
-  // Fallback handling for assignment-site var() usage is intentionally deferred.
-  // For now we only validate fallback branches against ordinary consuming properties.
-  if (
-    isCustomPropertyName(declaration.property) &&
-    registeredEntries.some((entry) => getVarFallbackSource(entry.varNode) !== null)
-  ) {
-    return { diagnostics, skipped: 1, validated: 0 };
-  }
-
-  const valueSource = cssTree.generate(valueToValidate);
+  const valueSource = generateCss(valueToValidate);
   const occurrences = collectVarOccurrences(
     valueSource,
     registeredEntries.map((entry) => entry.varNode),
@@ -656,7 +891,7 @@ function validateDeclaration(
     let samples: string[];
 
     try {
-      samples = buildRepresentativeSamples(entry.registration.syntax, cssTree.definitionSyntax);
+      samples = buildRepresentativeSamples(entry.registration.syntax, parseDefinitionSyntax);
     } catch {
       return { diagnostics, skipped: 1, validated: 0 };
     }
@@ -680,38 +915,8 @@ function validateDeclaration(
           candidateValue,
         )
     : (candidateValue: CssValueAst) => {
-        const match = cssTree.lexer.matchProperty(declaration.property, candidateValue);
-        return Boolean(match?.matched);
+        return matchesProperty(declaration.property, candidateValue);
       };
-
-  const fallbackEntries: FallbackEntry[] = [];
-
-  for (const [index, entry] of registeredEntries.entries()) {
-    const fallbackSource = getVarFallbackSource(entry.varNode);
-
-    if (!fallbackSource) {
-      continue;
-    }
-
-    const fallbackValue = parseValue(fallbackSource);
-
-    if (!fallbackValue) {
-      return { diagnostics, skipped: 1, validated: 0 };
-    }
-
-    // Nested var() fallback chains are valid CSS, but we skip them for now until
-    // the validator can model fallback reachability without overclaiming certainty.
-    if (collectVarFunctions(fallbackValue).length > 0) {
-      return { diagnostics, skipped: 1, validated: 0 };
-    }
-
-    fallbackEntries.push({
-      fallbackSource,
-      index,
-      registration: entry.registration,
-      varNode: entry.varNode,
-    });
-  }
 
   // The declaration passes if all registered var() usages can be substituted
   // with one compatible combination of representative sample values.
@@ -721,32 +926,6 @@ function validateDeclaration(
     substitutionOptions,
     matcher,
   );
-  const fallbackReplacementContext: ReplacementCheckContext = {
-    matcher,
-    occurrences,
-    substitutionOptions,
-    valueSource,
-  };
-
-  for (const fallbackEntry of fallbackEntries) {
-    const isFallbackCompatible = canDeclarationMatchWithOccurrenceReplacement(
-      fallbackReplacementContext,
-      fallbackEntry.index,
-      fallbackEntry.fallbackSource,
-    );
-
-    if (!isFallbackCompatible) {
-      diagnostics.push(
-        toFallbackDiagnostic(
-          filePath,
-          declaration,
-          fallbackEntry.registration,
-          fallbackEntry.varNode,
-        ),
-      );
-    }
-  }
-
   if (!isCompatible) {
     if (isCustomPropertyName(declaration.property)) {
       diagnostics.push(
@@ -754,6 +933,7 @@ function validateDeclaration(
           filePath,
           declaration,
           registry.get(declaration.property) as RegisteredProperty,
+          "representative-var-substitution",
         ),
       );
     } else {
@@ -775,7 +955,11 @@ function validateDeclaration(
     }
   }
 
-  return { diagnostics, skipped: 0, validated: 1 };
+  return {
+    diagnostics,
+    skipped: fallbackValidation.nestedUnproven ? 1 : 0,
+    validated: fallbackValidation.nestedUnproven ? 0 : 1,
+  };
 }
 
 export function validateFiles(
@@ -811,12 +995,12 @@ export function validateFiles(
   let validatedDeclarations = 0;
 
   if (options.failFast && diagnostics.length > 0) {
-    return {
+    return validationResult(
       diagnostics,
-      registry: registryResult.registry,
+      registryResult.registry,
       skippedDeclarations,
       validatedDeclarations,
-    };
+    );
   }
 
   const parsedAstByPath = new Map<string, ParsedStylesheetResult>();
@@ -833,12 +1017,12 @@ export function validateFiles(
     : new Map<string, Set<string>>();
 
   if (options.failFast && diagnostics.length > 0) {
-    return {
+    return validationResult(
       diagnostics,
-      registry: registryResult.registry,
+      registryResult.registry,
       skippedDeclarations,
       validatedDeclarations,
-    };
+    );
   }
 
   for (const input of inputs) {
@@ -861,7 +1045,7 @@ export function validateFiles(
       continue;
     }
 
-    cssTree.walk(parsed.ast, {
+    walkCss(parsed.ast, {
       visit: "Declaration",
       enter(node: CssWalkNode) {
         if (options.failFast && diagnostics.length > 0) {
@@ -891,10 +1075,10 @@ export function validateFiles(
     }
   }
 
-  return {
+  return validationResult(
     diagnostics,
-    registry: registryResult.registry,
+    registryResult.registry,
     skippedDeclarations,
     validatedDeclarations,
-  };
+  );
 }
