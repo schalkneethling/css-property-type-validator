@@ -15,8 +15,8 @@ importers:
         specifier: ^26.1.2
         version: 26.1.2
       '@varlock/bumpy':
-        specifier: 1.14.0
-        version: 1.14.0
+        specifier: 1.18.1
+        version: 1.18.1
       cheerio:
         specifier: ^1.2.0
         version: 1.2.0
@@ -676,8 +676,8 @@ packages:
   '@types/node@26.1.2':
     resolution: {integrity: sha512-Vu4a5UFA9rIIFJ7rB/Vaafh9lrCQszopTCx6KjFboXTGQbPNasehVR5TEiithSDGyd1DEiUByggTZsg8jukeIg==}
 
-  '@varlock/bumpy@1.14.0':
-    resolution: {integrity: sha512-nyKIfapUGURBKTmDPSvwZtuC8NRCRvN157TxDqxz+GBqTlTzV93txHGcrI/4aepTpIqoqZew3QPzIZaEOaMKJA==}
+  '@varlock/bumpy@1.18.1':
+    resolution: {integrity: sha512-u6PHUr+laAgWWm/c3wdExHBCcvYkkTb+KsiRNR9GCFIbCDrCN9CyOZO/crtRZ5u4KWMKtUTeA7U/s+AA0k7Dcg==}
     hasBin: true
 
   '@vitest/expect@4.1.10':
@@ -2137,7 +2137,7 @@ snapshots:
     dependencies:
       undici-types: 8.3.0
 
-  '@varlock/bumpy@1.14.0': {}
+  '@varlock/bumpy@1.18.1': {}
 
   '@vitest/expect@4.1.10':
     dependencies:
