@@ -15,8 +15,8 @@ importers:
         specifier: ^26.1.2
         version: 26.1.2
       '@varlock/bumpy':
-        specifier: 1.14.0
-        version: 1.14.0
+        specifier: 1.18.1
+        version: 1.18.1
       cheerio:
         specifier: ^1.2.0
         version: 1.2.0
@@ -111,8 +111,8 @@ importers:
         specifier: 6.7.1
         version: 6.7.1
       '@codemirror/view':
-        specifier: 6.43.7
-        version: 6.43.7
+        specifier: 6.43.8
+        version: 6.43.8
       '@schalkneethling/css-property-type-validator-core':
         specifier: 0.12.0
         version: 0.12.0
@@ -188,11 +188,11 @@ packages:
   '@codemirror/state@6.7.1':
     resolution: {integrity: sha512-9QzNDgE4EYDnAHfrTlR2lwiPciiOymLtwKK+8yHQzCc7GXhAP9xdEbEJFy2IWB1j9UGUl9BsgMmTo/ImA02T7A==}
 
-  '@codemirror/view@6.43.1':
-    resolution: {integrity: sha512-+BIjw/AG3tDQ4pJgTLPYdAW25eDE66YsvM4LKyVPgGzVgZ4a9Wj1SRX8kPVKgBDdPt8oHtZ15F0qx7p0oOHdHw==}
-
   '@codemirror/view@6.43.7':
     resolution: {integrity: sha512-FZsExxkoxnAN+d9TgqXLg5g4A1oQwzX9WlkOT5i2PKkcW7xx3Bmu0vs90g6fo9Mpdsb/l96dnAraQ8932aO4/g==}
+
+  '@codemirror/view@6.43.8':
+    resolution: {integrity: sha512-qtItTDssZ/5GFfi94hrILu9j/VUeFPDPkhovEfmWFj2ipTxnzPB8DdHgfbb8HYTzLTYhrndKmyQxXUz/PDLenw==}
 
   '@csstools/css-calc@3.2.1':
     resolution: {integrity: sha512-DtdHlgXh5ZkA43cwBcAm+huzgJiwx3ZTWVjBs94kwz2xKqSimDA3lBgCjphYgwgVUMWatSM0pDd8TILB1yrVVg==}
@@ -704,8 +704,8 @@ packages:
   '@types/node@26.1.2':
     resolution: {integrity: sha512-Vu4a5UFA9rIIFJ7rB/Vaafh9lrCQszopTCx6KjFboXTGQbPNasehVR5TEiithSDGyd1DEiUByggTZsg8jukeIg==}
 
-  '@varlock/bumpy@1.14.0':
-    resolution: {integrity: sha512-nyKIfapUGURBKTmDPSvwZtuC8NRCRvN157TxDqxz+GBqTlTzV93txHGcrI/4aepTpIqoqZew3QPzIZaEOaMKJA==}
+  '@varlock/bumpy@1.18.1':
+    resolution: {integrity: sha512-u6PHUr+laAgWWm/c3wdExHBCcvYkkTb+KsiRNR9GCFIbCDrCN9CyOZO/crtRZ5u4KWMKtUTeA7U/s+AA0k7Dcg==}
     hasBin: true
 
   '@vitest/browser-preview@4.1.10':
@@ -1873,14 +1873,14 @@ snapshots:
     dependencies:
       '@codemirror/language': 6.12.3
       '@codemirror/state': 6.6.0
-      '@codemirror/view': 6.43.1
+      '@codemirror/view': 6.43.7
       '@lezer/common': 1.5.2
 
   '@codemirror/commands@6.10.3':
     dependencies:
       '@codemirror/language': 6.12.3
       '@codemirror/state': 6.6.0
-      '@codemirror/view': 6.43.1
+      '@codemirror/view': 6.43.7
       '@lezer/common': 1.5.2
 
   '@codemirror/lang-css@6.3.1':
@@ -1899,7 +1899,7 @@ snapshots:
   '@codemirror/language@6.12.3':
     dependencies:
       '@codemirror/state': 6.6.0
-      '@codemirror/view': 6.43.1
+      '@codemirror/view': 6.43.7
       '@lezer/common': 1.5.2
       '@lezer/highlight': 1.2.3
       '@lezer/lr': 1.4.10
@@ -1908,13 +1908,13 @@ snapshots:
   '@codemirror/lint@6.9.5':
     dependencies:
       '@codemirror/state': 6.6.0
-      '@codemirror/view': 6.43.1
+      '@codemirror/view': 6.43.7
       crelt: 1.0.6
 
   '@codemirror/search@6.7.0':
     dependencies:
       '@codemirror/state': 6.6.0
-      '@codemirror/view': 6.43.1
+      '@codemirror/view': 6.43.7
       crelt: 1.0.6
 
   '@codemirror/state@6.6.0':
@@ -1925,14 +1925,14 @@ snapshots:
     dependencies:
       '@marijn/find-cluster-break': 1.0.2
 
-  '@codemirror/view@6.43.1':
+  '@codemirror/view@6.43.7':
     dependencies:
-      '@codemirror/state': 6.6.0
+      '@codemirror/state': 6.7.1
       crelt: 1.0.6
       style-mod: 4.1.3
       w3c-keyname: 2.2.8
 
-  '@codemirror/view@6.43.7':
+  '@codemirror/view@6.43.8':
     dependencies:
       '@codemirror/state': 6.7.1
       crelt: 1.0.6
@@ -2241,7 +2241,7 @@ snapshots:
     dependencies:
       undici-types: 8.3.0
 
-  '@varlock/bumpy@1.14.0': {}
+  '@varlock/bumpy@1.18.1': {}
 
   '@vitest/browser-preview@4.1.10(vite@8.2.0(@types/node@26.1.2))(vitest@4.1.10)':
     dependencies:
@@ -2502,7 +2502,7 @@ snapshots:
       '@codemirror/lint': 6.9.5
       '@codemirror/search': 6.7.0
       '@codemirror/state': 6.6.0
-      '@codemirror/view': 6.43.1
+      '@codemirror/view': 6.43.7
 
   color-convert@2.0.1:
     dependencies:

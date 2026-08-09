@@ -72,7 +72,7 @@
   "devDependencies": {
     "@playwright/test": "1.62.1",
     "@types/node": "^26.1.2",
-    "@varlock/bumpy": "1.14.0",
+    "@varlock/bumpy": "1.18.1",
     "cheerio": "^1.2.0",
     "lightningcss": "1.33.0",
     "postcss": "8.5.26",
