@@ -22,6 +22,10 @@ Before changing any `@property` semantic behavior, read the exact normative sect
 
 Stat and reject oversized/non-regular/out-of-root inputs before reading. Retain a post-read byte check. Use the shared project-context reader for every direct or imported CSS file.
 
+## GitHub Actions security
+
+Every workflow must declare an explicit top-level `permissions` map so `GITHUB_TOKEN` access never falls back to GitHub defaults. Ordinary CI should grant only `contents: read`. Grant additional permissions only to the specific job that requires them, keep each permission at the least-privileged level, and document why it is necessary.
+
 ## Verification
 
 Run targeted tests after RED and GREEN, then formatting, linting, type checking, all tests, builds, supported-syntax checks, package boundary checks, and relevant browser/report tests. Review snapshot and generated-contract changes semantically.
