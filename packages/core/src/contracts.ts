@@ -9,7 +9,7 @@ import type {
 
 export const ANALYSIS_RESULT_SCHEMA_VERSION = "1.0.0" as const;
 export const REGISTRATION_PLAN_SCHEMA_VERSION = "1.0.0" as const;
-export const CORE_TOOL_VERSION = "0.12.0" as const;
+export const CORE_TOOL_VERSION = "0.13.0" as const;
 export const CORE_TOOL_NAME = "@schalkneethling/css-property-type-validator-core" as const;
 
 export interface ContractToolVersionV1 {

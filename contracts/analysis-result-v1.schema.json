@@ -95,7 +95,7 @@
       "required": ["name", "version"],
       "properties": {
         "name": { "const": "@schalkneethling/css-property-type-validator-core" },
-        "version": { "const": "0.12.0" }
+        "version": { "const": "0.13.0" }
       }
     },
     "input": {
