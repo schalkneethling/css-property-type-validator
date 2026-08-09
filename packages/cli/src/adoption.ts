@@ -790,9 +790,12 @@ export function parseAudit(value: unknown): CliAuditV1 {
   }
   value.diagnostics.forEach((diagnostic) => validateCliDiagnostic(diagnostic, code));
   if (value.gateEvaluation !== null) validateGateEvaluation(value.gateEvaluation, code);
-  validateSourceFingerprints(value.sourceFingerprints, code);
+  const sourceFingerprints = validateSourceFingerprints(value.sourceFingerprints, code);
   if (typeof value.sourceRedacted !== "boolean") {
     throw new CliWorkflowError(code, "Audit sourceRedacted must be a boolean.");
+  }
+  if (value.sourceRedacted && sourceFingerprints.length > 0) {
+    throw new CliWorkflowError(code, "A redacted audit must not contain source fingerprints.");
   }
   return value as unknown as CliAuditV1;
 }

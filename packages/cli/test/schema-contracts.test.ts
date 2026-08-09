@@ -55,4 +55,15 @@ describe("AC-CLI-CONTRACT-001 canonical Draft 2020-12 schemas", () => {
     expect(plan.required).toContain("candidates");
     expect(plan.properties).toHaveProperty("candidates");
   });
+
+  test("AC-CLI-PRIVACY-002 forbids fingerprints in a redacted audit", async () => {
+    const audit = JSON.parse(
+      await readFile(new URL("cli-audit-v1.schema.json", `file://${contractRoot}/`), "utf8"),
+    ) as { allOf?: unknown[] };
+
+    expect(audit.allOf).toHaveLength(1);
+    expect(audit.allOf?.[0]).toHaveProperty("if.properties.sourceRedacted.const", true);
+    expect(audit.allOf?.[0]).toHaveProperty("if.required", ["sourceRedacted"]);
+    expect(audit.allOf?.[0]).toHaveProperty("then.properties.sourceFingerprints.maxItems", 0);
+  });
 });

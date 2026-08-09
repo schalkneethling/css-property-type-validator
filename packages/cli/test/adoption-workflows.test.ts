@@ -576,3 +576,13 @@ describe("AC-CLI-PRIVACY-001 deep source redaction", () => {
     );
   });
 });
+
+describe("AC-CLI-PRIVACY-002 redacted audit consistency", () => {
+  test("rejects source fingerprints when an audit declares source redaction", () => {
+    const audit = createAudit([{ css: ":root { --space: 1px; }", path: "/project/a.css" }]);
+
+    expect(() => parseAudit({ ...audit, sourceRedacted: true })).toThrowError(
+      expect.objectContaining({ code: "CPTV_CLI_INVALID_AUDIT" }),
+    );
+  });
+});

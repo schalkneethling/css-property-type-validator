@@ -205,3 +205,30 @@ boundary, not a change to core semantics. Classification: gating security invari
 | Criterion/scenario | Fixtures/tests                                      | Implementation                              | Authority                     |
 | ------------------ | --------------------------------------------------- | ------------------------------------------- | ----------------------------- |
 | AC-CLI-PRIVACY-001 | `test/adoption-workflows.test.ts` hostile sentinels | `src/adoption.ts` deep redaction projection | Explicit CLI privacy decision |
+
+## AC-CLI-PRIVACY-002 — Redacted audit metadata is internally consistent
+
+```gherkin
+Scenario: A consumer parses contradictory redaction metadata
+  Given an audit declares `sourceRedacted: true`
+  And the audit contains one or more source fingerprints
+  When the runtime parser or published JSON Schema validates the audit
+  Then validation fails closed
+  And the runtime parser reports `CPTV_CLI_INVALID_AUDIT`
+```
+
+- **In scope:** Runtime and Draft 2020-12 schema validation reject source fingerprints when an
+  audit declares that source-derived data was redacted.
+- **Out of scope:** Inferring whether an unredacted audit omitted expected fingerprints, recovering
+  stripped source data, or changing what `createAudit` redacts.
+- **Preconditions:** The document otherwise satisfies the v1 CLI audit contract.
+- **Observable result:** Contradictory hand-authored or older audit files fail before they can be
+  consumed as valid redacted reports.
+- **Conservative uncertainty:** The validator does not guess which field is authoritative; it
+  rejects the inconsistent document and requires regeneration or human repair.
+- **Provenance:** Versioned CLI privacy and machine-contract policy; no CSS semantic claim is made.
+- **Classification:** Gating security and contract invariant.
+
+| Criterion/scenario | Fixtures/tests                                                     | Implementation                                          | Authority                              |
+| ------------------ | ------------------------------------------------------------------ | ------------------------------------------------------- | -------------------------------------- |
+| AC-CLI-PRIVACY-002 | `test/adoption-workflows.test.ts`; `test/schema-contracts.test.ts` | `src/adoption.ts`; `contracts/cli-audit-v1.schema.json` | Explicit CLI privacy/contract decision |

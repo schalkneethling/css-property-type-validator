@@ -37,6 +37,15 @@
     "sourceFingerprints": { "type": "array", "items": { "$ref": "#/$defs/sourceFingerprint" } },
     "sourceRedacted": { "type": "boolean" }
   },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "sourceRedacted": { "const": true } },
+        "required": ["sourceRedacted"]
+      },
+      "then": { "properties": { "sourceFingerprints": { "maxItems": 0 } } }
+    }
+  ],
   "$defs": {
     "baselineRecovery": {
       "type": "object",
