@@ -85,6 +85,21 @@ static: they do not claim browser behavior or replace specification-backed seman
 - **Provenance:** Product decision: acceptance-driven RED/GREEN workflow.
 - **Outcome:** Gating contributor workflow contract.
 
+## AC-GUARD-007 — Workflows declare least-privilege token access
+
+- **In scope:** Every GitHub Actions workflow declares an explicit top-level `permissions` map;
+  the ordinary CI workflow grants only `contents: read`.
+- **Out of scope:** Proving third-party action behavior or preventing a deliberately reviewed job
+  from requesting narrower or additional capabilities required by that job.
+- **Preconditions:** A workflow can receive the repository `GITHUB_TOKEN`.
+- **Observable result:** The workflow-permissions contract identifies the exact workflow with a
+  missing top-level declaration and rejects CI permissions broader than read-only contents.
+- **Uncertainty:** Unrecognized or dynamically constructed permission syntax fails closed for
+  human review; the check does not infer GitHub defaults.
+- **Provenance:** GitHub Actions security decision: explicitly minimize `GITHUB_TOKEN` access;
+  CodeQL alert from PR #172 review 4891253884.
+- **Outcome:** Gating repository security contract.
+
 ## Contract table
 
 | Contract            | Required observable behavior                                                                                |
@@ -95,14 +110,16 @@ static: they do not claim browser behavior or replace specification-backed seman
 | Diagnostic registry | Activated registry codes are unique, match `CPTV_*`, and cover all static uses                              |
 | Generated registry  | Activated manifest digests match bytes and lists all `@generated` source files                              |
 | Lifecycle           | RED requires one valid criterion and an explicit verification command                                       |
+| Workflow token      | Every workflow declares top-level permissions; CI grants only `contents: read`                              |
 
 ## Traceability
 
-| Criterion/scenario | Fixtures/tests                                                | Implementation                               | Documentation/specification |
-| ------------------ | ------------------------------------------------------------- | -------------------------------------------- | --------------------------- |
-| AC-GUARD-001       | `scripts/test/guardrails.test.mjs` orphan criterion fixture   | `scripts/check-acceptance-traceability.mjs`  | This document               |
-| AC-GUARD-002       | `scripts/test/guardrails.test.mjs` Node import fixture        | `scripts/check-core-browser-boundary.mjs`    | This document; `AGENTS.md`  |
-| AC-GUARD-003       | `scripts/test/guardrails.test.mjs` direct reader fixture      | `scripts/check-bounded-css-reads.mjs`        | This document; `AGENTS.md`  |
-| AC-GUARD-004       | `scripts/test/guardrails.test.mjs` duplicate registry fixture | `scripts/check-diagnostic-code-contract.mjs` | This document               |
-| AC-GUARD-005       | `scripts/test/guardrails.test.mjs` stale generated fixture    | `scripts/check-generated-contracts.mjs`      | This document               |
-| AC-GUARD-006       | `scripts/test/guardrails.test.mjs` lifecycle usage fixture    | `scripts/agent-verify-red.mjs`               | This document               |
+| Criterion/scenario | Fixtures/tests                                                | Implementation                               | Documentation/specification          |
+| ------------------ | ------------------------------------------------------------- | -------------------------------------------- | ------------------------------------ |
+| AC-GUARD-001       | `scripts/test/guardrails.test.mjs` orphan criterion fixture   | `scripts/check-acceptance-traceability.mjs`  | This document                        |
+| AC-GUARD-002       | `scripts/test/guardrails.test.mjs` Node import fixture        | `scripts/check-core-browser-boundary.mjs`    | This document; `AGENTS.md`           |
+| AC-GUARD-003       | `scripts/test/guardrails.test.mjs` direct reader fixture      | `scripts/check-bounded-css-reads.mjs`        | This document; `AGENTS.md`           |
+| AC-GUARD-004       | `scripts/test/guardrails.test.mjs` duplicate registry fixture | `scripts/check-diagnostic-code-contract.mjs` | This document                        |
+| AC-GUARD-005       | `scripts/test/guardrails.test.mjs` stale generated fixture    | `scripts/check-generated-contracts.mjs`      | This document                        |
+| AC-GUARD-006       | `scripts/test/guardrails.test.mjs` lifecycle usage fixture    | `scripts/agent-verify-red.mjs`               | This document                        |
+| AC-GUARD-007       | `scripts/test/workflow-permissions.test.mjs`                  | Workflow-level permission declarations       | This document; PR #172 CodeQL review |

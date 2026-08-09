@@ -22,7 +22,7 @@
     "test:browser": "pnpm run build && playwright test -c test/playwright.config.ts"
   },
   "devDependencies": {
-    "@playwright/test": "1.60.0",
-    "vitest": "^4.1.8"
+    "@playwright/test": "1.62.1",
+    "vitest": "^4.1.10"
   }
 }

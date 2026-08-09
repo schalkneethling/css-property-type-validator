@@ -70,9 +70,9 @@
     "example": "pnpm run build && node packages/cli/dist/cli.js fixtures/imports/main.css"
   },
   "devDependencies": {
-    "@playwright/test": "1.60.0",
-    "@types/node": "^25.9.2",
-    "@varlock/bumpy": "1.13.2",
+    "@playwright/test": "1.62.1",
+    "@types/node": "^26.1.2",
+    "@varlock/bumpy": "1.14.0",
     "cheerio": "^1.2.0",
     "lightningcss": "1.33.0",
     "postcss": "8.5.26",
