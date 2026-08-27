@@ -20,7 +20,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
-    "vite-plus": "^0.2.8",
+    "vite-plus": "^0.3.0",
     "vitest": "^4.1.10"
   },
   "engines": {
