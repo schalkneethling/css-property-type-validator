@@ -79,7 +79,7 @@
     "lightningcss": "1.33.0",
     "postcss": "8.5.26",
     "typescript": "^6.0.3",
-    "vite-plus": "^0.2.8"
+    "vite-plus": "^0.2.9"
   },
   "engines": {
     "node": ">=22.0.0"

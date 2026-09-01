@@ -44,7 +44,7 @@
   "devDependencies": {
     "@schalkneethling/css-property-type-validator-project-context": "workspace:*",
     "@schalkneethling/css-property-type-validator-report": "workspace:*",
-    "vite-plus": "^0.2.8",
+    "vite-plus": "^0.2.9",
     "vitest": "^4.1.10"
   }
 }
