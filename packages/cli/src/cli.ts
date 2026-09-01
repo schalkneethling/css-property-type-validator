@@ -171,7 +171,9 @@ async function loadConfiguredEntryPoints(
     for (const match of matches) entryPointsByPath.set(match.path, match);
   }
 
-  return [...entryPointsByPath.values()].sort((left, right) => left.path.localeCompare(right.path));
+  return [...entryPointsByPath.values()].sort((left, right) =>
+    left.path < right.path ? -1 : left.path > right.path ? 1 : 0,
+  );
 }
 
 async function loadAdoptionAudit(args: AdoptionArguments) {
@@ -193,7 +195,7 @@ async function loadAdoptionAudit(args: AdoptionArguments) {
     ...new Map(
       [...scannedInputs, ...configuredEntryPoints].map((input) => [input.path, input]),
     ).values(),
-  ].sort((left, right) => left.path.localeCompare(right.path));
+  ].sort((left, right) => (left.path < right.path ? -1 : left.path > right.path ? 1 : 0));
   const registryPatterns =
     args.options.registry.length > 0 ? args.options.registry : (context.config?.registry ?? []);
   const tokenPatterns =

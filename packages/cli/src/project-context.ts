@@ -76,7 +76,7 @@ export async function loadProjectInputs(
   }
 
   return [...inputsByCanonicalPath.values()].sort((left, right) =>
-    left.path.localeCompare(right.path),
+    left.path < right.path ? -1 : left.path > right.path ? 1 : 0,
   );
 }
 
@@ -120,7 +120,7 @@ export async function prepareImportResolver(
     }
 
     for (const [key, request] of [...pending].sort(([left], [right]) =>
-      left.localeCompare(right),
+      left < right ? -1 : left > right ? 1 : 0,
     )) {
       if (resolved.has(key)) continue;
 
