@@ -107,12 +107,12 @@ static: they do not claim browser behavior or replace specification-backed seman
 
 ## AC-GUARD-008 — Guardrail sources use deterministic patterns
 
-- **In scope:** Guardrail and lifecycle scripts under `scripts/` contain no locale-sensitive
-  sort comparisons (`localeCompare`) and no unbounded fetch-response buffering (`.text()`,
-  `.json()`, or `.arrayBuffer()` on a response, or inline on `await fetch(...)`), enforced by
-  structural ast-grep rules with a pinned CLI version.
-- **Out of scope:** Product package sources (their output ordering is a separate contract
-  decision), semantic proof that a streamed read is correctly bounded, and receivers the
+- **In scope:** Guardrail and lifecycle scripts under `scripts/` and published package sources
+  under `packages/*/src` contain no locale-sensitive sort comparisons (`localeCompare`) and no
+  unbounded fetch-response buffering (`.text()`, `.json()`, or `.arrayBuffer()` on a response,
+  or inline on `await fetch(...)`), enforced by structural ast-grep rules with a pinned CLI
+  version. Product ordering itself is accepted in AC-ORDER-001.
+- **Out of scope:** Semantic proof that a streamed read is correctly bounded, and receivers the
   naming-convention rule cannot see.
 - **Preconditions:** `@ast-grep/cli` is installed as an exact-version dev dependency.
 - **Observable result:** `check-determinism-rules` reports each violating file, line, and rule
