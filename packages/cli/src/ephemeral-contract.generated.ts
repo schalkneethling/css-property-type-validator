@@ -6,8 +6,8 @@ export const EPHEMERAL_PAGES_CONTRACT = {
   "compatibilityVersion": "1.0",
   "upstream": {
     "repository": "https://github.com/schalkneethling/ephemeral-pages",
-    "commit": "5bee37aaed30985a1bb4c7ebc62d6acecd772002",
-    "checkedAt": "2026-08-08",
+    "commit": "9b11df2a1f9b8b4ea05c74034e5c76f6a5a0841d",
+    "checkedAt": "2026-09-01",
     "sources": [
       {
         "path": "src/csp.ts",
@@ -23,7 +23,7 @@ export const EPHEMERAL_PAGES_CONTRACT = {
       },
       {
         "path": "netlify/functions/pages.ts",
-        "blobSha": "b9832998a1799b5ba832dfb5496c1477b0fa8f71"
+        "blobSha": "20d486bb562953a2665f78d71d6c6fafa51827cd"
       }
     ]
   },
