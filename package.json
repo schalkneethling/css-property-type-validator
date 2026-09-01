@@ -78,7 +78,7 @@
     "cheerio": "^1.2.0",
     "lightningcss": "1.33.0",
     "postcss": "8.5.26",
-    "typescript": "^6.0.3",
+    "typescript": "^7.0.2",
     "vite-plus": "^0.2.8"
   },
   "engines": {
