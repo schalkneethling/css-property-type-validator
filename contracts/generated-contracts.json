@@ -2,7 +2,7 @@
   "contracts": [
     {
       "path": "packages/cli/src/ephemeral-contract.generated.ts",
-      "sha256": "241b2b4be11694f7729f62fec00c9a7828299e527874c41cd0b33d8a779ec622"
+      "sha256": "3e7c1f2cdee1d0e24f5046cf66777f05ca757cefa630da7c32096fd8fd909ba2"
     }
   ]
 }
