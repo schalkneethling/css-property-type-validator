@@ -73,7 +73,7 @@
   "devDependencies": {
     "@ast-grep/cli": "0.45.3",
     "@playwright/test": "1.62.1",
-    "@types/node": "^26.1.2",
+    "@types/node": "^26.4.0",
     "@varlock/bumpy": "1.18.1",
     "cheerio": "^1.2.0",
     "lightningcss": "1.33.0",
