@@ -1,6 +1,13 @@
 # Changelog
 
 
+
+## 0.13.0 (2026-09-01)
+
+### Features
+
+- Add the typed custom property adoption audit, review, planning, validation, and CI contracts.
+
 ## 0.12.0 (2026-05-31)
 
 ### Features
