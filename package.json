@@ -18,7 +18,7 @@
   "scripts": {
     "build": "pnpm -r --if-present run build",
     "check": "vp check && pnpm run typecheck && pnpm test && pnpm run build && pnpm run check:contracts",
-    "check:contracts": "pnpm run acceptance:check && pnpm run spec:check && pnpm run guardrails:core && pnpm run guardrails:reads && pnpm run guardrails:diagnostics && pnpm run guardrails:generated && pnpm run guardrails:release-order && pnpm run guardrails:versions && pnpm run ephemeral:contract:check && pnpm run ephemeral:contract:generated-check && pnpm run web:assert-release-boundary",
+    "check:contracts": "pnpm run acceptance:check && pnpm run spec:check && pnpm run guardrails:core && pnpm run guardrails:reads && pnpm run guardrails:diagnostics && pnpm run guardrails:generated && pnpm run guardrails:release-order && pnpm run guardrails:versions && pnpm run guardrails:determinism && pnpm run ephemeral:contract:check && pnpm run ephemeral:contract:generated-check && pnpm run web:assert-release-boundary",
     "format": "vp check --fix",
     "format:check": "vp check --no-lint",
     "lint": "vp check --no-fmt",
@@ -67,9 +67,11 @@
     "release:verify": "pnpm run release:check-changelogs && pnpm run check && pnpm run check:supported-syntax-names",
     "check:supported-syntax-names": "node scripts/check-supported-syntax-names.mjs",
     "clean": "node scripts/clean.mjs",
-    "example": "pnpm run build && node packages/cli/dist/cli.js fixtures/imports/main.css"
+    "example": "pnpm run build && node packages/cli/dist/cli.js fixtures/imports/main.css",
+    "guardrails:determinism": "node scripts/check-determinism-rules.mjs scripts"
   },
   "devDependencies": {
+    "@ast-grep/cli": "0.45.3",
     "@playwright/test": "1.62.1",
     "@types/node": "^26.1.2",
     "@varlock/bumpy": "1.18.1",
