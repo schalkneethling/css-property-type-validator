@@ -1,6 +1,8 @@
 import { lstat, readFile } from "node:fs/promises";
 import process from "node:process";
 
+import { readBodyBounded } from "./lib/guardrail-utils.mjs";
+
 const sourceUrl = new URL("../packages/core/src/specification.ts", import.meta.url);
 const stat = await lstat(sourceUrl);
 if (!stat.isFile() || stat.size > 256 * 1024)
@@ -30,8 +32,8 @@ for (const [page, fragments] of pages) {
     failures.push(`${page}: ${response.status}`);
     continue;
   }
-  const text = await response.text();
-  if (Buffer.byteLength(text) > 8 * 1024 * 1024) {
+  const text = await readBodyBounded(response, 8 * 1024 * 1024);
+  if (text === null) {
     failures.push(`${page}: response exceeded 8 MiB`);
     continue;
   }

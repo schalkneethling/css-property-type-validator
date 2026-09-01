@@ -27,7 +27,11 @@ for (const filePath of files) {
     continue;
   }
 
-  const traceability = text.slice(traceabilityStart);
+  const afterHeading = text.slice(traceabilityStart);
+  const firstLineBreak = afterHeading.indexOf("\n");
+  const sectionBody = firstLineBreak === -1 ? "" : afterHeading.slice(firstLineBreak + 1);
+  const nextHeading = sectionBody.search(/^##\s+/m);
+  const traceability = nextHeading === -1 ? sectionBody : sectionBody.slice(0, nextHeading);
   if (
     !/^\|\s*(Criterion|Criterion\/scenario)/im.test(traceability) ||
     !/\|\s*Implementation\s*\|/im.test(traceability)
@@ -37,6 +41,7 @@ for (const filePath of files) {
     );
   }
 
+  const declared = new Set(ids);
   for (const id of ids) {
     if (headings.has(id)) {
       errors.push(
@@ -50,6 +55,17 @@ for (const filePath of files) {
     if (occurrences !== 1) {
       errors.push(
         `${filePath}: ${id} must occur exactly once in its Traceability table (found ${occurrences}).`,
+      );
+    }
+  }
+
+  const tableIds = new Set(
+    [...traceability.matchAll(/\bAC-[A-Z0-9]+-\d+\b/g)].map((match) => match[0]),
+  );
+  for (const id of tableIds) {
+    if (!declared.has(id)) {
+      errors.push(
+        `${filePath}: Traceability table references undeclared criterion ${id}; remove the stale row or declare the criterion.`,
       );
     }
   }
