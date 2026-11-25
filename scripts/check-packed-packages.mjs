@@ -18,6 +18,31 @@ const privateRuntimePackages = new Set([
   "@schalkneethling/css-property-type-validator-project-context",
   "@schalkneethling/css-property-type-validator-report",
 ]);
+const stylelintPluginPackage = "@schalkneethling/stylelint-plugin-css-property-type-validator";
+// AC-SL-PC-005: every Stylelint major the plugin's peer range claims must be installed and
+// exercised below, and the peer range must claim nothing else.
+const supportedStylelintMajors = [17, 18];
+const expectedStylelintPeerRange = supportedStylelintMajors
+  .map((major) => `^${major}.0.0`)
+  .join(" || ");
+// Lints an invalid @property registration through Stylelint's own plugin resolution, so the
+// check fails if the plugin cannot be loaded by name or its rule stops reporting.
+const consumerLintScript = `
+import stylelint from "stylelint";
+const result = await stylelint.lint({
+  code: '@property --brand-color { syntax: "<color>"; }',
+  codeFilename: "component.css",
+  configBasedir: process.cwd(),
+  config: {
+    plugins: ["${stylelintPluginPackage}"],
+    rules: { "css-property-type-validator/valid-property-types": true },
+  },
+});
+const texts = result.results.flatMap((entry) => entry.warnings.map((warning) => warning.text));
+if (!texts.some((text) => text.includes("inherits descriptor"))) {
+  throw new Error(\`Stylelint \${stylelint.version ?? "unknown"} did not report the invalid registration: \${JSON.stringify(texts)}\`);
+}
+`;
 const temporaryRoot = await mkdtemp(path.join(tmpdir(), "cptv-release-boundary-"));
 const packDirectory = path.join(temporaryRoot, "packs");
 
@@ -70,50 +95,64 @@ try {
     if (!mainExists) {
       throw new Error(`${manifest.name} is missing declared main entry ${manifest.main}.`);
     }
+    if (
+      manifest.name === stylelintPluginPackage &&
+      manifest.peerDependencies?.stylelint !== expectedStylelintPeerRange
+    ) {
+      throw new Error(
+        `${manifest.name} declares stylelint peer range ${JSON.stringify(manifest.peerDependencies?.stylelint)}, expected ${JSON.stringify(expectedStylelintPeerRange)}.`,
+      );
+    }
   }
 
   if (consume) {
-    const consumer = path.join(temporaryRoot, "consumer");
-    await mkdir(consumer);
     const coreTarball = tarballByPackage.get("@schalkneethling/css-property-type-validator-core");
     if (!coreTarball) throw new Error("The packed core tarball is unavailable to the consumer.");
-    await writeFile(
-      path.join(consumer, "package.json"),
-      `${JSON.stringify(
-        {
-          dependencies: Object.fromEntries([
-            ...publicPackages.map((name) => [name, `file:${tarballByPackage.get(name)}`]),
-            ["stylelint", "^17.0.0"],
-          ]),
-          private: true,
-          type: "module",
-        },
-        null,
-        2,
-      )}\n`,
-      "utf8",
-    );
-    await execFileAsync("npm", ["install", "--ignore-scripts", "--no-package-lock"], {
-      cwd: consumer,
-    });
-    await execFileAsync(
-      "node",
-      [
-        "--input-type=module",
-        "--eval",
-        "await import('@schalkneethling/css-property-type-validator-core'); await import('@schalkneethling/stylelint-plugin-css-property-type-validator');",
-      ],
-      { cwd: consumer },
-    );
-    await execFileAsync(
-      path.join(consumer, "node_modules", ".bin", "css-property-type-validator"),
-      ["--help"],
-      { cwd: consumer },
-    );
+    for (const major of supportedStylelintMajors) {
+      const consumer = path.join(temporaryRoot, `consumer-stylelint-${major}`);
+      await mkdir(consumer);
+      await writeFile(
+        path.join(consumer, "package.json"),
+        `${JSON.stringify(
+          {
+            dependencies: Object.fromEntries([
+              ...publicPackages.map((name) => [name, `file:${tarballByPackage.get(name)}`]),
+              ["stylelint", `^${major}.0.0`],
+            ]),
+            private: true,
+            type: "module",
+          },
+          null,
+          2,
+        )}\n`,
+        "utf8",
+      );
+      // npm fails with ERESOLVE here when the plugin's peer range excludes this major.
+      await execFileAsync("npm", ["install", "--ignore-scripts", "--no-package-lock"], {
+        cwd: consumer,
+      });
+      await execFileAsync(
+        "node",
+        [
+          "--input-type=module",
+          "--eval",
+          "await import('@schalkneethling/css-property-type-validator-core'); await import('@schalkneethling/stylelint-plugin-css-property-type-validator');",
+        ],
+        { cwd: consumer },
+      );
+      await execFileAsync("node", ["--input-type=module", "--eval", consumerLintScript], {
+        cwd: consumer,
+      });
+      await execFileAsync(
+        path.join(consumer, "node_modules", ".bin", "css-property-type-validator"),
+        ["--help"],
+        { cwd: consumer },
+      );
+    }
   }
 
   console.log(
-    `${consume ? "Consumed" : "Inspected"} ${tarballs.join(", ")} outside the workspace.`,
+    `${consume ? `Consumed with Stylelint ${supportedStylelintMajors.join(", ")}` : "Inspected"} ${tarballs.join(", ")} outside the workspace.`,
   );
 } finally {
   await rm(temporaryRoot, { recursive: true, force: true });

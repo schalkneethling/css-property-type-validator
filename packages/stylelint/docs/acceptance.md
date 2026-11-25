@@ -69,11 +69,31 @@ within the Stylelint-owned root. Cache or reader failures remain stable
 configuration warnings. Authority: product package-boundary and filesystem
 safety decisions. Classification: gating.
 
+## AC-SL-PC-005 — Supported Stylelint major versions
+
+```gherkin
+Scenario: A consumer installs the packed plugin with a supported Stylelint major
+  Given the packed plugin declares a Stylelint peer dependency range
+  And each supported Stylelint major version is listed by the packed-consumer check
+  When a consumer outside the workspace installs the packed plugin with that Stylelint major
+  Then npm resolves the install without a peer dependency conflict
+  And Stylelint loads the plugin by its package name
+  And the rule reports a diagnostic for an invalid @property registration
+```
+
+The supported majors are Stylelint 17 and 18. The packed plugin's peer range
+must name exactly those majors, so the published range never claims a major
+that the check does not install. Out of scope: Stylelint pre-releases and
+majors older than 17. Authority: published-consumer compatibility decision; no
+CSS semantics are changed. Classification: gating for releases, run through
+`pnpm run release:consume-local`.
+
 ## Traceability
 
-| Criterion    | Tests                               | Implementation                                                | Authority                                   |
-| ------------ | ----------------------------------- | ------------------------------------------------------------- | ------------------------------------------- |
-| AC-SL-PC-001 | `test/valid-property-types.test.ts` | `src/project-context.ts`, `src/rules/valid-property-types.ts` | This document; repository `AGENTS.md`       |
-| AC-SL-PC-002 | `test/valid-property-types.test.ts` | `src/rules/valid-property-types.ts`                           | This document                               |
-| AC-SL-PC-003 | package-boundary build inspection   | `vite.config.ts`, `package.json`                              | This document; published-consumer invariant |
-| AC-SL-PC-004 | `test/valid-property-types.test.ts` | `src/project-context.ts`, `src/rules/valid-property-types.ts` | This document; repository `AGENTS.md`       |
+| Criterion    | Tests                                                           | Implementation                                                | Authority                                   |
+| ------------ | --------------------------------------------------------------- | ------------------------------------------------------------- | ------------------------------------------- |
+| AC-SL-PC-001 | `test/valid-property-types.test.ts`                             | `src/project-context.ts`, `src/rules/valid-property-types.ts` | This document; repository `AGENTS.md`       |
+| AC-SL-PC-002 | `test/valid-property-types.test.ts`                             | `src/rules/valid-property-types.ts`                           | This document                               |
+| AC-SL-PC-003 | package-boundary build inspection                               | `vite.config.ts`, `package.json`                              | This document; published-consumer invariant |
+| AC-SL-PC-004 | `test/valid-property-types.test.ts`                             | `src/project-context.ts`, `src/rules/valid-property-types.ts` | This document; repository `AGENTS.md`       |
+| AC-SL-PC-005 | `scripts/check-packed-packages.mjs --consume` (repository root) | `package.json` `peerDependencies`                             | This document; published-consumer invariant |

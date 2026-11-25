@@ -10,6 +10,8 @@ Use it when you already run Stylelint and want typed CSS custom property validat
 npm install --save-dev stylelint @schalkneethling/stylelint-plugin-css-property-type-validator
 ```
 
+The plugin supports Stylelint 17 and 18.
+
 ## Usage
 
 ```js
