@@ -8,8 +8,8 @@ export function run(command, args) {
   if (result.error) {
     throw result.error;
   }
-  if (typeof result.status === "number" && result.status !== 0) {
-    process.exitCode = result.status;
+  if (result.status !== 0) {
+    process.exitCode = typeof result.status === "number" ? result.status : 1;
     return false;
   }
   return true;
@@ -23,6 +23,13 @@ export function runExpectedFailure(command, args) {
   if (result.status === 0) {
     process.stderr.write(
       "RED evidence command passed; it did not prove the selected unmet criterion.\n",
+    );
+    process.exitCode = 1;
+    return false;
+  }
+  if (typeof result.status !== "number") {
+    process.stderr.write(
+      `RED evidence command was terminated by signal ${result.signal}; a crash is not valid RED evidence.\n`,
     );
     process.exitCode = 1;
     return false;

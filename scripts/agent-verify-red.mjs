@@ -1,4 +1,19 @@
+import { resolve } from "node:path";
+
 import { runExpectedFailure, runGuardrails, usage } from "./lib/agent-lifecycle.mjs";
+import { listFiles, readTextBounded } from "./lib/guardrail-utils.mjs";
+
+async function criterionIsDeclared(criterion) {
+  const acceptanceDirectory = resolve(process.cwd(), "docs/acceptance");
+  const files = await listFiles(acceptanceDirectory, (filePath) => filePath.endsWith(".md"));
+  const headingPattern = new RegExp(`^##\\s+${criterion}\\b`, "m");
+  for (const filePath of files) {
+    if (headingPattern.test(await readTextBounded(filePath))) {
+      return true;
+    }
+  }
+  return false;
+}
 
 const args = process.argv.slice(2);
 const criterionIndex = args.indexOf("--criterion");
@@ -9,6 +24,10 @@ if (!criterion || !/^AC-[A-Z0-9]+-\d+$/.test(criterion)) {
   usage("Usage: agent-verify-red --criterion AC-AREA-001 -- <test command> [arguments]");
 } else if (separatorIndex === -1 || separatorIndex === args.length - 1) {
   usage("RED verification requires one explicit test command after --.");
+} else if (!(await criterionIsDeclared(criterion))) {
+  usage(
+    `Criterion ${criterion} is not declared as a heading in docs/acceptance/*.md; RED evidence must trace to a declared criterion.`,
+  );
 } else if (runGuardrails()) {
   const [command, ...commandArgs] = args.slice(separatorIndex + 1);
   if (runExpectedFailure(command, commandArgs)) {

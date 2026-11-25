@@ -1,6 +1,7 @@
 import * as cheerio from "cheerio";
 
 import { SUPPORTED_SYNTAX_COMPONENT_NAMES } from "../packages/core/src/supported-syntax.ts";
+import { readBodyBounded } from "./lib/guardrail-utils.mjs";
 
 const SPEC_URL = "https://www.w3.org/TR/css-properties-values-api-1/#supported-names";
 
@@ -48,7 +49,10 @@ async function main() {
     throw new Error(`Failed to download the supported-names section: ${response.status}`);
   }
 
-  const documentText = await response.text();
+  const documentText = await readBodyBounded(response, 8 * 1024 * 1024);
+  if (documentText === null) {
+    throw new Error("Supported-names section response exceeded 8 MiB.");
+  }
   const specNames = extractSupportedNames(documentText).sort();
   const localNames = [...SUPPORTED_SYNTAX_COMPONENT_NAMES].sort();
 

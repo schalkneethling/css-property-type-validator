@@ -1,0 +1,7 @@
+id: no-locale-sensitive-sort
+language: javascript
+severity: error
+message: localeCompare ordering varies with the host locale and ICU data; use a plain code-unit comparison for deterministic ordering.
+note: "Replace with: (left < right ? -1 : left > right ? 1 : 0)."
+rule:
+  pattern: $A.localeCompare($$$ARGS)

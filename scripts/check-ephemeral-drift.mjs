@@ -1,6 +1,10 @@
 import { readFile, lstat } from "node:fs/promises";
 import process from "node:process";
 
+import { readBodyBounded } from "./lib/guardrail-utils.mjs";
+
+const MAX_API_RESPONSE_BYTES = 1024 * 1024;
+
 const manifestUrl = new URL("../compatibility/ephemeral-pages.json", import.meta.url);
 const stat = await lstat(manifestUrl);
 if (!stat.isFile() || stat.size > 64 * 1024)
@@ -23,7 +27,10 @@ const proposedCommitResponse = await fetch(
 );
 if (!proposedCommitResponse.ok)
   throw new Error(`Unable to resolve Ephemeral main: ${proposedCommitResponse.status}`);
-const proposedCommit = (await proposedCommitResponse.json()).sha;
+const proposedCommitBody = await readBodyBounded(proposedCommitResponse, MAX_API_RESPONSE_BYTES);
+if (proposedCommitBody === null)
+  throw new Error("Ephemeral commit response exceeded its 1 MiB limit.");
+const proposedCommit = JSON.parse(proposedCommitBody).sha;
 
 for (const source of contract.upstream.sources) {
   const endpoint = `https://api.github.com/repos/${owner}/${repo}/contents/${source.path}?ref=${proposedCommit}`;
@@ -32,7 +39,12 @@ for (const source of contract.upstream.sources) {
     failures.push(`${source.path}: registry response ${response.status}`);
     continue;
   }
-  const metadata = await response.json();
+  const metadataBody = await readBodyBounded(response, MAX_API_RESPONSE_BYTES);
+  if (metadataBody === null) {
+    failures.push(`${source.path}: registry response exceeded its 1 MiB limit`);
+    continue;
+  }
+  const metadata = JSON.parse(metadataBody);
   proposal.push({ path: source.path, blobSha: metadata.sha });
   if (metadata.sha !== source.blobSha)
     failures.push(`${source.path}: pinned ${source.blobSha}, main ${metadata.sha}`);

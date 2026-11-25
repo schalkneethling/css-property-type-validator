@@ -57,7 +57,9 @@ export async function listFiles(root, predicate) {
 
   async function walk(directory) {
     const entries = await readdir(directory, { withFileTypes: true });
-    for (const entry of entries.sort((left, right) => left.name.localeCompare(right.name))) {
+    const byCodeUnit = (left, right) =>
+      left.name < right.name ? -1 : left.name > right.name ? 1 : 0;
+    for (const entry of entries.sort(byCodeUnit)) {
       const candidate = resolve(directory, entry.name);
       if (entry.isDirectory()) {
         await walk(candidate);
@@ -72,6 +74,25 @@ export async function listFiles(root, predicate) {
   }
 
   return files;
+}
+
+export async function readBodyBounded(response, limit) {
+  const reader = response.body.getReader();
+  const chunks = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) {
+      break;
+    }
+    total += value.byteLength;
+    if (total > limit) {
+      await reader.cancel();
+      return null;
+    }
+    chunks.push(value);
+  }
+  return Buffer.concat(chunks).toString("utf8");
 }
 
 export function sha256(content) {

@@ -1,5 +1,7 @@
 import process from "node:process";
 
+import { readBodyBounded } from "./lib/guardrail-utils.mjs";
+
 const approvedPublication = "26 March 2024";
 const approvedSnapshot = "https://www.w3.org/TR/2024/WD-css-properties-values-api-1-20240326/";
 const response = await fetch("https://www.w3.org/TR/css-properties-values-api-1/", {
@@ -7,9 +9,8 @@ const response = await fetch("https://www.w3.org/TR/css-properties-values-api-1/
 });
 if (!response.ok)
   throw new Error(`Unable to inspect the official specification: ${response.status}`);
-const text = await response.text();
-if (Buffer.byteLength(text) > 8 * 1024 * 1024)
-  throw new Error("Official specification response exceeded 8 MiB.");
+const text = await readBodyBounded(response, 8 * 1024 * 1024);
+if (text === null) throw new Error("Official specification response exceeded 8 MiB.");
 if (!text.includes(approvedPublication) && !text.includes(approvedSnapshot)) {
   console.error(
     `The latest published specification no longer identifies the approved ${approvedPublication} profile. Review drift; do not update semantics automatically.`,

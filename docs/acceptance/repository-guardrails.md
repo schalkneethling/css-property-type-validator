@@ -6,12 +6,14 @@ static: they do not claim browser behavior or replace specification-backed seman
 ## AC-GUARD-001 — Traceability is complete before handoff
 
 - **In scope:** Each acceptance document has unique stable `AC-*` headings and a traceability
-  table that names every heading.
+  table that names every heading exactly once and names no criterion that is not declared as a
+  heading in the same document.
 - **Out of scope:** Deciding whether a criterion is sufficient, or parsing arbitrary Markdown
   table dialects.
 - **Preconditions:** An implementation slice records its boundaries in `docs/acceptance/`.
-- **Observable result:** `check-acceptance-traceability` rejects an orphan, duplicate, or
-  undocumented criterion before handoff.
+- **Observable result:** `check-acceptance-traceability` rejects an orphan, duplicate,
+  undocumented, or table-only stale criterion before handoff; the traceability table is
+  isolated up to the next heading so surrounding prose cannot satisfy the count.
 - **Uncertainty:** A malformed or missing table fails closed and asks for human repair.
 - **Provenance:** Product decision: acceptance-driven RED/GREEN workflow.
 - **Outcome:** Gating contributor contract.
@@ -76,10 +78,13 @@ static: they do not claim browser behavior or replace specification-backed seman
   separate commands and retain their distinct failure causes.
 - **Out of scope:** Automatically approving acceptance criteria, closing issues, or substituting
   a human overreach review.
-- **Preconditions:** The contributor supplies a stable criterion ID and, for RED, an explicit
-  test command.
+- **Preconditions:** The contributor supplies a stable criterion ID that is declared as a
+  heading in `docs/acceptance/` and, for RED, an explicit test command.
 - **Observable result:** Lifecycle scripts validate guardrails before executing the requested
-  verification and reject missing criterion/test inputs with usage exit status 2.
+  verification and reject missing criterion/test inputs — and criteria not declared in
+  `docs/acceptance/` — with usage exit status 2. Only a numeric nonzero exit is accepted as RED
+  evidence: a RED command that passes or is terminated by a signal is rejected, and a
+  signal-terminated guardrail or verification child is a failure, never a success.
 - **Uncertainty:** A passing automation result does not make an advisory or uncertain diagnostic
   gating.
 - **Provenance:** Product decision: acceptance-driven RED/GREEN workflow.
@@ -100,17 +105,36 @@ static: they do not claim browser behavior or replace specification-backed seman
   CodeQL alert from PR #172 review 4891253884.
 - **Outcome:** Gating repository security contract.
 
+## AC-GUARD-008 — Guardrail sources use deterministic patterns
+
+- **In scope:** Guardrail and lifecycle scripts under `scripts/` contain no locale-sensitive
+  sort comparisons (`localeCompare`) and no unbounded fetch-response buffering (`.text()`,
+  `.json()`, or `.arrayBuffer()` on a response, or inline on `await fetch(...)`), enforced by
+  structural ast-grep rules with a pinned CLI version.
+- **Out of scope:** Product package sources (their output ordering is a separate contract
+  decision), semantic proof that a streamed read is correctly bounded, and receivers the
+  naming-convention rule cannot see.
+- **Preconditions:** `@ast-grep/cli` is installed as an exact-version dev dependency.
+- **Observable result:** `check-determinism-rules` reports each violating file, line, and rule
+  and fails; a clean tree passes with an explicit confirmation.
+- **Uncertainty:** Structural matching is syntactic; findings are reviewed rather than
+  auto-fixed, and the response rule depends on `response`/`res`/`resp` receiver naming.
+- **Provenance:** Determinant PR #3 review: both patterns recurred in code distilled from this
+  repository.
+- **Outcome:** Gating guardrail-quality contract.
+
 ## Contract table
 
-| Contract            | Required observable behavior                                                                                |
-| ------------------- | ----------------------------------------------------------------------------------------------------------- |
-| Traceability        | Every `AC-*` heading appears once in the document's traceability table and nowhere else as a heading        |
-| Core boundary       | Core has no Node-only or project-context imports and does not depend on `process`                           |
-| Bounded reads       | Direct production `readFile`, `readFileSync`, and `createReadStream` calls occur only in the bounded reader |
-| Diagnostic registry | Activated registry codes are unique, match `CPTV_*`, and cover all static uses                              |
-| Generated registry  | Activated manifest digests match bytes and lists all `@generated` source files                              |
-| Lifecycle           | RED requires one valid criterion and an explicit verification command                                       |
-| Workflow token      | Every workflow declares top-level permissions; CI grants only `contents: read`                              |
+| Contract            | Required observable behavior                                                                                            |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Traceability        | Every `AC-*` heading appears once in the document's traceability table, and every table criterion is a declared heading |
+| Core boundary       | Core has no Node-only or project-context imports and does not depend on `process`                                       |
+| Bounded reads       | Direct production `readFile`, `readFileSync`, and `createReadStream` calls occur only in the bounded reader             |
+| Diagnostic registry | Activated registry codes are unique, match `CPTV_*`, and cover all static uses                                          |
+| Generated registry  | Activated manifest digests match bytes and lists all `@generated` source files                                          |
+| Lifecycle           | RED requires one declared criterion and an explicit command that fails with a numeric nonzero exit                      |
+| Workflow token      | Every workflow declares top-level permissions; CI grants only `contents: read`                                          |
+| Determinism rules   | Guardrail scripts contain no locale-sensitive sorts and no unbounded fetch-response buffering                           |
 
 ## Traceability
 
@@ -123,3 +147,4 @@ static: they do not claim browser behavior or replace specification-backed seman
 | AC-GUARD-005       | `scripts/test/guardrails.test.mjs` stale generated fixture    | `scripts/check-generated-contracts.mjs`      | This document                        |
 | AC-GUARD-006       | `scripts/test/guardrails.test.mjs` lifecycle usage fixture    | `scripts/agent-verify-red.mjs`               | This document                        |
 | AC-GUARD-007       | `scripts/test/workflow-permissions.test.mjs`                  | Workflow-level permission declarations       | This document; PR #172 CodeQL review |
+| AC-GUARD-008       | `scripts/test/guardrails.test.mjs` determinism-rule fixtures  | `scripts/check-determinism-rules.mjs`        | This document; determinant PR #3     |

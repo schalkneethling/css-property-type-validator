@@ -112,6 +112,99 @@ test("AC-GUARD-006 requires a criterion and explicit RED test command", () => {
   assert.match(result.stderr, /Usage: agent-verify-red/);
 });
 
+test("AC-GUARD-001 rejects a traceability row referencing an undeclared criterion", async () => {
+  await fixture(async (root) => {
+    await mkdir(resolve(root, "docs/acceptance"), { recursive: true });
+    await writeFile(
+      resolve(root, "docs/acceptance/slice.md"),
+      "# Slice\n\n## AC-TEST-001 — Outcome\n\n## Traceability\n\n| Criterion/scenario | Implementation |\n| --- | --- |\n| AC-TEST-001 | `src/a.ts` |\n| AC-TEST-009 | `src/gone.ts` |\n",
+    );
+    const result = run("check-acceptance-traceability.mjs", root);
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /references undeclared criterion AC-TEST-009/);
+  });
+});
+
+test("AC-GUARD-006 rejects a criterion that is not declared in docs/acceptance", () => {
+  const result = spawnSync(
+    process.execPath,
+    [
+      resolve(repositoryRoot, "scripts/agent-verify-red.mjs"),
+      "--criterion",
+      "AC-UNDEFINED-999",
+      "--",
+      process.execPath,
+      "-e",
+      "process.exit(1)",
+    ],
+    { cwd: repositoryRoot, encoding: "utf8" },
+  );
+  assert.equal(result.status, 2);
+  assert.match(result.stderr, /AC-UNDEFINED-999 is not declared/);
+});
+
+test("AC-GUARD-006 rejects a signal-terminated RED command as evidence", () => {
+  const result = spawnSync(
+    process.execPath,
+    [
+      resolve(repositoryRoot, "scripts/agent-verify-red.mjs"),
+      "--criterion",
+      "AC-GUARD-001",
+      "--",
+      process.execPath,
+      "-e",
+      'process.kill(process.pid, "SIGKILL")',
+    ],
+    { cwd: repositoryRoot, encoding: "utf8" },
+  );
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /terminated by signal SIGKILL/);
+  assert.doesNotMatch(result.stdout, /RED evidence captured/);
+});
+
+test("AC-GUARD-008 reports locale-sensitive sorts and unbounded response reads", async () => {
+  await fixture(async (root) => {
+    await writeFile(
+      resolve(root, "violations.mjs"),
+      [
+        "export const sorted = (entries) =>",
+        "  entries.sort((left, right) => left.name.localeCompare(right.name));",
+        "export async function unbounded(url) {",
+        "  const response = await fetch(url);",
+        "  return response.text();",
+        "}",
+        "export const inline = async (url) => (await fetch(url)).json();",
+        "",
+      ].join("\n"),
+    );
+    const result = spawnSync(
+      process.execPath,
+      [resolve(repositoryRoot, "scripts/check-determinism-rules.mjs"), root],
+      { cwd: repositoryRoot, encoding: "utf8" },
+    );
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /no-locale-sensitive-sort/);
+    assert.match(result.stderr, /no-unbounded-response-read/);
+    assert.match(result.stderr, /no-unbounded-inline-fetch-read/);
+  });
+});
+
+test("AC-GUARD-008 passes deterministic guardrail code", async () => {
+  await fixture(async (root) => {
+    await writeFile(
+      resolve(root, "clean.mjs"),
+      "export const sorted = (entries) =>\n  entries.sort((left, right) => (left.name < right.name ? -1 : left.name > right.name ? 1 : 0));\n",
+    );
+    const result = spawnSync(
+      process.execPath,
+      [resolve(repositoryRoot, "scripts/check-determinism-rules.mjs"), root],
+      { cwd: repositoryRoot, encoding: "utf8" },
+    );
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /Determinism rules passed/);
+  });
+});
+
 test("AC-GUARD-006 rejects a RED command that passes instead of proving an unmet outcome", () => {
   const result = spawnSync(
     process.execPath,
