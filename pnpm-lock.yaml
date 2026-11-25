@@ -114,8 +114,8 @@ importers:
         specifier: 6.7.4
         version: 6.7.4
       '@codemirror/view':
-        specifier: 6.43.11
-        version: 6.43.11
+        specifier: 6.43.15
+        version: 6.43.15
       '@schalkneethling/css-property-type-validator-core':
         specifier: 0.12.0
         version: 0.12.0
@@ -229,8 +229,8 @@ packages:
   '@codemirror/state@6.7.4':
     resolution: {integrity: sha512-QhQIVRY+xHZDxwOSFrJ1eUMapJBUID3IdeAjf7dHO7zBUzSkyooHiodnalz5MG3iHzwixKMlAAyn7244y537EA==}
 
-  '@codemirror/view@6.43.11':
-    resolution: {integrity: sha512-2+esucbQX6wB2JYi1eDvdCPFTA31BN8oSy6xCmk3G6CloV11yOvEjYk+gH7kLrP0MuHG94E8WDhjs5oMiu3+Wg==}
+  '@codemirror/view@6.43.15':
+    resolution: {integrity: sha512-HHsfpqFeHyXLs983pSRe38Xajs0vFWZQ2BuX0m7Ki8w3jZ5iD8cuR3lBz2/5/X53Dhf32SBHKh6rtSTB6tKeGw==}
 
   '@csstools/css-calc@3.2.1':
     resolution: {integrity: sha512-DtdHlgXh5ZkA43cwBcAm+huzgJiwx3ZTWVjBs94kwz2xKqSimDA3lBgCjphYgwgVUMWatSM0pDd8TILB1yrVVg==}
@@ -1215,8 +1215,8 @@ packages:
       typescript:
         optional: true
 
-  crelt@1.0.6:
-    resolution: {integrity: sha512-VQ2MBenTq1fWZUH9DJNGti7kKv6EeAuYr3cLwxUWhIu1baTaXh4Ib5W2CqHVqib4/MqbYGJqiL3Zb8GJZr3l4g==}
+  crelt@1.0.7:
+    resolution: {integrity: sha512-aK6BbWfhf4U/wCcLHKPJl/xa6VkVstRaPywWtMKGwuOLc/wZTyQYuoxgvZnNsBvv7Kg3YTBQYYBCggcviQczuA==}
 
   css-functions-list@3.3.3:
     resolution: {integrity: sha512-8HFEBPKhOpJPEPu70wJJetjKta86Gw9+CCyCnB3sui2qQfOvRyqBy4IKLKKAwdMpWb2lHXWk9Wb4Z6AmaUT1Pg==}
@@ -1764,8 +1764,8 @@ packages:
     resolution: {integrity: sha512-yDPMNjp4WyfYBkHnjIRLfca1i6KMyGCtsVgoKe/z1+6vukgaENdgGBZt+ZmKPc4gavvEZ5OgHfHdrazhgNyG7w==}
     engines: {node: '>=12'}
 
-  style-mod@4.1.3:
-    resolution: {integrity: sha512-i/n8VsZydrugj3Iuzll8+x/00GH2vnYsk1eomD8QiRrSAeW6ItbCQDtfXCeJHd0iwiNagqjQkvpvREEPtW3IoQ==}
+  style-mod@4.1.5:
+    resolution: {integrity: sha512-WQ2llCZa9sZSkJA+aOwpg5DkfbAXFKGh//t3MRTBeruFiSBC+GXUmbBzrw3bXyboCWAbtCW9InDfBsXrRD/rAg==}
 
   stylelint@17.14.1:
     resolution: {integrity: sha512-xVQwyiuxALUBNB2fBe0tmNemg9KqLtdj3T64mioFDar79B2cU8LIyz+3KL6LdiHs9NkeNfwxpKSaIVOY8f112g==}
@@ -2047,14 +2047,14 @@ snapshots:
     dependencies:
       '@codemirror/language': 6.12.3
       '@codemirror/state': 6.7.4
-      '@codemirror/view': 6.43.11
+      '@codemirror/view': 6.43.15
       '@lezer/common': 1.5.2
 
   '@codemirror/commands@6.10.3':
     dependencies:
       '@codemirror/language': 6.12.3
       '@codemirror/state': 6.7.4
-      '@codemirror/view': 6.43.11
+      '@codemirror/view': 6.43.15
       '@lezer/common': 1.5.2
 
   '@codemirror/lang-css@6.3.1':
@@ -2073,33 +2073,33 @@ snapshots:
   '@codemirror/language@6.12.3':
     dependencies:
       '@codemirror/state': 6.7.4
-      '@codemirror/view': 6.43.11
+      '@codemirror/view': 6.43.15
       '@lezer/common': 1.5.2
       '@lezer/highlight': 1.2.3
       '@lezer/lr': 1.4.10
-      style-mod: 4.1.3
+      style-mod: 4.1.5
 
   '@codemirror/lint@6.9.5':
     dependencies:
       '@codemirror/state': 6.7.4
-      '@codemirror/view': 6.43.11
-      crelt: 1.0.6
+      '@codemirror/view': 6.43.15
+      crelt: 1.0.7
 
   '@codemirror/search@6.7.0':
     dependencies:
       '@codemirror/state': 6.7.4
-      '@codemirror/view': 6.43.11
-      crelt: 1.0.6
+      '@codemirror/view': 6.43.15
+      crelt: 1.0.7
 
   '@codemirror/state@6.7.4':
     dependencies:
       '@marijn/find-cluster-break': 1.0.2
 
-  '@codemirror/view@6.43.11':
+  '@codemirror/view@6.43.15':
     dependencies:
       '@codemirror/state': 6.7.4
-      crelt: 1.0.6
-      style-mod: 4.1.3
+      crelt: 1.0.7
+      style-mod: 4.1.5
       w3c-keyname: 2.2.8
 
   '@csstools/css-calc@3.2.1(@csstools/css-parser-algorithms@4.0.0(@csstools/css-tokenizer@4.0.0))(@csstools/css-tokenizer@4.0.0)':
@@ -2776,7 +2776,7 @@ snapshots:
       '@codemirror/lint': 6.9.5
       '@codemirror/search': 6.7.0
       '@codemirror/state': 6.7.4
-      '@codemirror/view': 6.43.11
+      '@codemirror/view': 6.43.15
 
   color-convert@2.0.1:
     dependencies:
@@ -2799,7 +2799,7 @@ snapshots:
     optionalDependencies:
       typescript: 7.0.2
 
-  crelt@1.0.6: {}
+  crelt@1.0.7: {}
 
   css-functions-list@3.3.3: {}
 
@@ -3305,7 +3305,7 @@ snapshots:
     dependencies:
       ansi-regex: 6.2.2
 
-  style-mod@4.1.3: {}
+  style-mod@4.1.5: {}
 
   stylelint@17.14.1(typescript@7.0.2):
     dependencies:
