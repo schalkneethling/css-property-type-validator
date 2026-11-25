@@ -1,0 +1,13 @@
+id: no-unbounded-response-read-ts
+language: typescript
+severity: error
+message: Buffering a whole fetch response before checking its size makes the limit advisory; read the body in chunks and cancel once the limit is exceeded.
+note: Stream response.body with a reader, track byte length as chunks arrive, and cancel over-limit streams. Matches by receiver name (response/res/resp); see no-unbounded-inline-fetch-read for inline fetch chains.
+rule:
+  any:
+    - pattern: $RES.text()
+    - pattern: $RES.json()
+    - pattern: $RES.arrayBuffer()
+constraints:
+  RES:
+    regex: (?i)(response|resp|res)$

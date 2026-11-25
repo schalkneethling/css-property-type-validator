@@ -340,7 +340,7 @@ export function generatePropertyRegistrations(
   }
 
   const sortedObservedEntries = [...observed.entries()].toSorted(([left], [right]) =>
-    left.localeCompare(right),
+    left < right ? -1 : left > right ? 1 : 0,
   );
 
   for (const [name, entry] of sortedObservedEntries) {

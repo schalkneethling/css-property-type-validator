@@ -68,7 +68,7 @@
     "check:supported-syntax-names": "node scripts/check-supported-syntax-names.mjs",
     "clean": "node scripts/clean.mjs",
     "example": "pnpm run build && node packages/cli/dist/cli.js fixtures/imports/main.css",
-    "guardrails:determinism": "node scripts/check-determinism-rules.mjs scripts"
+    "guardrails:determinism": "node scripts/check-determinism-rules.mjs scripts packages/cli/src packages/core/src packages/project-context/src packages/report/src packages/stylelint/src"
   },
   "devDependencies": {
     "@ast-grep/cli": "0.45.3",
