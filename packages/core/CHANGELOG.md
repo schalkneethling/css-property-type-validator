@@ -1,6 +1,17 @@
 # Changelog
 
 
+
+## 0.13.0 (2026-11-25)
+
+### Features
+
+- Add the typed custom property adoption audit, review, planning, validation, and CI contracts.
+
+### Bug Fixes
+
+- Order canonical output with plain code-unit comparisons instead of localeCompare, so identical inputs produce byte-identical ordering regardless of the host locale and ICU data.
+
 ## 0.12.0 (2026-05-31)
 
 ### Features
