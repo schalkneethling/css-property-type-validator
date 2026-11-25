@@ -53,7 +53,7 @@
   "devDependencies": {
     "@schalkneethling/css-property-type-validator-project-context": "workspace:*",
     "stylelint": "^17.13.0",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.11"
   },
   "peerDependencies": {
     "stylelint": "^17.0.0"
