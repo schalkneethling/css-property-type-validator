@@ -1,6 +1,18 @@
 # Changelog
 
 
+
+## 0.9.0 (2026-11-25)
+
+### Features
+
+- Add the typed custom property adoption audit, review, planning, validation, and CI contracts.
+
+### Bug Fixes
+
+- Order canonical output with plain code-unit comparisons instead of localeCompare, so identical inputs produce byte-identical ordering regardless of the host locale and ICU data.
+- Update the pinned Ephemeral Pages compatibility contract to the MCP-server release; the reviewed delivery behavior is unchanged.
+
 ## 0.8.0 (2026-05-31)
 
 ### Features
