@@ -56,6 +56,6 @@
     "vitest": "^5.1.0"
   },
   "peerDependencies": {
-    "stylelint": "^17.0.0"
+    "stylelint": "^17.0.0 || ^18.0.0"
   }
 }
