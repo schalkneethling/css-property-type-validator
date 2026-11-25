@@ -20,8 +20,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
-    "vite-plus": "^0.2.8",
-    "vitest": "^4.1.11"
+    "vite-plus": "^1.6.0",
+    "vitest": "^5.1.0"
   },
   "engines": {
     "node": ">=22.0.0"
